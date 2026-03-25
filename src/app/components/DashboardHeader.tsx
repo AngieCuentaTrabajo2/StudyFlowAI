@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Bell, BookOpen, ClipboardList, LogOut, Menu, Search } from "lucide-react";
+import { Bell, BookOpen, ClipboardList, Menu, Search } from "lucide-react";
 import { formatearFechaCorta, useStudyFlow } from "../data/studyflow-store";
 import Sidebar from "./Sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -19,7 +19,7 @@ type ResultadoBusqueda = {
 
 export default function DashboardHeader() {
   const navigate = useNavigate();
-  const { usuarioActual, notificaciones, cursos, tareas, examenes, cerrarSesion } = useStudyFlow();
+  const { usuarioActual, notificaciones, cursos, tareas, examenes } = useStudyFlow();
   const [busqueda, setBusqueda] = useState("");
   const cantidadNoLeidas = notificaciones.filter((item) => item.noLeida).length;
   const initials = `${usuarioActual?.nombres?.[0] ?? "S"}${usuarioActual?.apellidos?.[0] ?? "F"}`;
@@ -83,11 +83,6 @@ export default function DashboardHeader() {
   const irAResultado = (destino: string) => {
     setBusqueda("");
     navigate(destino);
-  };
-
-  const salir = () => {
-    cerrarSesion();
-    navigate("/login");
   };
 
   return (
@@ -166,15 +161,6 @@ export default function DashboardHeader() {
         </div>
 
         <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            className="hidden border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900 md:inline-flex"
-            onClick={salir}
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Cerrar sesion
-          </Button>
-
           <Link to="/app/notifications">
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5 text-gray-600" />
