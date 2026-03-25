@@ -14,7 +14,7 @@ import {
   parseISO,
   startOfToday,
 } from "date-fns";
-import { api, type ContextoApi } from "./api";
+import { api, type ContextoApi, type UsuarioApi } from "./api";
 
 export type Prioridad = "low" | "medium" | "high";
 export type EstadoTarea = "pending" | "in-progress" | "completed" | "overdue";
@@ -225,6 +225,27 @@ function crearPerfilBase(): PerfilUsuario {
       googleCalendar: false,
       sugerenciasAutomaticas: true,
     },
+  };
+}
+
+function normalizarUsuarioApi(
+  usuario: UsuarioApi,
+  opciones?: { contrasena?: string; base?: PerfilUsuario | null },
+): PerfilUsuario {
+  const base = opciones?.base ?? crearPerfilBase();
+
+  return {
+    ...base,
+    ...usuario,
+    contrasena: opciones?.contrasena ?? base.contrasena,
+    horasDisponibles: usuario.horasDisponibles ?? base.horasDisponibles,
+    metodoEstudio: usuario.metodoEstudio ?? base.metodoEstudio,
+    tonoAsistente: usuario.tonoAsistente ?? base.tonoAsistente,
+    metas: usuario.metas ?? base.metas,
+    horasEstudioDiarias: usuario.horasEstudioDiarias ?? base.horasEstudioDiarias,
+    horasSueno: usuario.horasSueno ?? base.horasSueno,
+    notificaciones: usuario.notificaciones ?? base.notificaciones,
+    aplicacion: usuario.aplicacion ?? base.aplicacion,
   };
 }
 
@@ -599,15 +620,17 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       iniciarSesion: async (correo, contrasena) => {
         try {
           const resultado = await api.iniciarSesion({ correo, contrasena });
-          if (!resultado.usuario) {
+          const usuario = resultado.usuario;
+          if (!usuario) {
             return false;
           }
 
           setEstado((actual) => ({
             ...actual,
-            usuarioActual: actual.usuarioActual
-              ? { ...actual.usuarioActual, ...resultado.usuario, contrasena }
-              : { ...crearPerfilBase(), ...resultado.usuario, contrasena },
+            usuarioActual: normalizarUsuarioApi(usuario, {
+              contrasena,
+              base: actual.usuarioActual,
+            }),
           }));
 
           return true;
@@ -639,11 +662,9 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
             plan: datos.plan,
           });
 
-          const siguienteUsuario: PerfilUsuario = {
-            ...crearPerfilBase(),
-            ...resultado.usuario,
+          const siguienteUsuario = normalizarUsuarioApi(resultado.usuario, {
             contrasena: datos.password,
-          };
+          });
           const notificacionBienvenida: NotificacionItem = {
             id: crearId("notif"),
             tipo: "success",
@@ -708,11 +729,10 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
               setEstado((actual) => ({
                 ...actual,
                 usuarioActual: actual.usuarioActual
-                  ? {
-                      ...actual.usuarioActual,
-                      ...resultado.usuario,
+                  ? normalizarUsuarioApi(resultado.usuario, {
                       contrasena: actual.usuarioActual.contrasena,
-                    }
+                      base: actual.usuarioActual,
+                    })
                   : actual.usuarioActual,
               }));
             })
@@ -1040,37 +1060,6 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       },
       generarHorarioInteligente: () => {
         return;
-        const bloquesGenerados = generarHorarioDesdeEstado(estado);
-        const examenPrincipal = [...estado.examenes].sort((a, b) => a.fecha.localeCompare(b.fecha))[0];
-        const cursoPrincipal = estado.cursos.find((curso) => curso.id === examenPrincipal?.cursoId);
-        const notificacionLocal: NotificacionItem = {
-          id: crearId("notif"),
-          tipo: "info",
-          titulo: "Horario inteligente actualizado",
-          mensaje: `Se asigno mas tiempo a ${cursoPrincipal?.nombre ?? "tus cursos prioritarios"} por cercania de evaluacion.`,
-          creadaEn: new Date().toISOString(),
-          noLeida: true,
-        };
-
-        setEstado((actual) => ({
-          ...actual,
-          bloquesPlanificador: bloquesGenerados,
-          notificaciones: [notificacionLocal, ...actual.notificaciones],
-        }));
-
-        if (estado.usuarioActual?.id) {
-          api
-            .guardarPlanificador(estado.usuarioActual.id, bloquesGenerados)
-            .then((resultado) => {
-              setEstado((actual) => ({
-                ...actual,
-                bloquesPlanificador: resultado.bloques,
-              }));
-            })
-            .catch(() => {});
-
-          persistirNotificacion(estado.usuarioActual.id, notificacionLocal);
-        }
       },
       moverBloquePlanificador: (bloqueId, dia, horaInicio) => {
         const bloquesActualizados = estado.bloquesPlanificador.map((bloque) =>
