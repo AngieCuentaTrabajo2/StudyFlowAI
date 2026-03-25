@@ -30,6 +30,7 @@ export type UsuarioApi = {
   plan: "gratis" | "estudiante" | "premium";
   horasDisponibles: string | null;
   metodoEstudio: string | null;
+  tonoAsistente: "frio" | "amigable" | "responsable" | null;
   metas: string | null;
   horasEstudioDiarias: number | null;
   horasSueno: number | null;

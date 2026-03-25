@@ -240,6 +240,24 @@ export default function Settings() {
               </SelectContent>
             </Select>
           </div>
+          <div>
+            <Label>Tono del asistente</Label>
+            <Select
+              value={perfil.tonoAsistente}
+              onValueChange={(tonoAsistente: PerfilUsuario["tonoAsistente"]) =>
+                setPerfil({ ...perfil, tonoAsistente })
+              }
+            >
+              <SelectTrigger className="mt-2">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="amigable">Amigable</SelectItem>
+                <SelectItem value="responsable">Responsable</SelectItem>
+                <SelectItem value="frio">Frio</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="md:col-span-2">
             <Label>Metas academicas</Label>
             <Textarea
@@ -304,6 +322,12 @@ export default function Settings() {
                 titulo="Enfoque preferido"
                 valor={formatearMetodo(perfil.metodoEstudio)}
                 descripcion="Base para sugerencias IA"
+              />
+              <MiniDato
+                icon={User}
+                titulo="Estilo del asistente"
+                valor={formatearTonoAsistente(perfil.tonoAsistente)}
+                descripcion="Define como te responde la IA"
               />
             </div>
           </CardContent>
@@ -425,6 +449,16 @@ function formatearMetodo(metodo: string) {
   };
 
   return etiquetas[metodo] ?? metodo;
+}
+
+function formatearTonoAsistente(tono: PerfilUsuario["tonoAsistente"]) {
+  const etiquetas: Record<PerfilUsuario["tonoAsistente"], string> = {
+    amigable: "Amigable",
+    responsable: "Responsable",
+    frio: "Frio",
+  };
+
+  return etiquetas[tono] ?? tono;
 }
 
 function MiniDato({

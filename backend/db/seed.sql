@@ -22,6 +22,7 @@ insert into estudiantes (
   plan,
   horas_disponibles,
   metodo_estudio,
+  tono_asistente,
   metas,
   horas_estudio_diarias,
   horas_sueno,
@@ -46,6 +47,7 @@ values (
   'estudiante',
   '4-6',
   'pomodoro',
+  'amigable',
   'Mantener un semestre ordenado, avanzar con constancia y llegar a los examenes con un plan claro.',
   4,
   8,
@@ -106,7 +108,7 @@ values
 
 insert into mensajes_chat (id, estudiante_id, rol, mensaje)
 values
-  ('50000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'ai', 'Hola, Jhan. Ya revise tus cursos, tareas y examenes. Puedo ayudarte a organizar tu semana, resumir temas o proponerte un plan de estudio.'),
+  ('50000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'ai', 'Hola, Jhan 😊 Todo bien. Ya revise tus cursos, tareas y examenes, asi que de una puedo ayudarte a organizar tu semana, resumir temas o armarte un plan de estudio bacan.'),
   ('50000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', 'user', 'Que deberia priorizar hoy?'),
   ('50000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000001', 'ai', 'Hoy deberias priorizar Implementar API REST y repasar Base de Datos, porque ambas actividades estan mas cerca y tienen mayor impacto en tu semana.');
 

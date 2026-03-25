@@ -68,6 +68,7 @@ function mapearUsuario(row) {
     plan: row.plan ?? "gratis",
     horasDisponibles: row.horasDisponibles ?? null,
     metodoEstudio: row.metodoEstudio ?? null,
+    tonoAsistente: row.tonoAsistente ?? "responsable",
     metas: row.metas ?? null,
     horasEstudioDiarias: row.horasEstudioDiarias ?? null,
     horasSueno: row.horasSueno ?? null,
@@ -84,6 +85,18 @@ function mapearUsuario(row) {
       sugerenciasAutomaticas: row.aplicacionSugerenciasAutomaticas ?? true,
     },
   };
+}
+
+function construirInstruccionTono(tonoAsistente) {
+  if (tonoAsistente === "amigable") {
+    return "Adopta un tono amigable, cercano y alentador desde la primera respuesta. Usa al menos 1 emoji en casi todas las respuestas casuales, de saludo o de apoyo, y puedes llegar a 2 si suma calidez o claridad, sin exagerar ni sonar infantil. Habla como un asistente cercano para un estudiante peruano: usa de forma natural giros ligeros como 'bacan', 'tranqui', 'de una', 'todo bien', 'pilas', 'ojo' o 'chevere'. En saludos o respuestas breves, evita sonar neutro o demasiado formal; entra en confianza desde el arranque.";
+  }
+
+  if (tonoAsistente === "frio") {
+    return "Adopta un tono frio, sobrio y directo. Ve al punto, evita emojis y reduce al minimo el lenguaje emocional.";
+  }
+
+  return "Adopta un tono responsable, claro y sereno. Organiza bien las ideas, prioriza utilidad practica y evita el exceso de emojis o informalidad.";
 }
 
 function mapearCurso(row) {
@@ -247,6 +260,28 @@ function construirResumenContextualTexto(contextoCompacto) {
   return secciones.join("\n");
 }
 
+function ajustarRespuestaAsistente(mensaje) {
+  const texto = String(mensaje || "").trim();
+  if (!texto) {
+    return "No pude darte una respuesta clara esta vez. Intenta preguntarme de nuevo con otras palabras o dime si quieres que te ayude con tareas, cursos, examenes o estudio.";
+  }
+
+  const textoNormalizado = normalizarTexto(texto);
+  const patronesConfusion = [
+    "no entendi",
+    "no entiendo",
+    "no comprendo",
+    "no me quedo claro",
+    "no tengo claro",
+  ];
+
+  if (patronesConfusion.some((patron) => textoNormalizado.includes(patron))) {
+    return "No lo capte del todo. Puedes preguntarmelo de nuevo con otras palabras o decirme si quieres ayuda con tus tareas, cursos, examenes o con una explicacion academica.";
+  }
+
+  return texto;
+}
+
 function construirDatosHerramientas(contexto) {
   const cursos = deduplicarPorClave(contexto.cursos, (curso) => `${curso.nombre}-${curso.docente}-${curso.horario}`);
   const cursosPorId = new Map(cursos.map((curso) => [curso.id, curso]));
@@ -403,6 +438,7 @@ function construirContextoIA(contexto) {
           semestre: contexto.usuario.semestre,
           horasDisponibles: contexto.usuario.horasDisponibles,
           metodoEstudio: contexto.usuario.metodoEstudio,
+          tonoAsistente: contexto.usuario.tonoAsistente,
           horasEstudioDiarias: contexto.usuario.horasEstudioDiarias,
           horasSueno: contexto.usuario.horasSueno,
           plan: contexto.usuario.plan,
@@ -478,11 +514,12 @@ async function generarRespuestaConIA({ mensaje, contexto }) {
   const historialConversacion = construirHistorialConversacion(contexto.mensajesChat);
   const herramientasLocales = construirHerramientasLocales(contexto);
   const herramientasBase = ejecutarHerramientasBase(herramientasLocales);
+  const instruccionTono = construirInstruccionTono(contextoCompacto.usuario?.tonoAsistente);
   const messages = [
     {
       role: "system",
       content:
-        "Eres StudyFlow AI, un asistente academico universitario en espanol. Responde con tono claro, util, conversacional, humano y profesional. Debes basarte en los datos reales del sistema y en las herramientas disponibles. No inventes datos del estudiante. Si el usuario pregunta por tareas, cursos, examenes, prioridades, seguimiento de lo hablado o referencias como 'eso', 'esas tareas', 'lo anterior', debes apoyarte en el historial reciente y en los resultados reales de herramientas antes de responder. Nunca digas que falta informacion si ya existe en el contexto o en las herramientas base cargadas. Evita sonar como bot automatico o menu fijo; responde como un asesor academico que recuerda la conversacion.",
+        `Eres StudyFlow AI, un asistente academico universitario en espanol. Responde con tono claro, util, conversacional, humano y profesional. ${instruccionTono} Debes basarte en los datos reales del sistema y en las herramientas disponibles. No inventes datos del estudiante. Si el usuario pregunta por tareas, cursos, examenes, prioridades, seguimiento de lo hablado o referencias como 'eso', 'esas tareas', 'lo anterior', debes apoyarte en el historial reciente y en los resultados reales de herramientas antes de responder. Nunca digas que falta informacion si ya existe en el contexto o en las herramientas base cargadas. Evita sonar como bot automatico o menu fijo; responde como un asesor academico que recuerda la conversacion.`,
     },
     {
       role: "system",
@@ -551,15 +588,16 @@ async function generarRespuestaConIA({ mensaje, contexto }) {
     }
 
     return {
-      mensaje: contenidoFinal,
+      mensaje: ajustarRespuestaAsistente(contenidoFinal),
       fuente: "groq",
     };
   }
 
   return {
-    mensaje:
+    mensaje: ajustarRespuestaAsistente(
       opcionInicial.content?.trim() ||
-      "No pude generar una respuesta util en este momento. Intenta reformular tu solicitud.",
+        "No pude generar una respuesta util en este momento. Intenta reformular tu solicitud.",
+    ),
     fuente: "groq",
   };
 }
@@ -577,6 +615,7 @@ function construirCamposPerfil(body) {
     plan: "plan",
     horasDisponibles: "horas_disponibles",
     metodoEstudio: "metodo_estudio",
+    tonoAsistente: "tono_asistente",
     metas: "metas",
     horasEstudioDiarias: "horas_estudio_diarias",
     horasSueno: "horas_sueno",
@@ -637,6 +676,7 @@ async function obtenerContextoEstudiante(estudianteId) {
           plan,
           horas_disponibles as "horasDisponibles",
           metodo_estudio as "metodoEstudio",
+          tono_asistente as "tonoAsistente",
           metas,
           horas_estudio_diarias as "horasEstudioDiarias",
           horas_sueno as "horasSueno",
@@ -781,6 +821,7 @@ app.post("/api/auth/login", async (request, response) => {
         plan,
         horas_disponibles as "horasDisponibles",
         metodo_estudio as "metodoEstudio",
+        tono_asistente as "tonoAsistente",
         metas,
         horas_estudio_diarias as "horasEstudioDiarias",
         horas_sueno as "horasSueno",
@@ -856,6 +897,7 @@ app.post("/api/auth/register", async (request, response) => {
         plan,
         horas_disponibles,
         metodo_estudio,
+        tono_asistente,
         metas,
         horas_estudio_diarias,
         horas_sueno,
@@ -868,7 +910,7 @@ app.post("/api/auth/register", async (request, response) => {
         app_google_calendar,
         app_sugerencias_automaticas
       )
-      values ($1, $2, $3, $4, $5, $6, $7, $8, '4-6', 'pomodoro', '', 4, 8, true, true, true, true, false, false, false, true)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, '4-6', 'pomodoro', 'responsable', '', 4, 8, true, true, true, true, false, false, false, true)
       returning
         id,
         nombres,
@@ -880,6 +922,7 @@ app.post("/api/auth/register", async (request, response) => {
         plan,
         horas_disponibles as "horasDisponibles",
         metodo_estudio as "metodoEstudio",
+        tono_asistente as "tonoAsistente",
         metas,
         horas_estudio_diarias as "horasEstudioDiarias",
         horas_sueno as "horasSueno",
@@ -987,6 +1030,7 @@ app.patch("/api/perfil/:estudianteId", async (request, response) => {
         plan,
         horas_disponibles as "horasDisponibles",
         metodo_estudio as "metodoEstudio",
+        tono_asistente as "tonoAsistente",
         metas,
         horas_estudio_diarias as "horasEstudioDiarias",
         horas_sueno as "horasSueno",

@@ -32,6 +32,7 @@ export type PerfilUsuario = {
   plan: "gratis" | "estudiante" | "premium";
   horasDisponibles: string;
   metodoEstudio: string;
+  tonoAsistente: "frio" | "amigable" | "responsable";
   metas: string;
   horasEstudioDiarias: number;
   horasSueno: number;
@@ -208,6 +209,7 @@ function crearPerfilBase(): PerfilUsuario {
     plan: "estudiante",
     horasDisponibles: "4-6",
     metodoEstudio: "pomodoro",
+    tonoAsistente: "responsable",
     metas: "Mantener un promedio alto, llegar con orden a examenes y reducir el estres academico.",
     horasEstudioDiarias: 4,
     horasSueno: 8,
@@ -399,7 +401,7 @@ function crearEstadoInicial(): EstadoStudyFlow {
       id: "chat-1",
       tipo: "ai",
       mensaje:
-        "Hola, Jhan. Ya revise tus cursos, tareas y examenes. Puedo ayudarte a organizar tu semana, resumir temas o proponerte un plan de estudio.",
+        "Hola, Jhan 😊 Todo bien. Ya revise tus cursos, tareas y examenes, asi que de una puedo ayudarte a organizar tu semana, resumir temas o armarte un plan de estudio bacan.",
       hora: "10:30",
     },
   ];
@@ -498,6 +500,8 @@ function integrarContexto(estadoActual: EstadoStudyFlow, contexto: ContextoApi) 
             contexto.usuario?.horasDisponibles ?? estadoActual.usuarioActual.horasDisponibles,
           metodoEstudio:
             contexto.usuario?.metodoEstudio ?? estadoActual.usuarioActual.metodoEstudio,
+          tonoAsistente:
+            contexto.usuario?.tonoAsistente ?? estadoActual.usuarioActual.tonoAsistente,
           metas: contexto.usuario?.metas ?? estadoActual.usuarioActual.metas,
           horasEstudioDiarias:
             contexto.usuario?.horasEstudioDiarias ?? estadoActual.usuarioActual.horasEstudioDiarias,

@@ -12,6 +12,7 @@ create table if not exists estudiantes (
   plan text not null default 'gratis' check (plan in ('gratis', 'estudiante', 'premium')),
   horas_disponibles text,
   metodo_estudio text,
+  tono_asistente text not null default 'responsable' check (tono_asistente in ('frio', 'amigable', 'responsable')),
   metas text,
   horas_estudio_diarias int default 4,
   horas_sueno int default 8,
@@ -27,6 +28,7 @@ create table if not exists estudiantes (
 );
 
 alter table estudiantes add column if not exists plan text not null default 'gratis';
+alter table estudiantes add column if not exists tono_asistente text not null default 'responsable';
 
 alter table estudiantes add column if not exists notif_tareas boolean not null default true;
 alter table estudiantes add column if not exists notif_examenes boolean not null default true;
