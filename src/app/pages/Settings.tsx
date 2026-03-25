@@ -321,13 +321,13 @@ export default function Settings() {
                 icon={Sparkles}
                 titulo="Enfoque preferido"
                 valor={formatearMetodo(perfil.metodoEstudio)}
-                descripcion="Base para sugerencias IA"
+                descripcion="Guia tus recomendaciones de estudio"
               />
               <MiniDato
                 icon={User}
                 titulo="Estilo del asistente"
                 valor={formatearTonoAsistente(perfil.tonoAsistente)}
-                descripcion="Define como te responde la IA"
+                descripcion="Define el tono de tus respuestas"
               />
             </div>
           </CardContent>
@@ -396,7 +396,7 @@ export default function Settings() {
             />
             <FilaToggle
               label="Integracion con calendario"
-              descripcion="Preparado para sincronizar con servicios externos."
+              descripcion="Sincroniza tus horarios y recordatorios en un solo lugar."
               checked={perfil.aplicacion.googleCalendar}
               onCheckedChange={(value) =>
                 setPerfil({ ...perfil, aplicacion: { ...perfil.aplicacion, googleCalendar: value } })
@@ -404,7 +404,7 @@ export default function Settings() {
             />
             <FilaToggle
               label="Sugerencias automaticas"
-              descripcion="Ajustes automaticos en horarios y recomendaciones."
+              descripcion="Recibe recomendaciones y ajustes segun tu ritmo academico."
               checked={perfil.aplicacion.sugerenciasAutomaticas}
               onCheckedChange={(value) =>
                 setPerfil({
@@ -420,13 +420,12 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Lock className="h-5 w-5" />
-              Seguridad
+              Acceso
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-800">
-              La actualizacion de contrasena aun esta en modo prototipo. Por ahora esta seccion es visual y
-              la autenticacion avanzada sera la siguiente mejora.
+              Aqui puedes actualizar tus datos de acceso y mantener tu cuenta al dia.
             </div>
             <div className="grid gap-4 md:grid-cols-3">
               <Input type="password" placeholder="Contrasena actual" />

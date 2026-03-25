@@ -7,11 +7,13 @@ import {
   ClipboardList,
   GraduationCap,
   LayoutDashboard,
+  LogOut,
   Settings,
   Sparkles,
   TrendingUp,
 } from "lucide-react";
 import { useStudyFlow } from "../data/studyflow-store";
+import { Button } from "./ui/button";
 
 const menuItems = [
   { path: "/app", label: "Dashboard", icon: LayoutDashboard },
@@ -27,7 +29,7 @@ const menuItems = [
 
 export default function Sidebar({ mobile = false }: { mobile?: boolean }) {
   const location = useLocation();
-  const { usuarioActual, notificaciones } = useStudyFlow();
+  const { usuarioActual, notificaciones, cerrarSesion } = useStudyFlow();
   const cantidadNoLeidas = notificaciones.filter((item) => item.noLeida).length;
 
   return (
@@ -37,7 +39,7 @@ export default function Sidebar({ mobile = false }: { mobile?: boolean }) {
       }
     >
       <div className="p-6">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/app" className="flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600">
             <GraduationCap className="h-6 w-6 text-white" />
           </div>
@@ -81,6 +83,14 @@ export default function Sidebar({ mobile = false }: { mobile?: boolean }) {
             {usuarioActual ? `${usuarioActual.nombres} ${usuarioActual.apellidos}` : "Invitado"}
           </p>
           <p className="text-sm text-white/70">{usuarioActual?.carrera ?? "Completa tu perfil"}</p>
+          <Button
+            variant="secondary"
+            className="mt-4 w-full justify-center border-white/10 bg-white/10 text-white hover:bg-white/20"
+            onClick={cerrarSesion}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Cerrar sesion
+          </Button>
         </div>
       </div>
     </aside>
