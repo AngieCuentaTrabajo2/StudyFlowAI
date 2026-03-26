@@ -78,8 +78,8 @@ export default function Planner() {
         </Button>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-4">
-        <Card className="border-none shadow-lg xl:col-span-1">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-4">
+        <Card className="min-w-0 overflow-hidden border-none shadow-lg xl:col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
@@ -165,7 +165,7 @@ export default function Planner() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-lg xl:col-span-3">
+        <Card className="min-w-0 overflow-hidden border-none shadow-lg xl:col-span-3">
           <CardHeader>
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <CardTitle className="flex items-center gap-2">
@@ -175,12 +175,12 @@ export default function Planner() {
               <Badge className="bg-blue-50 text-blue-600">{bloquesPlanificador.length} bloques activos</Badge>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4 overflow-x-hidden">
+          <CardContent className="min-w-0 space-y-4">
             <div className="rounded-2xl bg-blue-50 px-3 py-2 text-xs text-blue-700 sm:hidden">
               Desliza horizontalmente para ver toda la semana. Compactamos el tablero para que se lea mejor en movil.
             </div>
 
-            <div className="overflow-x-auto overscroll-x-contain sm:hidden">
+            <div className="w-full max-w-full overflow-x-auto overscroll-x-contain pb-2 touch-pan-x [-webkit-overflow-scrolling:touch] sm:hidden">
               <CalendarioPlanificador
                 compacto
                 bloquesPlanificador={bloquesPlanificador}
@@ -196,7 +196,7 @@ export default function Planner() {
               />
             </div>
 
-            <div className="hidden overflow-x-auto overscroll-x-contain sm:block">
+            <div className="hidden w-full max-w-full overflow-x-auto overscroll-x-contain pb-2 [-webkit-overflow-scrolling:touch] sm:block">
               <CalendarioPlanificador
                 bloquesPlanificador={bloquesPlanificador}
                 celdaActiva={celdaActiva}
@@ -421,7 +421,7 @@ function CalendarioPlanificador({
   const minWidth = compacto ? "min-w-[720px]" : "min-w-[960px]";
 
   return (
-    <div className={minWidth}>
+    <div className={`w-max ${minWidth}`}>
       <div className={`grid grid-cols-8 ${compacto ? "gap-1.5" : "gap-2"}`}>
         <div />
         {Array.from({ length: 7 }, (_, index) => (
