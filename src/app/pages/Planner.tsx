@@ -60,7 +60,7 @@ export default function Planner() {
   const cursosConMayorCarga = useMemo(() => cursos.slice(0, 3), [cursos]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 overflow-x-hidden">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="mb-2 text-2xl font-bold sm:text-3xl">Planificador inteligente</h1>
@@ -175,12 +175,12 @@ export default function Planner() {
               <Badge className="bg-blue-50 text-blue-600">{bloquesPlanificador.length} bloques activos</Badge>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4 overflow-x-auto">
+          <CardContent className="space-y-4 overflow-x-hidden">
             <div className="rounded-2xl bg-blue-50 px-3 py-2 text-xs text-blue-700 sm:hidden">
               Desliza horizontalmente para ver toda la semana. Compactamos el tablero para que se lea mejor en movil.
             </div>
 
-            <div className="sm:hidden">
+            <div className="overflow-x-auto overscroll-x-contain sm:hidden">
               <CalendarioPlanificador
                 compacto
                 bloquesPlanificador={bloquesPlanificador}
@@ -196,7 +196,7 @@ export default function Planner() {
               />
             </div>
 
-            <div className="hidden sm:block">
+            <div className="hidden overflow-x-auto overscroll-x-contain sm:block">
               <CalendarioPlanificador
                 bloquesPlanificador={bloquesPlanificador}
                 celdaActiva={celdaActiva}
