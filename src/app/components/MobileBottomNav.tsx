@@ -23,7 +23,7 @@ export default function MobileBottomNav() {
   const cantidadNoLeidas = notificaciones.filter((item) => item.noLeida).length;
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur lg:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 pb-[max(env(safe-area-inset-bottom),0px)] backdrop-blur lg:hidden">
       <div className="grid grid-cols-5">
         {items.map((item) => {
           const Icon = item.icon;
@@ -35,7 +35,7 @@ export default function MobileBottomNav() {
             <Link
               key={item.path}
               to={item.path}
-              className={`relative flex flex-col items-center justify-center gap-1 px-2 py-3 text-xs transition ${
+              className={`relative flex min-h-[64px] flex-col items-center justify-center gap-1 px-1 py-3 text-[11px] transition sm:px-2 sm:text-xs ${
                 isActive ? "text-blue-600" : "text-gray-500"
               }`}
             >

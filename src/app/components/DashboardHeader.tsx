@@ -104,14 +104,14 @@ export default function DashboardHeader() {
           </Sheet>
         </div>
 
-        <div className="max-w-xl flex-1">
+        <div className="max-w-xl min-w-0 flex-1">
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <Input
               value={busqueda}
               onChange={(event) => setBusqueda(event.target.value)}
-              placeholder="Buscar cursos, tareas, examenes..."
-              className="border-gray-200 bg-gray-50 pl-10"
+              placeholder="Buscar..."
+              className="border-gray-200 bg-gray-50 pl-10 sm:placeholder:text-sm md:placeholder:text-base"
             />
 
             {busqueda.trim() ? (
@@ -160,9 +160,9 @@ export default function DashboardHeader() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-4">
           <Link to="/app/notifications">
-            <Button variant="ghost" size="icon" className="relative">
+            <Button variant="ghost" size="icon" className="relative h-9 w-9 sm:h-10 sm:w-10">
               <Bell className="h-5 w-5 text-gray-600" />
               {cantidadNoLeidas > 0 && (
                 <Badge className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center bg-red-500 p-0 text-xs text-white">
@@ -173,7 +173,7 @@ export default function DashboardHeader() {
           </Link>
 
           <Link to="/app/settings">
-            <Avatar className="cursor-pointer">
+            <Avatar className="h-9 w-9 cursor-pointer sm:h-10 sm:w-10">
               <AvatarImage src="" />
               <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white">
                 {initials}

@@ -93,8 +93,8 @@ export default function AIAssistant() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="mb-2 text-3xl font-bold">Asistente IA</h1>
-          <p className="text-gray-600">
+          <h1 className="mb-2 text-2xl font-bold sm:text-3xl">Asistente IA</h1>
+          <p className="max-w-2xl text-sm text-gray-600 sm:text-base">
             Usa tu contexto academico real para responder, priorizar y sugerir el siguiente paso.
           </p>
         </div>
@@ -120,21 +120,21 @@ export default function AIAssistant() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-4">
-        <Card className="flex h-[760px] flex-col border-none shadow-lg xl:col-span-3">
+        <Card className="flex min-h-[70vh] flex-col border-none shadow-lg xl:col-span-3 xl:h-[760px]">
           <CardHeader className="border-b">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 sm:h-12 sm:w-12">
                   <Sparkles className="h-6 w-6 text-white" />
                 </div>
-                <div>
-                  <CardTitle>Asistente academico inteligente</CardTitle>
-                  <p className="text-sm text-gray-600">
+                <div className="min-w-0">
+                  <CardTitle className="text-lg sm:text-xl">Asistente academico inteligente</CardTitle>
+                  <p className="text-xs text-gray-600 sm:text-sm">
                     Usa tu contexto academico real y consulta Groq desde el backend.
                   </p>
                 </div>
               </div>
-              <div className="hidden items-center gap-2 lg:flex">
+              <div className="hidden items-center gap-2 xl:flex">
                 <Badge className="bg-emerald-50 text-emerald-700">{bloquesEstudio.length} bloques de estudio</Badge>
                 <Badge className="bg-purple-50 text-purple-700">{mensajesChat.length} mensajes</Badge>
                 <Button
@@ -148,16 +148,24 @@ export default function AIAssistant() {
                 </Button>
               </div>
             </div>
+            <div className="flex flex-wrap items-center gap-2 xl:hidden">
+              <Badge className="bg-emerald-50 text-emerald-700">{bloquesEstudio.length} bloques</Badge>
+              <Badge className="bg-purple-50 text-purple-700">{mensajesChat.length} mensajes</Badge>
+              <Button type="button" variant="outline" size="sm" className="rounded-full bg-white" onClick={limpiarMensajesAsistente}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Limpiar
+              </Button>
+            </div>
           </CardHeader>
 
-          <div className="border-b bg-gray-50/80 px-6 py-4">
+          <div className="border-b bg-gray-50/80 px-4 py-4 sm:px-6">
             <div className="flex flex-wrap gap-2">
               {accionesRapidas.map((accion) => (
                 <Button
                   key={accion}
                   type="button"
                   variant="outline"
-                  className="rounded-full bg-white"
+                  className="rounded-full bg-white text-xs sm:text-sm"
                   disabled={asistentePensando}
                   onClick={() => ejecutarAccionRapida(accion)}
                 >
@@ -168,7 +176,7 @@ export default function AIAssistant() {
             </div>
           </div>
 
-          <ScrollArea className="flex-1 p-6">
+          <ScrollArea className="flex-1 p-4 sm:p-6">
             <div className="mx-auto max-w-5xl space-y-5">
               {mensajesChat.length === 0 ? (
                 <EstadoVacio onAction={ejecutarAccionRapida} />
@@ -176,12 +184,12 @@ export default function AIAssistant() {
                 mensajesChat.map((item, indice) => (
                   item.tipo === "ai" ? (
                     <div key={item.id} className="flex w-full justify-start pr-4 sm:pr-10">
-                      <div className="flex min-w-0 max-w-[min(86%,40rem)] items-start gap-3">
-                        <div className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-md">
+                      <div className="flex min-w-0 max-w-[min(94%,40rem)] items-start gap-2 sm:max-w-[min(86%,40rem)] sm:gap-3">
+                        <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-md sm:h-10 sm:w-10">
                           <Sparkles className="h-5 w-5 text-white" />
                         </div>
 
-                        <div className="min-w-0 flex-1 overflow-hidden rounded-[28px] border border-gray-100 bg-white/95 px-4 py-4 text-gray-900 shadow-md shadow-slate-200/60 sm:px-5">
+                        <div className="min-w-0 flex-1 overflow-hidden rounded-[24px] border border-gray-100 bg-white/95 px-4 py-4 text-gray-900 shadow-md shadow-slate-200/60 sm:rounded-[28px] sm:px-5">
                           <div className="space-y-3">
                             <div className="flex flex-wrap items-center gap-2">
                               <Badge className="rounded-full bg-blue-50 text-blue-700">Sugerencia academica</Badge>
@@ -202,7 +210,7 @@ export default function AIAssistant() {
                     </div>
                   ) : (
                     <div key={item.id} className="flex w-full justify-end pl-10 sm:pl-16">
-                      <div className="min-w-0 w-fit max-w-[min(72%,28rem)] overflow-hidden rounded-[28px] bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-4 py-4 text-white shadow-lg shadow-blue-500/20 sm:px-5">
+                      <div className="min-w-0 w-fit max-w-[min(82%,28rem)] overflow-hidden rounded-[24px] bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-4 py-4 text-white shadow-lg shadow-blue-500/20 sm:max-w-[min(72%,28rem)] sm:rounded-[28px] sm:px-5">
                         <MensajeFormateado contenido={item.mensaje} tipo="user" />
                         <span className="mt-3 block text-xs text-blue-100">{item.hora}</span>
                       </div>
@@ -224,7 +232,7 @@ export default function AIAssistant() {
               <Button
                 type="submit"
                 disabled={asistentePensando || !mensaje.trim()}
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                className="shrink-0 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               >
                 <Send className="h-5 w-5" />
               </Button>
@@ -237,7 +245,7 @@ export default function AIAssistant() {
           </div>
         </Card>
 
-        <div className="space-y-6">
+        <div className="hidden space-y-6 xl:block">
           <Card className="border-none shadow-lg">
             <CardHeader>
               <CardTitle>Panel rapido</CardTitle>

@@ -57,57 +57,57 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white">
       <Navbar />
 
-      <section id="inicio" className="px-6 pb-20 pt-32">
-        <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2">
+      <section id="inicio" className="overflow-hidden px-4 pb-14 pt-24 sm:px-6 sm:pb-20 sm:pt-32">
+        <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2 lg:gap-12">
           <div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2">
+            <div className="mb-5 inline-flex max-w-full items-center gap-2 rounded-full bg-blue-50 px-4 py-2">
               <Sparkles className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-600">Asistente academico con IA</span>
+              <span className="truncate text-sm font-medium text-blue-600">Asistente academico con IA</span>
             </div>
-            <h1 className="mb-6 text-5xl font-bold leading-tight lg:text-6xl">
+            <h1 className="mb-5 text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
               Organiza tus estudios con{" "}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 inteligencia artificial
               </span>
             </h1>
-            <p className="mb-8 text-xl leading-relaxed text-gray-600">
+            <p className="mb-8 max-w-2xl text-base leading-relaxed text-gray-600 sm:text-xl">
               StudyFlow AI ayuda a estudiantes universitarios a gestionar cursos, tareas,
               examenes, horarios y habitos de estudio de manera inteligente y personalizada.
             </p>
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
               <Link to="/register?plan=gratis">
                 <Button
                   size="lg"
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 px-8 text-lg hover:from-blue-700 hover:to-purple-700"
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 px-6 text-base hover:from-blue-700 hover:to-purple-700 sm:w-auto sm:px-8 sm:text-lg"
                 >
                   Empieza gratis
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
               <Link to="/login">
-                <Button size="lg" variant="outline" className="px-8 text-lg">
+                <Button size="lg" variant="outline" className="w-full px-6 text-base sm:w-auto sm:px-8 sm:text-lg">
                   Ver demo
                 </Button>
               </Link>
             </div>
           </div>
 
-          <div className="relative">
+          <div className="relative order-first lg:order-none">
             <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-200 to-purple-200 opacity-20 blur-3xl" />
             <ImageWithFallback
               src="https://images.unsplash.com/photo-1758411898021-ef0dadaaa295?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaWdpdGFsJTIwZGFzaGJvYXJkJTIwaW50ZXJmYWNlJTIwbW9kZXJufGVufDF8fHx8MTc3NDQ0OTUzMXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
               alt="Dashboard StudyFlow AI"
-              className="relative rounded-2xl shadow-2xl"
+              className="relative max-h-[420px] w-full rounded-2xl object-cover shadow-2xl sm:max-h-[520px]"
             />
           </div>
         </div>
       </section>
 
-      <section id="beneficios" className="bg-gray-50 px-6 py-20">
+      <section id="beneficios" className="bg-gray-50 px-4 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-16 text-center">
-            <h2 className="mb-4 text-4xl font-bold">Todo lo que necesitas para triunfar academicamente</h2>
-            <p className="text-xl text-gray-600">
+          <div className="mb-12 text-center sm:mb-16">
+            <h2 className="mb-4 text-3xl font-bold sm:text-4xl">Todo lo que necesitas para triunfar academicamente</h2>
+            <p className="text-base text-gray-600 sm:text-xl">
               Herramientas inteligentes disenadas para estudiantes universitarios
             </p>
           </div>
@@ -153,11 +153,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="caracteristicas" className="px-6 py-20">
+      <section id="caracteristicas" className="px-4 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-16 text-center">
-            <h2 className="mb-4 text-4xl font-bold">Como funciona</h2>
-            <p className="text-xl text-gray-600">Tres pasos simples para transformar tu vida academica</p>
+          <div className="mb-12 text-center sm:mb-16">
+            <h2 className="mb-4 text-3xl font-bold sm:text-4xl">Como funciona</h2>
+            <p className="text-base text-gray-600 sm:text-xl">Tres pasos simples para transformar tu vida academica</p>
           </div>
 
           <div className="grid gap-8 md:grid-cols-3">
@@ -178,11 +178,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-gray-50 px-6 py-20">
+      <section className="bg-gray-50 px-4 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-16 text-center">
-            <h2 className="mb-4 text-4xl font-bold">Lo que dicen nuestros usuarios</h2>
-            <p className="text-xl text-gray-600">
+          <div className="mb-12 text-center sm:mb-16">
+            <h2 className="mb-4 text-3xl font-bold sm:text-4xl">Lo que dicen nuestros usuarios</h2>
+            <p className="text-base text-gray-600 sm:text-xl">
               Miles de estudiantes ya mejoraron su rendimiento academico
             </p>
           </div>
@@ -240,14 +240,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="precios" className="px-6 py-20">
+      <section id="precios" className="px-4 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-16 text-center">
-            <h2 className="mb-4 text-4xl font-bold">Planes para cada estudiante</h2>
-            <p className="text-xl text-gray-600">Elige el plan que mejor se adapte a ti</p>
+          <div className="mb-12 text-center sm:mb-16">
+            <h2 className="mb-4 text-3xl font-bold sm:text-4xl">Planes para cada estudiante</h2>
+            <p className="text-base text-gray-600 sm:text-xl">Elige el plan que mejor se adapte a ti</p>
           </div>
 
-          <div className="mx-auto grid max-w-5xl gap-8 md:grid-cols-3">
+          <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3 md:gap-8">
             {planes.map((plan) => (
               <Card
                 key={plan.nombre}
@@ -262,7 +262,7 @@ export default function LandingPage() {
                     </span>
                   </div>
                 )}
-                <CardContent className="p-8">
+                <CardContent className="p-6 sm:p-8">
                   <h3 className="mb-2 text-2xl font-bold">{plan.nombre}</h3>
                   <p className="mb-6 text-gray-600">{plan.subtitulo}</p>
                   <div className="mb-6">
@@ -296,14 +296,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-gradient-to-br from-blue-600 to-purple-600 px-6 py-20">
+      <section className="bg-gradient-to-br from-blue-600 to-purple-600 px-4 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-4xl text-center text-white">
-          <h2 className="mb-6 text-4xl font-bold">Listo para transformar tu vida academica?</h2>
-          <p className="mb-8 text-xl opacity-90">
+          <h2 className="mb-6 text-3xl font-bold sm:text-4xl">Listo para transformar tu vida academica?</h2>
+          <p className="mb-8 text-base opacity-90 sm:text-xl">
             Unete a miles de estudiantes que ya estan alcanzando sus metas con StudyFlow AI
           </p>
           <Link to="/register?plan=gratis">
-            <Button size="lg" className="bg-white px-8 text-lg text-blue-600 hover:bg-gray-100">
+            <Button size="lg" className="w-full bg-white px-6 text-base text-blue-600 hover:bg-gray-100 sm:w-auto sm:px-8 sm:text-lg">
               Empieza gratis ahora
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
@@ -311,7 +311,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="bg-gray-900 px-6 py-12 text-white">
+      <footer className="bg-gray-900 px-4 py-12 text-white sm:px-6">
         <div className="mx-auto max-w-7xl">
           <div className="mb-8 grid gap-8 md:grid-cols-4">
             {[

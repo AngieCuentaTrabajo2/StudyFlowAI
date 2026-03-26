@@ -67,8 +67,10 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="mb-2 text-3xl font-bold">Hola, {usuarioActual?.nombres}. Este es tu plan academico de hoy.</h1>
-        <p className="text-gray-600">
+        <h1 className="mb-2 text-2xl font-bold leading-tight sm:text-3xl">
+          Hola, {usuarioActual?.nombres}. Este es tu plan academico de hoy.
+        </h1>
+        <p className="max-w-2xl text-sm text-gray-600 sm:text-base">
           Tus cursos, tareas, examenes y bloques de estudio ya alimentan el panel en tiempo real.
         </p>
       </div>
@@ -115,11 +117,11 @@ export default function Dashboard() {
                       <span>{tarea.horasEstimadas}h</span>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                     <Badge className={tarea.prioridad === "high" ? "bg-red-50 text-red-600" : estiloCurso.badge}>
                       {tarea.prioridad === "high" ? "Urgente" : "Media"}
                     </Badge>
-                    <Button size="sm" variant="outline" onClick={() => alternarTareaCompletada(tarea.id)}>
+                    <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => alternarTareaCompletada(tarea.id)}>
                       Completar
                     </Button>
                   </div>
@@ -188,7 +190,7 @@ export default function Dashboard() {
                   className="rounded-2xl border p-4"
                   style={{ borderColor: estiloCurso.borde, background: estiloCurso.fondoClaro }}
                 >
-                  <div className="mb-3 flex items-center justify-between">
+                  <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <h3 className="font-semibold">{examen.titulo}</h3>
                       <p className="text-sm text-gray-600">{curso?.nombre}</p>

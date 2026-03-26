@@ -45,18 +45,20 @@ export default function Courses() {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="mb-2 text-3xl font-bold">Mis cursos</h1>
-          <p className="text-gray-600">Gestiona materias, actividades y ritmo de avance por curso.</p>
+          <h1 className="mb-2 text-2xl font-bold sm:text-3xl">Mis cursos</h1>
+          <p className="max-w-2xl text-sm text-gray-600 sm:text-base">
+            Gestiona materias, actividades y ritmo de avance por curso.
+          </p>
         </div>
 
         <Dialog>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+            <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 sm:w-auto">
               <Plus className="mr-2 h-5 w-5" />
               Agregar curso
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Agregar curso</DialogTitle>
             </DialogHeader>
@@ -140,7 +142,7 @@ export default function Courses() {
         </Select>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {cursosFiltrados.map((curso) => {
           const tareasCurso = tareas.filter((tarea) => tarea.cursoId === curso.id);
           const tareasCompletadas = tareasCurso.filter((tarea) => tarea.estado === "completed").length;
@@ -154,7 +156,7 @@ export default function Courses() {
             <Link key={curso.id} to={`/app/courses/${curso.id}`}>
               <Card className="h-full overflow-hidden border-none shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl">
                 <div className="h-1.5 w-full" style={{ background: estiloCurso.gradiente }} />
-                <CardContent className="p-6">
+                <CardContent className="p-5 sm:p-6">
                   <div className="mb-4 flex items-start justify-between">
                     <div
                       className="flex h-12 w-12 items-center justify-center rounded-xl"
@@ -165,7 +167,7 @@ export default function Courses() {
                     <Badge className={estiloCurso.badge}>{progresoCurso}%</Badge>
                   </div>
 
-                  <h3 className="mb-2 text-xl font-bold">{curso.nombre}</h3>
+                  <h3 className="mb-2 text-lg font-bold sm:text-xl">{curso.nombre}</h3>
                   <div className="space-y-2 text-sm text-gray-600">
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4" />

@@ -41,7 +41,7 @@ export default function Exams() {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="mb-2 text-3xl font-bold">Examenes</h1>
+          <h1 className="mb-2 text-2xl font-bold sm:text-3xl">Examenes</h1>
           <p className="text-gray-600">
             Preparate con anticipacion y enfoca tus bloques de estudio donde mas importa.
           </p>
@@ -49,12 +49,12 @@ export default function Exams() {
 
         <Dialog>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+            <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Agregar examen
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Nuevo examen</DialogTitle>
             </DialogHeader>
@@ -88,7 +88,7 @@ export default function Exams() {
 
       {examenesUrgentes.length > 0 && (
         <Card className="border-none border-l-4 border-l-red-500 bg-gradient-to-r from-red-50 to-orange-50 shadow-lg">
-          <CardContent className="flex items-center gap-4 p-6">
+          <CardContent className="flex flex-col items-start gap-4 p-5 sm:flex-row sm:items-center sm:p-6">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-100">
               <AlertCircle className="h-6 w-6 text-red-600" />
             </div>
@@ -120,7 +120,7 @@ export default function Exams() {
                 }`}
               >
                 <div className="h-1.5 w-full" style={{ background: estiloCurso.gradiente }} />
-                <CardContent className="flex flex-col gap-6 p-6 xl:flex-row xl:items-start">
+                <CardContent className="flex flex-col gap-6 p-5 sm:p-6 xl:flex-row xl:items-start">
                   <div
                     className="flex h-20 w-20 shrink-0 flex-col items-center justify-center rounded-2xl border shadow-sm"
                     style={{
@@ -204,7 +204,7 @@ export default function Exams() {
 
                   <div className="flex flex-col gap-2">
                     <Button
-                      className="text-white"
+                      className="w-full text-white"
                       style={{ background: estiloCurso.gradienteSolid }}
                       onClick={generarHorarioInteligente}
                     >
@@ -214,12 +214,12 @@ export default function Exams() {
 
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button variant="outline">
+                        <Button variant="outline" className="w-full">
                           <Pencil className="mr-2 h-4 w-4" />
                           Editar
                         </Button>
                       </DialogTrigger>
-                      <DialogContent>
+                      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
                         <DialogHeader>
                           <DialogTitle>Editar examen</DialogTitle>
                         </DialogHeader>
@@ -233,7 +233,7 @@ export default function Exams() {
 
                     <Button
                       variant="outline"
-                      className="text-red-600 hover:text-red-700"
+                      className="w-full text-red-600 hover:text-red-700"
                       onClick={() => eliminarExamen(examen.id)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />

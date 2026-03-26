@@ -100,18 +100,20 @@ export default function Tasks() {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="mb-2 text-3xl font-bold">Tareas</h1>
-          <p className="text-gray-600">Organiza pendientes, prioriza entregas y registra progreso real.</p>
+          <h1 className="mb-2 text-2xl font-bold sm:text-3xl">Tareas</h1>
+          <p className="max-w-2xl text-sm text-gray-600 sm:text-base">
+            Organiza pendientes, prioriza entregas y registra progreso real.
+          </p>
         </div>
 
         <Dialog open={dialogoCrearAbierto} onOpenChange={setDialogoCrearAbierto}>
           <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+            <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 sm:w-auto">
               <Plus className="mr-2 h-5 w-5" />
               Crear tarea
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Crear tarea</DialogTitle>
             </DialogHeader>
@@ -200,6 +202,7 @@ export default function Tasks() {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="w-full sm:w-auto"
                   onClick={() => actualizarTarea(tarea.id, { estado: "in-progress" })}
                 >
                   Marcar en progreso
@@ -256,7 +259,7 @@ export default function Tasks() {
                           </span>
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <Badge
                           className={
                             tarea.prioridad === "high"
@@ -296,18 +299,18 @@ export default function Tasks() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2 sm:flex-row">
                     <Dialog
                       open={tareaEnEdicion?.id === tarea.id}
                       onOpenChange={(abierto) => !abierto && setTareaEnEdicion(null)}
                     >
                       <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" onClick={() => setTareaEnEdicion(tarea)}>
+                        <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setTareaEnEdicion(tarea)}>
                           <Pencil className="mr-2 h-4 w-4" />
                           Editar
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-lg">
+                      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
                         <DialogHeader>
                           <DialogTitle>Editar tarea</DialogTitle>
                         </DialogHeader>
@@ -362,7 +365,7 @@ export default function Tasks() {
                     </Dialog>
                     <Button
                       size="sm"
-                      className="bg-green-600 text-white hover:bg-green-700"
+                      className="w-full bg-green-600 text-white hover:bg-green-700 sm:w-auto"
                       onClick={() => alternarTareaCompletada(tarea.id)}
                     >
                       {estadoVisual === "completed" ? "Reabrir" : "Completar"}
