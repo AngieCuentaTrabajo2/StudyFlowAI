@@ -10,7 +10,7 @@ import {
   Sparkles,
   Star,
 } from "lucide-react";
-import { ImageWithFallback } from "../components/figma/ImageWithFallback";
+import { ImageWithFallback } from "../components/shared/ImageWithFallback";
 
 const planes = [
   {
