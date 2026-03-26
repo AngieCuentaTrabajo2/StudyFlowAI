@@ -17,6 +17,7 @@ import { Slider } from "../components/ui/slider";
 
 const horas = Array.from({ length: 14 }, (_, index) => index + 8);
 const ALTO_CELDA = 72;
+const ALTO_CELDA_MOVIL = 52;
 
 function bloqueSeSolapa(
   bloques: BloquePlanificador[],
@@ -62,14 +63,14 @@ export default function Planner() {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="mb-2 text-3xl font-bold">Planificador inteligente</h1>
-          <p className="text-gray-600">
+          <h1 className="mb-2 text-2xl font-bold sm:text-3xl">Planificador inteligente</h1>
+          <p className="max-w-2xl text-sm text-gray-600 sm:text-base">
             Organiza tu semana con bloques utiles, visuales y priorizados por contexto academico.
           </p>
         </div>
         <Button
           disabled
-          className="cursor-not-allowed bg-gradient-to-r from-slate-300 to-slate-400 text-slate-50 opacity-80 hover:from-slate-300 hover:to-slate-400"
+          className="w-full cursor-not-allowed bg-gradient-to-r from-slate-300 to-slate-400 text-slate-50 opacity-80 hover:from-slate-300 hover:to-slate-400 sm:w-auto"
           onClick={generarHorarioInteligente}
         >
           <Sparkles className="mr-2 h-5 w-5" />
@@ -85,10 +86,10 @@ export default function Planner() {
               Preferencias
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-5 sm:space-y-6">
             <div>
               <Label className="mb-3 block">Horas libres para estudiar</Label>
-              <p className="mb-2 text-2xl font-bold text-blue-600">{usuarioActual?.horasEstudioDiarias ?? 4}h</p>
+              <p className="mb-2 text-xl font-bold text-blue-600 sm:text-2xl">{usuarioActual?.horasEstudioDiarias ?? 4}h</p>
               <Slider
                 value={[usuarioActual?.horasEstudioDiarias ?? 4]}
                 max={10}
@@ -100,7 +101,7 @@ export default function Planner() {
 
             <div>
               <Label className="mb-3 block">Horas de sueno</Label>
-              <p className="mb-2 text-2xl font-bold text-purple-600">{usuarioActual?.horasSueno ?? 8}h</p>
+              <p className="mb-2 text-xl font-bold text-purple-600 sm:text-2xl">{usuarioActual?.horasSueno ?? 8}h</p>
               <Slider
                 value={[usuarioActual?.horasSueno ?? 8]}
                 max={10}
@@ -174,121 +175,48 @@ export default function Planner() {
               <Badge className="bg-blue-50 text-blue-600">{bloquesPlanificador.length} bloques activos</Badge>
             </div>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <div className="min-w-[960px]">
-              <div className="grid grid-cols-8 gap-2">
-                <div />
-                {Array.from({ length: 7 }, (_, index) => (
-                  <div key={index} className="rounded-xl bg-gray-100 p-2 text-center text-sm font-semibold">
-                    {obtenerEtiquetaDiaPlanificador(index)}
-                  </div>
-                ))}
-              </div>
+          <CardContent className="space-y-4 overflow-x-auto">
+            <div className="rounded-2xl bg-blue-50 px-3 py-2 text-xs text-blue-700 sm:hidden">
+              Desliza horizontalmente para ver toda la semana. Compactamos el tablero para que se lea mejor en movil.
+            </div>
 
-              <div className="mt-2 space-y-2">
-                {horas.map((hora) => (
-                  <div key={hora} className="grid grid-cols-8 gap-2">
-                    <div className="flex items-center text-sm text-gray-500">{`${hora}:00`}</div>
-                    {Array.from({ length: 7 }, (_, diaIndex) => {
-                      const celdaId = `${diaIndex}-${hora}`;
-                      const bloque = bloquesPlanificador.find(
-                        (item) => item.dia === diaIndex && item.horaInicio === hora,
-                      );
-                      const activa = celdaActiva === celdaId;
+            <div className="sm:hidden">
+              <CalendarioPlanificador
+                compacto
+                bloquesPlanificador={bloquesPlanificador}
+                celdaActiva={celdaActiva}
+                bloqueArrastradoId={bloqueArrastradoId}
+                bloqueRecienteId={bloqueRecienteId}
+                onSetCeldaActiva={setCeldaActiva}
+                onSetBloqueArrastradoId={setBloqueArrastradoId}
+                onMoverBloque={moverBloquePlanificador}
+                onSetBloqueRecienteId={setBloqueRecienteId}
+                onSetMensajeEdicion={setMensajeEdicion}
+                onEditarBloque={setBloqueEnEdicion}
+              />
+            </div>
 
-                      return (
-                        <div
-                          key={diaIndex}
-                          className={`relative min-h-[72px] overflow-visible rounded-xl border p-2 transition-all ${
-                            activa ? "border-blue-300 bg-blue-50 shadow-inner" : "border-gray-100 bg-gray-50"
-                          }`}
-                          onDragOver={(event) => {
-                            event.preventDefault();
-                            setCeldaActiva(celdaId);
-                          }}
-                          onDragLeave={() => setCeldaActiva((actual) => (actual === celdaId ? null : actual))}
-                          onDrop={(event) => {
-                            event.preventDefault();
-                            const bloqueId = event.dataTransfer.getData("text/plain");
-                            if (!bloqueId) return;
-                            const bloqueArrastrado = bloquesPlanificador.find((item) => item.id === bloqueId);
-                            if (!bloqueArrastrado) return;
-                            if (
-                              bloqueSeSolapa(
-                                bloquesPlanificador,
-                                bloqueId,
-                                diaIndex,
-                                hora,
-                                bloqueArrastrado.duracion,
-                              )
-                            ) {
-                              setMensajeEdicion("Ese espacio ya se cruza con otro bloque. Prueba otra hora o ajusta la duracion.");
-                              setCeldaActiva(null);
-                              setBloqueArrastradoId(null);
-                              return;
-                            }
-                            moverBloquePlanificador(bloqueId, diaIndex, hora);
-                            setBloqueRecienteId(bloqueId);
-                            setMensajeEdicion("");
-                            window.setTimeout(() => setBloqueRecienteId((actual) => (actual === bloqueId ? null : actual)), 900);
-                            setBloqueArrastradoId(null);
-                            setCeldaActiva(null);
-                          }}
-                        >
-                          {bloque ? (
-                            <div
-                              draggable
-                              onDragStart={(event) => {
-                                event.dataTransfer.setData("text/plain", bloque.id);
-                                setBloqueArrastradoId(bloque.id);
-                              }}
-                              onDragEnd={() => {
-                                setBloqueArrastradoId(null);
-                                setCeldaActiva(null);
-                              }}
-                              onClick={() => setBloqueEnEdicion(bloque)}
-                              className={`absolute left-1 right-1 top-1 cursor-grab rounded-xl p-3 text-white shadow-md transition-all active:cursor-grabbing ${
-                                bloqueArrastradoId === bloque.id ? "scale-95 opacity-70" : "hover:-translate-y-0.5"
-                              } ${
-                                bloqueRecienteId === bloque.id ? "ring-4 ring-blue-200/80 animate-pulse" : ""
-                              }`}
-                              style={{
-                                backgroundColor: obtenerColorValor(bloque.color),
-                                height: `${Math.max(60, bloque.duracion * ALTO_CELDA - 8)}px`,
-                                zIndex: 10,
-                              }}
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="font-semibold leading-tight">{bloque.titulo}</div>
-                                <div className="flex items-center gap-1">
-                                  <Pencil className="h-3.5 w-3.5 shrink-0 text-white/80" />
-                                  <GripVertical className="h-4 w-4 shrink-0 text-white/80" />
-                                </div>
-                              </div>
-                              <div className="mt-2 flex items-center gap-1 text-xs text-white/85">
-                                <Clock className="h-3 w-3" />
-                                {bloque.duracion}h
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex h-full min-h-[56px] items-center justify-center rounded-xl border border-dashed border-transparent text-xs text-gray-400">
-                              {activa ? "Suelta aqui" : "Disponible"}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
+            <div className="hidden sm:block">
+              <CalendarioPlanificador
+                bloquesPlanificador={bloquesPlanificador}
+                celdaActiva={celdaActiva}
+                bloqueArrastradoId={bloqueArrastradoId}
+                bloqueRecienteId={bloqueRecienteId}
+                onSetCeldaActiva={setCeldaActiva}
+                onSetBloqueArrastradoId={setBloqueArrastradoId}
+                onMoverBloque={moverBloquePlanificador}
+                onSetBloqueRecienteId={setBloqueRecienteId}
+                onSetMensajeEdicion={setMensajeEdicion}
+                onEditarBloque={setBloqueEnEdicion}
+              />
             </div>
           </CardContent>
         </Card>
       </div>
 
       <Card className="border-none bg-gradient-to-br from-blue-50 to-purple-50 shadow-lg">
-        <CardContent className="p-6">
-          <div className="flex gap-4">
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row">
             <div
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
               style={{
@@ -310,7 +238,7 @@ export default function Planner() {
       </Card>
 
       <Dialog open={Boolean(bloqueEnEdicion)} onOpenChange={(abierto) => !abierto && setBloqueEnEdicion(null)}>
-        <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Editar bloque</DialogTitle>
           </DialogHeader>
@@ -377,7 +305,7 @@ function EditorBloque({
         <Label>Titulo</Label>
         <Input value={formulario.titulo} onChange={(event) => setFormulario({ ...formulario, titulo: event.target.value })} />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <Label>Dia</Label>
           <Select value={formulario.dia} onValueChange={(dia) => setFormulario({ ...formulario, dia })}>
@@ -409,7 +337,7 @@ function EditorBloque({
           </Select>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <Label>Duracion</Label>
           <Select value={formulario.duracion} onValueChange={(duracion) => setFormulario({ ...formulario, duracion })}>
@@ -440,7 +368,7 @@ function EditorBloque({
           </Select>
         </div>
       </div>
-      <div className="flex gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <Button
           className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600"
           onClick={() =>
@@ -455,10 +383,148 @@ function EditorBloque({
         >
           Guardar cambios
         </Button>
-        <Button variant="outline" className="text-red-600 hover:text-red-700" onClick={onEliminar}>
+        <Button variant="outline" className="text-red-600 hover:text-red-700 sm:w-auto" onClick={onEliminar}>
           <Trash2 className="mr-2 h-4 w-4" />
           Eliminar
         </Button>
+      </div>
+    </div>
+  );
+}
+
+function CalendarioPlanificador({
+  bloquesPlanificador,
+  celdaActiva,
+  bloqueArrastradoId,
+  bloqueRecienteId,
+  onSetCeldaActiva,
+  onSetBloqueArrastradoId,
+  onMoverBloque,
+  onSetBloqueRecienteId,
+  onSetMensajeEdicion,
+  onEditarBloque,
+  compacto = false,
+}: {
+  bloquesPlanificador: BloquePlanificador[];
+  celdaActiva: string | null;
+  bloqueArrastradoId: string | null;
+  bloqueRecienteId: string | null;
+  onSetCeldaActiva: (valor: string | null) => void;
+  onSetBloqueArrastradoId: (valor: string | null) => void;
+  onMoverBloque: (bloqueId: string, dia: number, horaInicio: number) => void;
+  onSetBloqueRecienteId: (valor: string | null) => void;
+  onSetMensajeEdicion: (valor: string) => void;
+  onEditarBloque: (bloque: BloquePlanificador | null) => void;
+  compacto?: boolean;
+}) {
+  const altoCelda = compacto ? ALTO_CELDA_MOVIL : ALTO_CELDA;
+  const minWidth = compacto ? "min-w-[720px]" : "min-w-[960px]";
+
+  return (
+    <div className={minWidth}>
+      <div className={`grid grid-cols-8 ${compacto ? "gap-1.5" : "gap-2"}`}>
+        <div />
+        {Array.from({ length: 7 }, (_, index) => (
+          <div
+            key={index}
+            className={`rounded-xl bg-gray-100 text-center font-semibold ${compacto ? "p-1.5 text-[11px]" : "p-2 text-sm"}`}
+          >
+            {obtenerEtiquetaDiaPlanificador(index)}
+          </div>
+        ))}
+      </div>
+
+      <div className={`mt-2 ${compacto ? "space-y-1.5" : "space-y-2"}`}>
+        {horas.map((hora) => (
+          <div key={hora} className={`grid grid-cols-8 ${compacto ? "gap-1.5" : "gap-2"}`}>
+            <div className={`flex items-center text-gray-500 ${compacto ? "text-[11px]" : "text-sm"}`}>{`${hora}:00`}</div>
+            {Array.from({ length: 7 }, (_, diaIndex) => {
+              const celdaId = `${diaIndex}-${hora}`;
+              const bloque = bloquesPlanificador.find((item) => item.dia === diaIndex && item.horaInicio === hora);
+              const activa = celdaActiva === celdaId;
+
+              return (
+                <div
+                  key={diaIndex}
+                  className={`relative overflow-visible rounded-xl border transition-all ${
+                    activa ? "border-blue-300 bg-blue-50 shadow-inner" : "border-gray-100 bg-gray-50"
+                  } ${compacto ? "min-h-[52px] p-1.5" : "min-h-[72px] p-2"}`}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    onSetCeldaActiva(celdaId);
+                  }}
+                  onDragLeave={() => onSetCeldaActiva(celdaActiva === celdaId ? null : celdaActiva)}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    const bloqueId = event.dataTransfer.getData("text/plain");
+                    if (!bloqueId) return;
+                    const bloqueArrastrado = bloquesPlanificador.find((item) => item.id === bloqueId);
+                    if (!bloqueArrastrado) return;
+                    if (bloqueSeSolapa(bloquesPlanificador, bloqueId, diaIndex, hora, bloqueArrastrado.duracion)) {
+                      onSetMensajeEdicion("Ese espacio ya se cruza con otro bloque. Prueba otra hora o ajusta la duracion.");
+                      onSetCeldaActiva(null);
+                      onSetBloqueArrastradoId(null);
+                      return;
+                    }
+                    onMoverBloque(bloqueId, diaIndex, hora);
+                    onSetBloqueRecienteId(bloqueId);
+                    onSetMensajeEdicion("");
+                    window.setTimeout(() => onSetBloqueRecienteId(null), 900);
+                    onSetBloqueArrastradoId(null);
+                    onSetCeldaActiva(null);
+                  }}
+                >
+                  {bloque ? (
+                    <div
+                      draggable
+                      onDragStart={(event) => {
+                        event.dataTransfer.setData("text/plain", bloque.id);
+                        onSetBloqueArrastradoId(bloque.id);
+                      }}
+                      onDragEnd={() => {
+                        onSetBloqueArrastradoId(null);
+                        onSetCeldaActiva(null);
+                      }}
+                      onClick={() => onEditarBloque(bloque)}
+                      className={`absolute left-1 right-1 top-1 cursor-grab rounded-xl text-white shadow-md transition-all active:cursor-grabbing ${
+                        bloqueArrastradoId === bloque.id ? "scale-95 opacity-70" : "hover:-translate-y-0.5"
+                      } ${bloqueRecienteId === bloque.id ? "ring-4 ring-blue-200/80 animate-pulse" : ""} ${
+                        compacto ? "p-2" : "p-3"
+                      }`}
+                      style={{
+                        backgroundColor: obtenerColorValor(bloque.color),
+                        height: `${Math.max(compacto ? 42 : 60, bloque.duracion * altoCelda - 8)}px`,
+                        zIndex: 10,
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className={`leading-tight ${compacto ? "text-[11px] font-semibold" : "font-semibold"}`}>
+                          {bloque.titulo}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Pencil className={`${compacto ? "h-3 w-3" : "h-3.5 w-3.5"} shrink-0 text-white/80`} />
+                          <GripVertical className={`${compacto ? "h-3.5 w-3.5" : "h-4 w-4"} shrink-0 text-white/80`} />
+                        </div>
+                      </div>
+                      <div className={`mt-1.5 flex items-center gap-1 text-white/85 ${compacto ? "text-[10px]" : "text-xs"}`}>
+                        <Clock className={`${compacto ? "h-2.5 w-2.5" : "h-3 w-3"}`} />
+                        {bloque.duracion}h
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      className={`flex h-full items-center justify-center rounded-xl border border-dashed border-transparent text-gray-400 ${
+                        compacto ? "min-h-[40px] text-[10px]" : "min-h-[56px] text-xs"
+                      }`}
+                    >
+                      {activa ? "Suelta aqui" : "Disponible"}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
       </div>
     </div>
   );
