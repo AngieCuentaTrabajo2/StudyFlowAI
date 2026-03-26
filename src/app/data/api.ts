@@ -1,15 +1,31 @@
 const URL_API =
   (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_API_URL ??
   "http://localhost:4000";
+const TIEMPO_ESPERA_API = 20000;
 
 async function request<T>(ruta: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${URL_API}${ruta}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
-    ...init,
-  });
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), TIEMPO_ESPERA_API);
+
+  let response: Response;
+
+  try {
+    response = await fetch(`${URL_API}${ruta}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers ?? {}),
+      },
+      ...init,
+      signal: init?.signal ?? controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error("La solicitud tardo demasiado. Intenta otra vez en unos segundos.");
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     const texto = await response.text();

@@ -21,8 +21,13 @@ export default function LoginPage() {
     event.preventDefault();
     setError("");
     setCargando(true);
-    const success = await iniciarSesion(email, password);
-    setCargando(false);
+    let success = false;
+
+    try {
+      success = await iniciarSesion(email, password);
+    } finally {
+      setCargando(false);
+    }
 
     if (!success) {
       setError("No pudimos iniciar sesion. Verifica tus datos o crea una cuenta.");
