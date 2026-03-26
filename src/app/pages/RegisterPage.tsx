@@ -39,8 +39,12 @@ export default function RegisterPage() {
     setError("");
     setCargando(true);
 
-    const success = await registrarUsuario(formData);
-    setCargando(false);
+    let success = false;
+    try {
+      success = await registrarUsuario(formData);
+    } finally {
+      setCargando(false);
+    }
 
     if (!success) {
       setError("No pudimos crear la cuenta. Revisa si ese correo ya esta registrado o intenta de nuevo.");
