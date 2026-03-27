@@ -197,6 +197,32 @@ function normalizarTexto(valor) {
     .replace(/\p{Diacritic}/gu, "");
 }
 
+function detectarSolicitudPreguntasPracticaAmbigua(mensaje, cursos) {
+  const texto = normalizarTexto(mensaje || "");
+  const pidePractica =
+    texto.includes("preguntas de practica") ||
+    texto.includes("pregunta de practica") ||
+    texto.includes("practiquemos") ||
+    (texto.includes("hazme preguntas") && texto.includes("practica"));
+
+  if (!pidePractica) {
+    return false;
+  }
+
+  const mencionaCurso = cursos.some((curso) => texto.includes(normalizarTexto(curso.nombre)));
+  return !mencionaCurso;
+}
+
+function construirRespuestaAclaratoriaPractica(contexto) {
+  const cursos = deduplicarPorClave(contexto.cursos, (curso) => `${curso.nombre}-${curso.docente}-${curso.horario}`).slice(0, 4);
+
+  if (!cursos.length) {
+    return "Claro. Puedo hacerte preguntas de practica, pero primero dime de que curso o tema quieres que sean.";
+  }
+
+  return `Claro. Te hago preguntas de practica, pero primero dime de que curso quieres que sean.\n\nPuedes elegir uno de estos: ${cursos.map((curso) => curso.nombre).join(", ")}.`;
+}
+
 function deduplicarPorClave(elementos, obtenerClave) {
   const vistos = new Set();
   return elementos.filter((elemento) => {
@@ -1564,6 +1590,58 @@ app.post("/api/chat/:estudianteId", async (request, response) => {
 
   try {
     const contexto = await obtenerContextoEstudiante(estudianteId);
+    if (detectarSolicitudPreguntasPracticaAmbigua(mensaje, contexto.cursos)) {
+      const respuestaSistema = construirRespuestaAclaratoriaPractica(contexto);
+      const cliente = await pool.connect();
+      try {
+        await cliente.query("begin");
+
+        const mensajeUsuario = await cliente.query(
+          `
+          insert into mensajes_chat (estudiante_id, rol, mensaje)
+          values ($1, 'user', $2)
+          returning
+            id,
+            rol as tipo,
+            mensaje,
+            to_char(creado_en, 'HH24:MI') as hora,
+            creado_en as "creadaEn"
+          `,
+          [estudianteId, mensaje],
+        );
+
+        const mensajeAsistente = await cliente.query(
+          `
+          insert into mensajes_chat (estudiante_id, rol, mensaje)
+          values ($1, 'ai', $2)
+          returning
+            id,
+            rol as tipo,
+            mensaje,
+            to_char(creado_en, 'HH24:MI') as hora,
+            creado_en as "creadaEn"
+          `,
+          [estudianteId, respuestaSistema],
+        );
+
+        await cliente.query("commit");
+
+        response.status(201).json({
+          mensajes: [
+            mapearMensajeChat(mensajeUsuario.rows[0]),
+            mapearMensajeChat(mensajeAsistente.rows[0]),
+          ],
+          fuente: "sistema",
+        });
+        return;
+      } catch (error) {
+        await cliente.query("rollback");
+        throw error;
+      } finally {
+        cliente.release();
+      }
+    }
+
     try {
       const respuestaIa = await generarRespuestaConIA({ mensaje, contexto });
       const cliente = await pool.connect();
