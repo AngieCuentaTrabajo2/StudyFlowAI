@@ -37,7 +37,7 @@ export default function Navbar() {
               <span className="sm:hidden">Entrar</span>
             </Button>
           </Link>
-          <Link to="/register">
+          <Link to="/register?plan=gratis">
             <Button className="px-3 text-sm bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 sm:px-4">
               <span className="hidden sm:inline">Empieza gratis</span>
               <span className="sm:hidden">Gratis</span>

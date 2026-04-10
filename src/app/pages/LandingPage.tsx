@@ -15,40 +15,26 @@ import { ImageWithFallback } from "../components/shared/ImageWithFallback";
 const planes = [
   {
     nombre: "Gratis",
-    subtitulo: "Para empezar a organizarte",
+    subtitulo: "Para empezar con orden y sin complicarte",
     precio: "S/ 0",
-    caracteristicas: ["Hasta 3 cursos", "Tareas ilimitadas", "Recordatorios basicos"],
+    caracteristicas: ["Hasta 5 cursos", "Tareas y examenes en un solo lugar", "Recordatorios esenciales"],
     destino: "/register?plan=gratis",
     cta: "Empezar gratis",
     destacado: false,
   },
   {
-    nombre: "Estudiante",
-    subtitulo: "Para estudiantes activos",
-    precio: "S/ 29",
-    caracteristicas: [
-      "Cursos ilimitados",
-      "Planificador inteligente",
-      "Asistente IA completo",
-      "Analiticas avanzadas",
-    ],
-    destino: "/register?plan=estudiante",
-    cta: "Crear cuenta ahora",
-    destacado: true,
-  },
-  {
     nombre: "Premium",
-    subtitulo: "Para maximo rendimiento",
-    precio: "S/ 49",
+    subtitulo: "Para estudiantes que quieren apoyo real de IA",
+    precio: "S/ 19",
     caracteristicas: [
-      "Todo en Estudiante",
-      "Sesiones de estudio guiadas",
-      "Generacion de resumenes",
-      "Soporte prioritario",
+      "Todo en Gratis",
+      "Planificador inteligente",
+      "Asistente IA para organizar y resolver dudas",
+      "Resumenes y prioridades automaticas",
     ],
-    destino: "/login?plan=premium",
-    cta: "Ya tengo cuenta",
-    destacado: false,
+    destino: "/register?plan=premium",
+    cta: "Elegir premium",
+    destacado: true,
   },
 ];
 
@@ -243,11 +229,13 @@ export default function LandingPage() {
       <section id="precios" className="px-4 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 text-center sm:mb-16">
-            <h2 className="mb-4 text-3xl font-bold sm:text-4xl">Planes para cada estudiante</h2>
-            <p className="text-base text-gray-600 sm:text-xl">Elige el plan que mejor se adapte a ti</p>
+            <h2 className="mb-4 text-3xl font-bold sm:text-4xl">Planes simples para estudiantes</h2>
+            <p className="text-base text-gray-600 sm:text-xl">
+              Dos opciones claras para empezar y crecer sin pagar de mas
+            </p>
           </div>
 
-          <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3 md:gap-8">
+          <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2 md:gap-8">
             {planes.map((plan) => (
               <Card
                 key={plan.nombre}

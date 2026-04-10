@@ -17,9 +17,14 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { registrarUsuario } = useStudyFlow();
+  const etiquetasPlan = {
+    gratis: "Gratis",
+    estudiante: "Premium",
+    premium: "Premium",
+  } as const;
   const planInicial = (() => {
     const plan = searchParams.get("plan");
-    return plan === "estudiante" || plan === "premium" ? plan : "gratis";
+    return plan === "premium" || plan === "estudiante" ? plan : "gratis";
   })();
 
   const [formData, setFormData] = useState({
@@ -72,7 +77,7 @@ export default function RegisterPage() {
 
           <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50 p-4">
             <p className="text-sm font-medium text-blue-700">Plan seleccionado</p>
-            <p className="mt-1 text-lg font-semibold capitalize text-blue-900">{formData.plan}</p>
+            <p className="mt-1 text-lg font-semibold text-blue-900">{etiquetasPlan[formData.plan]}</p>
             <p className="mt-1 text-sm text-blue-700">
               No te cobraremos nada ahora. Primero crea tu cuenta y entra al sistema.
             </p>

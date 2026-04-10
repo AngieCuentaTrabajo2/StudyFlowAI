@@ -45,17 +45,17 @@ export default function Settings() {
     const contenido = {
       gratis: {
         etiqueta: "Plan Gratis",
-        descripcion: "Ideal para empezar con organizacion basica y seguimiento ligero.",
+        descripcion: "Ideal para organizar cursos, tareas y recordatorios sin complicarte.",
         estilo: "bg-slate-100 text-slate-700",
       },
       estudiante: {
-        etiqueta: "Plan Estudiante",
-        descripcion: "Incluye planificador inteligente, analiticas y asistente academico completo.",
+        etiqueta: "Plan Premium",
+        descripcion: "Incluye planificador inteligente, asistente academico y automatizaciones clave.",
         estilo: "bg-blue-100 text-blue-700",
       },
       premium: {
         etiqueta: "Plan Premium",
-        descripcion: "Pensado para una gestion mas profunda con acompanamiento academico prioritario.",
+        descripcion: "Incluye planificador inteligente, asistente academico y automatizaciones clave.",
         estilo: "bg-purple-100 text-purple-700",
       },
     };

@@ -206,7 +206,7 @@ function crearPerfilBase(): PerfilUsuario {
     universidad: "Universidad Nacional de Ingenieria",
     carrera: "Ingenieria de Sistemas",
     semestre: "5",
-    plan: "estudiante",
+    plan: "premium",
     horasDisponibles: "4-6",
     metodoEstudio: "pomodoro",
     tonoAsistente: "responsable",
