@@ -25,7 +25,6 @@ export type PerfilUsuario = {
   nombres: string;
   apellidos: string;
   correo: string;
-  contrasena: string;
   universidad: string;
   carrera: string;
   semestre: string;
@@ -162,6 +161,10 @@ type ValorContextoStudyFlow = EstadoStudyFlow & {
 
 const CLAVE_ALMACENAMIENTO = "studyflow-ai-state-v1";
 const etiquetasDias = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"];
+const CUENTA_DEMO = {
+  correo: "jhan.perez@universidad.edu",
+  contrasena: "123456",
+};
 
 function crearId(prefijo: string) {
   return `${prefijo}-${Math.random().toString(36).slice(2, 10)}`;
@@ -202,7 +205,6 @@ function crearPerfilBase(): PerfilUsuario {
     nombres: "Jhan",
     apellidos: "Perez",
     correo: "jhan.perez@universidad.edu",
-    contrasena: "123456",
     universidad: "Universidad Nacional de Ingenieria",
     carrera: "Ingenieria de Sistemas",
     semestre: "5",
@@ -230,14 +232,13 @@ function crearPerfilBase(): PerfilUsuario {
 
 function normalizarUsuarioApi(
   usuario: UsuarioApi,
-  opciones?: { contrasena?: string; base?: PerfilUsuario | null },
+  opciones?: { base?: PerfilUsuario | null },
 ): PerfilUsuario {
   const base = opciones?.base ?? crearPerfilBase();
 
   return {
     ...base,
     ...usuario,
-    contrasena: opciones?.contrasena ?? base.contrasena,
     horasDisponibles: usuario.horasDisponibles ?? base.horasDisponibles,
     metodoEstudio: usuario.metodoEstudio ?? base.metodoEstudio,
     tonoAsistente: usuario.tonoAsistente ?? base.tonoAsistente,
@@ -246,6 +247,89 @@ function normalizarUsuarioApi(
     horasSueno: usuario.horasSueno ?? base.horasSueno,
     notificaciones: usuario.notificaciones ?? base.notificaciones,
     aplicacion: usuario.aplicacion ?? base.aplicacion,
+  };
+}
+
+function normalizarUsuarioPersistido(usuario: unknown): PerfilUsuario | null {
+  if (!usuario || typeof usuario !== "object") {
+    return null;
+  }
+
+  const base = crearPerfilBase();
+  const candidato = usuario as Partial<PerfilUsuario>;
+
+  return {
+    id: typeof candidato.id === "string" ? candidato.id : base.id,
+    nombres: typeof candidato.nombres === "string" ? candidato.nombres : base.nombres,
+    apellidos: typeof candidato.apellidos === "string" ? candidato.apellidos : base.apellidos,
+    correo: typeof candidato.correo === "string" ? candidato.correo : base.correo,
+    universidad: typeof candidato.universidad === "string" ? candidato.universidad : base.universidad,
+    carrera: typeof candidato.carrera === "string" ? candidato.carrera : base.carrera,
+    semestre: typeof candidato.semestre === "string" ? candidato.semestre : base.semestre,
+    plan:
+      candidato.plan === "gratis" || candidato.plan === "estudiante" || candidato.plan === "premium"
+        ? candidato.plan
+        : base.plan,
+    horasDisponibles:
+      typeof candidato.horasDisponibles === "string"
+        ? candidato.horasDisponibles
+        : base.horasDisponibles,
+    metodoEstudio:
+      typeof candidato.metodoEstudio === "string" ? candidato.metodoEstudio : base.metodoEstudio,
+    tonoAsistente:
+      candidato.tonoAsistente === "frio" ||
+      candidato.tonoAsistente === "amigable" ||
+      candidato.tonoAsistente === "responsable"
+        ? candidato.tonoAsistente
+        : base.tonoAsistente,
+    metas: typeof candidato.metas === "string" ? candidato.metas : base.metas,
+    horasEstudioDiarias:
+      typeof candidato.horasEstudioDiarias === "number"
+        ? candidato.horasEstudioDiarias
+        : base.horasEstudioDiarias,
+    horasSueno: typeof candidato.horasSueno === "number" ? candidato.horasSueno : base.horasSueno,
+    notificaciones:
+      candidato.notificaciones && typeof candidato.notificaciones === "object"
+        ? {
+            tareas:
+              typeof candidato.notificaciones.tareas === "boolean"
+                ? candidato.notificaciones.tareas
+                : base.notificaciones.tareas,
+            examenes:
+              typeof candidato.notificaciones.examenes === "boolean"
+                ? candidato.notificaciones.examenes
+                : base.notificaciones.examenes,
+            ia:
+              typeof candidato.notificaciones.ia === "boolean"
+                ? candidato.notificaciones.ia
+                : base.notificaciones.ia,
+            semanal:
+              typeof candidato.notificaciones.semanal === "boolean"
+                ? candidato.notificaciones.semanal
+                : base.notificaciones.semanal,
+            correo:
+              typeof candidato.notificaciones.correo === "boolean"
+                ? candidato.notificaciones.correo
+                : base.notificaciones.correo,
+          }
+        : base.notificaciones,
+    aplicacion:
+      candidato.aplicacion && typeof candidato.aplicacion === "object"
+        ? {
+            modoOscuro:
+              typeof candidato.aplicacion.modoOscuro === "boolean"
+                ? candidato.aplicacion.modoOscuro
+                : base.aplicacion.modoOscuro,
+            googleCalendar:
+              typeof candidato.aplicacion.googleCalendar === "boolean"
+                ? candidato.aplicacion.googleCalendar
+                : base.aplicacion.googleCalendar,
+            sugerenciasAutomaticas:
+              typeof candidato.aplicacion.sugerenciasAutomaticas === "boolean"
+                ? candidato.aplicacion.sugerenciasAutomaticas
+                : base.aplicacion.sugerenciasAutomaticas,
+          }
+        : base.aplicacion,
   };
 }
 
@@ -561,6 +645,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       const parseado = JSON.parse(guardado) as EstadoStudyFlow;
       return {
         ...parseado,
+        usuarioActual: normalizarUsuarioPersistido(parseado.usuarioActual),
         tareas: normalizarTareas(parseado.tareas ?? []),
       };
     } catch {
@@ -628,7 +713,6 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           setEstado((actual) => ({
             ...actual,
             usuarioActual: normalizarUsuarioApi(usuario, {
-              contrasena,
               base: actual.usuarioActual,
             }),
           }));
@@ -640,9 +724,8 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           }
 
           const coincide =
-            estado.usuarioActual &&
-            estado.usuarioActual.correo.toLowerCase() === correo.toLowerCase() &&
-            estado.usuarioActual.contrasena === contrasena;
+            correo.toLowerCase() === CUENTA_DEMO.correo.toLowerCase() &&
+            contrasena === CUENTA_DEMO.contrasena;
 
           return Boolean(coincide);
         }
@@ -662,9 +745,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
             plan: datos.plan,
           });
 
-          const siguienteUsuario = normalizarUsuarioApi(resultado.usuario, {
-            contrasena: datos.password,
-          });
+          const siguienteUsuario = normalizarUsuarioApi(resultado.usuario);
           const notificacionBienvenida: NotificacionItem = {
             id: crearId("notif"),
             tipo: "success",
@@ -698,7 +779,6 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
             nombres: nombres || "Estudiante",
             apellidos: restoApellidos.join(" "),
             correo: datos.email,
-            contrasena: datos.password,
             universidad: datos.university,
             carrera: datos.career,
             semestre: datos.semester,
@@ -730,7 +810,6 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
                 ...actual,
                 usuarioActual: actual.usuarioActual
                   ? normalizarUsuarioApi(resultado.usuario, {
-                      contrasena: actual.usuarioActual.contrasena,
                       base: actual.usuarioActual,
                     })
                   : actual.usuarioActual,
