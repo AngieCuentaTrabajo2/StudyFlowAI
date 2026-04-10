@@ -1,7 +1,7 @@
 const URL_API =
   (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_API_URL ??
   "http://localhost:4000";
-const TIEMPO_ESPERA_API = 20000;
+const TIEMPO_ESPERA_API = 35000;
 
 async function request<T>(ruta: string, init?: RequestInit): Promise<T> {
   const controller = new AbortController();

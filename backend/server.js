@@ -272,20 +272,29 @@ function extraerHerramientasSolicitadasEnTexto(texto, herramientasLocales) {
   return [...herramientas];
 }
 
-function detectarSolicitudPreguntasPracticaAmbigua(mensaje, cursos) {
+function detectarSolicitudPreguntasPractica(mensaje) {
   const texto = normalizarTexto(mensaje || "");
-  const pidePractica =
+  return (
     texto.includes("preguntas de practica") ||
     texto.includes("pregunta de practica") ||
     texto.includes("practiquemos") ||
-    (texto.includes("hazme preguntas") && texto.includes("practica"));
+    (texto.includes("hazme preguntas") && texto.includes("practica"))
+  );
+}
+
+function encontrarCursoMencionado(mensaje, cursos) {
+  const texto = normalizarTexto(mensaje || "");
+  return cursos.find((curso) => texto.includes(normalizarTexto(curso.nombre))) ?? null;
+}
+
+function detectarSolicitudPreguntasPracticaAmbigua(mensaje, cursos) {
+  const pidePractica = detectarSolicitudPreguntasPractica(mensaje);
 
   if (!pidePractica) {
     return false;
   }
 
-  const mencionaCurso = cursos.some((curso) => texto.includes(normalizarTexto(curso.nombre)));
-  return !mencionaCurso;
+  return !encontrarCursoMencionado(mensaje, cursos);
 }
 
 function construirRespuestaAclaratoriaPractica(contexto) {
@@ -296,6 +305,306 @@ function construirRespuestaAclaratoriaPractica(contexto) {
   }
 
   return `Claro. Te hago preguntas de practica, pero primero dime de que curso quieres que sean.\n\nPuedes elegir uno de estos: ${cursos.map((curso) => curso.nombre).join(", ")}.`;
+}
+
+function textoIncluyeAlguno(texto, terminos) {
+  return terminos.some((termino) => texto.includes(termino));
+}
+
+function unirListaNatural(elementos) {
+  const lista = elementos.filter(Boolean);
+  if (!lista.length) return "";
+  if (lista.length === 1) return lista[0];
+  if (lista.length === 2) return `${lista[0]} y ${lista[1]}`;
+  return `${lista.slice(0, -1).join(", ")} y ${lista[lista.length - 1]}`;
+}
+
+function obtenerCursosUnicos(contexto) {
+  return deduplicarPorClave(contexto.cursos, (curso) => `${curso.nombre}-${curso.docente}-${curso.horario}`);
+}
+
+function obtenerCursoPrioritario(contexto) {
+  const { tareasAtrasadas, tareasPendientes, examenesProximos } = construirDatosHerramientas(contexto);
+  const cursoIdPrioritario =
+    tareasAtrasadas[0]?.cursoId ??
+    tareasPendientes[0]?.cursoId ??
+    examenesProximos[0]?.cursoId ??
+    contexto.cursos[0]?.id;
+
+  return contexto.cursos.find((curso) => curso.id === cursoIdPrioritario) ?? null;
+}
+
+function obtenerCursoRelevante(mensaje, contexto) {
+  return encontrarCursoMencionado(mensaje, contexto.cursos) ?? obtenerCursoPrioritario(contexto);
+}
+
+function obtenerTemasCurso(contexto, curso) {
+  if (!curso) return [];
+
+  return deduplicarPorClave(
+    [
+      ...contexto.examenes
+        .filter((examen) => examen.cursoId === curso.id)
+        .flatMap((examen) => examen.temas ?? []),
+      ...contexto.tareas
+        .filter((tarea) => tarea.cursoId === curso.id)
+        .map((tarea) => tarea.titulo),
+    ].filter(Boolean),
+    (tema) => normalizarTexto(tema),
+  ).slice(0, 4);
+}
+
+function construirPrioridadesSistema(contexto, limite = 3) {
+  const { cursosPorId, tareasPendientes, tareasAtrasadas, examenesProximos } = construirDatosHerramientas(contexto);
+
+  return [
+    ...tareasAtrasadas.map(
+      (tarea) =>
+        `${tarea.titulo} en ${cursosPorId.get(tarea.cursoId)?.nombre ?? "Curso no identificado"} (atrasada)`,
+    ),
+    ...tareasPendientes.map(
+      (tarea) =>
+        `${tarea.titulo} en ${cursosPorId.get(tarea.cursoId)?.nombre ?? "Curso no identificado"} para ${formatearFechaRespuesta(tarea.fechaEntrega)}`,
+    ),
+    ...examenesProximos.map(
+      (examen) =>
+        `${examen.titulo} de ${cursosPorId.get(examen.cursoId)?.nombre ?? "Curso no identificado"} el ${formatearFechaRespuesta(examen.fecha)}`,
+    ),
+  ].slice(0, limite);
+}
+
+function construirPlanEstudioSistema(contexto) {
+  const prioridades = construirPrioridadesSistema(contexto, 3);
+  const bloquesEstudio = contexto.bloquesPlanificador.filter((bloque) => bloque.tipo === "study");
+
+  if (!prioridades.length) {
+    return "Tu panel no muestra urgencias inmediatas. Puedes dedicar hoy un bloque corto a repasar apuntes, ordenar pendientes y dejar lista la siguiente sesion de estudio.";
+  }
+
+  const recomendaciones = [
+    `1. Empieza por ${prioridades[0]}.`,
+    prioridades[1] ? `2. Luego avanza con ${prioridades[1]}.` : "2. Usa el segundo bloque para repaso activo o ejercicios cortos.",
+    bloquesEstudio.length
+      ? `3. Ya tienes ${bloquesEstudio.length} bloque${bloquesEstudio.length === 1 ? "" : "s"} de estudio guardado${bloquesEstudio.length === 1 ? "" : "s"}; aprovecha esos bloques para cerrar el dia con repaso breve.`
+      : "3. Si puedes, reserva hoy un bloque de 45 a 60 minutos para consolidar lo mas urgente.",
+  ];
+
+  return recomendaciones.join("\n");
+}
+
+function construirResumenSistema({ mensaje, contexto }) {
+  const curso = obtenerCursoRelevante(mensaje, contexto);
+  const temas = obtenerTemasCurso(contexto, curso);
+
+  if (!curso) {
+    const prioridades = construirPrioridadesSistema(contexto, 3);
+    return (
+      "Puedo darte un resumen rapido aunque Groq se este demorando. Ahora mismo tu mejor enfoque es este: " +
+      `${prioridades.length ? unirListaNatural(prioridades) : "ordenar tus temas y pendientes principales"}.`
+    );
+  }
+
+  if (!temas.length) {
+    return (
+      `Resumen rapido para ${curso.nombre}: enfocate en conceptos base, aplicaciones practicas y repaso activo. ` +
+      "Haz una pasada corta de teoria, luego un ejemplo resuelto y cierra explicando el tema con tus propias palabras."
+    );
+  }
+
+  return (
+    `Resumen rapido para ${curso.nombre}: ahora mismo conviene enfocarte en ${unirListaNatural(temas)}. ` +
+    "Para estudiarlo bien, define cada tema en una frase, comparalo con los otros, resuelve un ejemplo por tema y termina con una autoexplicacion sin mirar tus apuntes."
+  );
+}
+
+function construirExplicacionSistema({ mensaje, contexto }) {
+  const curso = obtenerCursoRelevante(mensaje, contexto);
+  const temas = obtenerTemasCurso(contexto, curso);
+  const temaPrincipal = temas[0];
+
+  if (curso && temaPrincipal) {
+    return (
+      `Te doy una explicacion corta y segura mientras Groq vuelve: en ${curso.nombre}, un buen modo de entender ${temaPrincipal} es dividirlo en cuatro partes: que es, para que sirve, cual es el procedimiento o logica principal y que error suele cometerse al aplicarlo. ` +
+      `Si estudias ${temaPrincipal} con ese esquema y luego lo conectas con ${temas[1] ?? "un ejemplo practico"}, ya tendras una base bastante solida.`
+    );
+  }
+
+  return (
+    "Te doy una explicacion util mientras Groq se demora: para entender cualquier tema rapido, separalo en definicion, objetivo, pasos clave, ejemplo y errores comunes. " +
+    "Si me dices el curso o el tema exacto, te lo bajo a un formato mucho mas concreto."
+  );
+}
+
+function construirRespuestaGeneralSistema({ contexto, detalleError }) {
+  const prioridades = construirPrioridadesSistema(contexto, 3);
+  const cursos = obtenerCursosUnicos(contexto).slice(0, 3).map((curso) => curso.nombre);
+
+  return (
+    `Groq se esta demorando mas de lo normal${detalleError ? ` (${detalleError})` : ""}, pero no te dejo sin respuesta. ` +
+    `${prioridades.length ? `Ahora mismo tus focos mas claros son ${unirListaNatural(prioridades)}. ` : ""}` +
+    `${cursos.length ? `Tambien puedo ayudarte con ${unirListaNatural(cursos)}. ` : ""}` +
+    "Si quieres, te organizo la semana, te resumo un tema, te doy prioridades o te hago preguntas de practica."
+  );
+}
+
+function construirRespuestaSistemaRapida({ mensaje, contexto, detalleError }) {
+  const texto = normalizarTexto(mensaje || "");
+  const cursoRelevante = obtenerCursoRelevante(mensaje, contexto);
+  const { cursosPorId, tareasActivas, tareasPendientes, tareasAtrasadas, examenesProximos } =
+    construirDatosHerramientas(contexto);
+
+  if (textoIncluyeAlguno(texto, ["hola", "buenas", "buen dia", "buenas tardes", "buenas noches", "que tal"])) {
+    return (
+      `Hola. Mientras Groq se demora, sigo viendo tu panel real: ${tareasActivas.length} tareas activas y ${examenesProximos.length} examenes proximos. ` +
+      `${cursoRelevante ? `Tu curso mas prioritario ahora parece ser ${cursoRelevante.nombre}. ` : ""}` +
+      "Si quieres, te organizo el dia o te preparo practica."
+    );
+  }
+
+  if (textoIncluyeAlguno(texto, ["gracias", "muchas gracias", "thanks"])) {
+    return "De nada. Aunque Groq se demore, igual puedo seguir apoyandote con tareas, prioridades, planes de estudio y preguntas de practica.";
+  }
+
+  if (textoIncluyeAlguno(texto, ["quien eres", "que puedes hacer", "en que me puedes ayudar", "ayudame"])) {
+    const cursos = obtenerCursosUnicos(contexto).slice(0, 4).map((curso) => curso.nombre);
+    return (
+      "Soy StudyFlow AI. Incluso sin Groq en este momento puedo ayudarte a revisar tareas, examenes, prioridades, organizar tu semana, proponerte preguntas de practica y darte resumenes rapidos de enfoque. " +
+      `${cursos.length ? `Ahora mismo tengo contexto de ${unirListaNatural(cursos)}.` : ""}`
+    );
+  }
+
+  if (detectarSolicitudPreguntasPractica(mensaje)) {
+    const curso =
+      cursoRelevante ??
+      obtenerCursosUnicos(contexto)[0];
+
+    if (!curso) {
+      return "Groq se esta demorando un poco. Mientras tanto, dime de que curso o tema quieres las preguntas de practica y te las preparo al toque.";
+    }
+
+    const temas = deduplicarPorClave(
+      [
+        ...contexto.examenes
+          .filter((examen) => examen.cursoId === curso.id)
+          .flatMap((examen) => examen.temas ?? []),
+        ...contexto.tareas
+          .filter((tarea) => tarea.cursoId === curso.id)
+          .map((tarea) => tarea.titulo),
+      ].filter(Boolean),
+      (tema) => normalizarTexto(tema),
+    ).slice(0, 3);
+
+    const preguntas =
+      temas.length > 0
+        ? temas.map(
+            (tema, indice) =>
+              `${indice + 1}. Explicame ${tema} con tus palabras y dame un ejemplo aplicado a ${curso.nombre}.`,
+          )
+        : [
+            `1. Cual dirias que es el concepto mas importante de ${curso.nombre} y por que?`,
+            `2. Como aplicarias un tema clave de ${curso.nombre} en un caso practico o ejercicio real?`,
+            `3. Que parte de ${curso.nombre} te cuesta mas y como la explicarias paso a paso?`,
+          ];
+
+    return (
+      `Groq se esta demorando mas de lo normal, pero avancemos igual. Aqui van preguntas de practica de ${curso.nombre}:\n\n` +
+      `${preguntas.join("\n")}\n\n` +
+      "Si quieres, en el siguiente mensaje te corrijo tus respuestas o te subo la dificultad."
+    );
+  }
+
+  if (textoIncluyeAlguno(texto, ["organiza", "organizar", "plan", "planifica", "planificar", "semana", "hoy", "horario"])) {
+    return (
+      "Groq se esta demorando un poco, asi que te dejo un plan rapido basado en tu contexto real:\n\n" +
+      construirPlanEstudioSistema(contexto)
+    );
+  }
+
+  if (texto.includes("tarea") || texto.includes("pendiente") || texto.includes("prioridad")) {
+    if (!tareasActivas.length) {
+      return "Ahora mismo no veo tareas activas registradas. Si quieres, puedo ayudarte a planificar la semana o revisar tus examenes proximos.";
+    }
+
+    const resumen = tareasActivas
+      .slice(0, 3)
+      .map(
+        (tarea) =>
+          `${tarea.titulo} en ${cursosPorId.get(tarea.cursoId)?.nombre ?? "Curso no identificado"} (${describirEstadoTarea(tarea.estadoVisual)})`,
+      )
+      .join("; ");
+
+    return `Groq se esta demorando un poco. Mientras tanto, tu panel muestra ${tareasActivas.length} tareas activas: ${tareasPendientes.length} pendientes vigentes y ${tareasAtrasadas.length} atrasadas. Lo mas cercano ahora es: ${resumen}.`;
+  }
+
+  if (texto.includes("examen")) {
+    if (!examenesProximos.length) {
+      return "No veo examenes proximos registrados por ahora. Si quieres, revisamos tus tareas activas o armamos un mini plan de estudio.";
+    }
+
+    const resumen = examenesProximos
+      .slice(0, 2)
+      .map(
+        (examen) =>
+          `${examen.titulo} de ${cursosPorId.get(examen.cursoId)?.nombre ?? "Curso no identificado"} el ${formatearFechaRespuesta(examen.fecha)}`,
+      )
+      .join("; ");
+
+    return `Groq se esta demorando un poco. Mientras tanto, tus examenes mas cercanos son: ${resumen}.`;
+  }
+
+  if (textoIncluyeAlguno(texto, ["curso", "cursos", "materia", "materias"])) {
+    const cursos = obtenerCursosUnicos(contexto);
+    if (!cursos.length) {
+      return "Todavia no veo cursos registrados en tu panel. Si quieres, primero podemos crear uno y luego conectarlo con tareas y examenes.";
+    }
+
+    return `Tus cursos actuales son ${unirListaNatural(cursos.slice(0, 5).map((curso) => curso.nombre))}. Si quieres, te digo cual conviene priorizar y por que.`;
+  }
+
+  if (textoIncluyeAlguno(texto, ["resume", "resumen", "resumeme", "resumir"])) {
+    return construirResumenSistema({ mensaje, contexto });
+  }
+
+  if (
+    textoIncluyeAlguno(texto, [
+      "explicame",
+      "explica",
+      "que es",
+      "como funciona",
+      "como se hace",
+      "entiendo",
+      "ayudame a entender",
+    ])
+  ) {
+    return construirExplicacionSistema({ mensaje, contexto });
+  }
+
+  return construirRespuestaGeneralSistema({ contexto, detalleError });
+}
+
+function crearPromesaTimeout(ms) {
+  return new Promise((_, reject) => {
+    setTimeout(() => reject(new Error("Groq tardo demasiado en responder.")), ms);
+  });
+}
+
+async function generarRespuestaAsistente({ mensaje, contexto, timeoutMs = 18000 }) {
+  try {
+    return await Promise.race([
+      generarRespuestaConIA({ mensaje, contexto }),
+      crearPromesaTimeout(timeoutMs),
+    ]);
+  } catch (error) {
+    console.error("Fallback StudyFlow por demora o error de Groq:", error);
+    return {
+      mensaje: construirRespuestaSistemaRapida({
+        mensaje,
+        contexto,
+        detalleError: error instanceof Error ? error.message : null,
+      }),
+      fuente: "sistema",
+    };
+  }
 }
 
 function deduplicarPorClave(elementos, obtenerClave) {
@@ -1774,7 +2083,7 @@ app.post("/api/chat/:estudianteId", async (request, response) => {
     }
 
     try {
-      const respuestaIa = await generarRespuestaConIA({ mensaje, contexto });
+      const respuestaIa = await generarRespuestaAsistente({ mensaje, contexto });
       const cliente = await pool.connect();
       try {
         await cliente.query("begin");
@@ -1824,11 +2133,7 @@ app.post("/api/chat/:estudianteId", async (request, response) => {
         cliente.release();
       }
     } catch (error) {
-      console.error("Error Groq StudyFlow:", error);
-      response.status(502).json({
-        mensaje: "No se pudo obtener respuesta de Groq.",
-        error: error.message,
-      });
+      response.status(500).json({ mensaje: "No se pudo preparar la respuesta del asistente.", error: error.message });
       return;
     }
   } catch (error) {
