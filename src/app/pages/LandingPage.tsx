@@ -5,12 +5,17 @@ import { Card, CardContent } from "../components/ui/card";
 import {
   ArrowRight,
   Bell,
+  BookOpen,
+  BrainCircuit,
   Calendar,
   CheckCircle,
+  CheckCircle2,
+  Clock3,
+  GraduationCap,
   Sparkles,
   Star,
+  TrendingUp,
 } from "lucide-react";
-import { ImageWithFallback } from "../components/shared/ImageWithFallback";
 
 const planes = [
   {
@@ -41,6 +46,66 @@ const planes = [
     destino: "/register?plan=premium",
     cta: "Elegir premium",
     destacado: true,
+  },
+];
+
+const agendaHero = [
+  {
+    hora: "08:00",
+    titulo: "Repaso de parcial",
+    curso: "Base de Datos",
+    tono: "bg-cyan-400",
+  },
+  {
+    hora: "16:30",
+    titulo: "Resolver entrega",
+    curso: "Algoritmos",
+    tono: "bg-violet-400",
+  },
+  {
+    hora: "20:00",
+    titulo: "Bloque con IA",
+    curso: "Resumen de lectura",
+    tono: "bg-emerald-400",
+  },
+];
+
+const metricasHero = [
+  {
+    icono: BookOpen,
+    titulo: "Cursos",
+    valor: "5",
+    detalle: "sincronizados",
+  },
+  {
+    icono: CheckCircle2,
+    titulo: "Tareas",
+    valor: "12",
+    detalle: "priorizadas",
+  },
+  {
+    icono: Clock3,
+    titulo: "Horas",
+    valor: "14h",
+    detalle: "esta semana",
+  },
+];
+
+const progresoHero = [
+  {
+    etiqueta: "Tareas completadas",
+    porcentaje: 82,
+    gradiente: "from-cyan-400 to-blue-500",
+  },
+  {
+    etiqueta: "Preparacion de examenes",
+    porcentaje: 68,
+    gradiente: "from-violet-400 to-fuchsia-500",
+  },
+  {
+    etiqueta: "Rutina semanal",
+    porcentaje: 74,
+    gradiente: "from-emerald-400 to-teal-500",
   },
 ];
 
@@ -85,12 +150,132 @@ export default function LandingPage() {
           </div>
 
           <div className="relative order-first lg:order-none">
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-200 to-purple-200 opacity-20 blur-3xl" />
-            <ImageWithFallback
-              src="https://images.unsplash.com/photo-1758411898021-ef0dadaaa295?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkaWdpdGFsJTIwZGFzaGJvYXJkJTIwaW50ZXJmYWNlJTIwbW9kZXJufGVufDF8fHx8MTc3NDQ0OTUzMXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
-              alt="Dashboard StudyFlow AI"
-              className="relative max-h-[420px] w-full rounded-2xl object-cover shadow-2xl sm:max-h-[520px]"
-            />
+            <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-blue-200 via-cyan-100 to-purple-200 opacity-50 blur-3xl" />
+            <div className="absolute -left-4 top-12 h-24 w-24 rounded-full bg-cyan-300/50 blur-3xl sm:-left-8 sm:h-32 sm:w-32" />
+            <div className="absolute -bottom-6 right-4 h-28 w-28 rounded-full bg-violet-300/50 blur-3xl sm:h-36 sm:w-36" />
+
+            <div className="relative overflow-hidden rounded-[2rem] border border-slate-200/80 bg-slate-950 p-4 shadow-[0_25px_80px_-35px_rgba(30,41,59,0.7)] sm:p-6">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.22),_transparent_32%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.24),_transparent_38%)]" />
+              <div className="relative">
+                <div className="mb-5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src="/branding/favicon.png"
+                      alt="StudyFlow AI"
+                      className="h-14 w-14 rounded-2xl ring-1 ring-white/10 shadow-lg"
+                    />
+                    <div>
+                      <p className="text-sm font-semibold text-white">StudyFlow AI</p>
+                      <p className="text-xs text-slate-300">Centro de control academico</p>
+                    </div>
+                  </div>
+                  <div className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-200">
+                    IA activa
+                  </div>
+                </div>
+
+                <div className="grid gap-4 xl:grid-cols-[1.2fr,0.9fr]">
+                  <div className="space-y-4">
+                    <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-4 backdrop-blur sm:p-5">
+                      <div className="mb-4 flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Plan del dia</p>
+                          <h3 className="mt-2 text-xl font-semibold text-white sm:text-2xl">
+                            Tu semana ya tiene foco
+                          </h3>
+                        </div>
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-violet-500 text-white">
+                          <BrainCircuit className="h-5 w-5" />
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        {agendaHero.map((item) => (
+                          <div
+                            key={item.titulo}
+                            className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/70 px-3 py-3"
+                          >
+                            <div className={`h-10 w-2 rounded-full ${item.tono}`} />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-white">{item.titulo}</p>
+                              <p className="text-xs text-slate-400">{item.curso}</p>
+                            </div>
+                            <span className="text-xs font-medium text-slate-300">{item.hora}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      {metricasHero.map((item) => (
+                        <div
+                          key={item.titulo}
+                          className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4 backdrop-blur"
+                        >
+                          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-white">
+                            <item.icono className="h-5 w-5" />
+                          </div>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{item.titulo}</p>
+                          <p className="mt-2 text-2xl font-semibold text-white">{item.valor}</p>
+                          <p className="text-xs text-slate-300">{item.detalle}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="rounded-[1.75rem] bg-white p-4 shadow-xl shadow-slate-950/20 sm:p-5">
+                      <div className="mb-3 flex items-center gap-2 text-slate-900">
+                        <Sparkles className="h-5 w-5 text-violet-500" />
+                        <h4 className="font-semibold">Asistente IA</h4>
+                      </div>
+                      <p className="text-sm leading-relaxed text-slate-600">
+                        Hoy te conviene cerrar la tarea de Algoritmos antes de las 6:00 pm y dejar un bloque corto para repasar tu parcial.
+                      </p>
+                      <div className="mt-4 rounded-2xl bg-slate-50 p-3">
+                        <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Recomendacion clave</p>
+                        <p className="mt-2 text-sm font-medium text-slate-900">
+                          Reprograma 1 bloque y recupera 2 horas libres el viernes.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-4 backdrop-blur sm:p-5">
+                      <div className="mb-4 flex items-center gap-2 text-white">
+                        <TrendingUp className="h-5 w-5 text-emerald-300" />
+                        <h4 className="font-semibold">Progreso semanal</h4>
+                      </div>
+                      <div className="space-y-4">
+                        {progresoHero.map((item) => (
+                          <div key={item.etiqueta}>
+                            <div className="mb-2 flex items-center justify-between text-sm">
+                              <span className="text-slate-200">{item.etiqueta}</span>
+                              <span className="font-medium text-white">{item.porcentaje}%</span>
+                            </div>
+                            <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
+                              <div
+                                className={`h-full rounded-full bg-gradient-to-r ${item.gradiente}`}
+                                style={{ width: `${item.porcentaje}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="absolute -bottom-4 left-4 hidden items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-lg sm:flex">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-violet-500 text-white">
+                <GraduationCap className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">5 cursos sincronizados</p>
+                <p className="text-xs text-slate-500">Agenda, tareas y examenes en un mismo lugar</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
