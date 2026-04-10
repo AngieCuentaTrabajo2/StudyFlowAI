@@ -50,8 +50,8 @@ export default function LandingPage() {
       <Navbar />
 
       <section id="inicio" className="overflow-hidden px-4 pb-14 pt-24 sm:px-6 sm:pb-20 sm:pt-32">
-        <div className="mx-auto grid max-w-7xl items-center gap-8 md:grid-cols-[1.05fr,0.95fr] md:gap-8 lg:grid-cols-[1.12fr,0.88fr] lg:gap-12">
-          <div className="max-w-2xl md:max-w-none">
+        <div className="mx-auto grid max-w-7xl items-center gap-8 md:grid-cols-[0.9fr,1.1fr] md:items-start md:gap-8 lg:grid-cols-[0.92fr,1.08fr] lg:gap-12">
+          <div className="max-w-2xl md:max-w-[30rem] lg:max-w-[32rem]">
             <div className="mb-5 inline-flex max-w-full items-center gap-2 rounded-full bg-blue-50 px-4 py-2">
               <Sparkles className="h-4 w-4 text-blue-600" />
               <span className="truncate text-sm font-medium text-blue-600">Asistente academico con IA</span>
@@ -62,7 +62,7 @@ export default function LandingPage() {
                 inteligencia artificial
               </span>
             </h1>
-            <p className="mb-8 max-w-2xl text-base leading-relaxed text-gray-600 sm:text-xl">
+            <p className="mb-8 max-w-xl text-base leading-relaxed text-gray-600 sm:text-xl">
               StudyFlow AI ayuda a estudiantes universitarios a gestionar cursos, tareas,
               examenes, horarios y habitos de estudio de manera inteligente y personalizada.
             </p>
@@ -84,7 +84,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="relative mx-auto w-full max-w-[400px] md:mx-0 md:max-w-[420px] md:-translate-y-8 md:justify-self-end lg:max-w-[500px] lg:-translate-y-10 xl:max-w-[540px]">
+          <div className="relative mx-auto w-full max-w-[400px] md:mx-0 md:max-w-[440px] md:-translate-y-16 md:justify-self-end lg:max-w-[520px] lg:-translate-y-20 xl:max-w-[560px] xl:-translate-y-24">
             <div className="absolute inset-4 rounded-[2rem] bg-gradient-to-br from-blue-200 via-cyan-100 to-purple-200 opacity-45 blur-3xl" />
             <div className="absolute -right-4 top-10 h-24 w-24 rounded-full bg-cyan-300/45 blur-3xl sm:h-28 sm:w-28" />
             <div className="absolute bottom-6 left-0 h-24 w-24 rounded-full bg-violet-300/45 blur-3xl sm:h-28 sm:w-28" />
