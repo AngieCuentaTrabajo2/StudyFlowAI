@@ -11,7 +11,6 @@ import {
   CheckCircle,
   CheckCircle2,
   Clock3,
-  GraduationCap,
   Sparkles,
   Star,
   TrendingUp,
@@ -47,27 +46,6 @@ const planes = [
     destino: "/register?plan=premium",
     cta: "Elegir premium",
     destacado: true,
-  },
-];
-
-const agendaHero = [
-  {
-    hora: "08:00",
-    titulo: "Repaso de parcial",
-    curso: "Base de Datos",
-    tono: "bg-cyan-400",
-  },
-  {
-    hora: "16:30",
-    titulo: "Resolver entrega",
-    curso: "Algoritmos",
-    tono: "bg-violet-400",
-  },
-  {
-    hora: "20:00",
-    titulo: "Bloque con IA",
-    curso: "Resumen de lectura",
-    tono: "bg-emerald-400",
   },
 ];
 
@@ -122,8 +100,8 @@ export default function LandingPage() {
       <Navbar />
 
       <section id="inicio" className="overflow-hidden px-4 pb-14 pt-24 sm:px-6 sm:pb-20 sm:pt-32">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2 lg:gap-12">
-          <div>
+        <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1.12fr,0.88fr] lg:gap-14">
+          <div className="max-w-2xl">
             <div className="mb-5 inline-flex max-w-full items-center gap-2 rounded-full bg-blue-50 px-4 py-2">
               <Sparkles className="h-4 w-4 text-blue-600" />
               <span className="truncate text-sm font-medium text-blue-600">Asistente academico con IA</span>
@@ -156,151 +134,125 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="relative order-first lg:order-none">
-            <div className="absolute inset-0 rounded-[2.25rem] bg-gradient-to-br from-blue-200 via-cyan-100 to-purple-200 opacity-50 blur-3xl" />
-            <div className="absolute -left-6 top-12 h-24 w-24 rounded-full bg-cyan-300/50 blur-3xl sm:h-32 sm:w-32" />
-            <div className="absolute -bottom-8 right-6 h-28 w-28 rounded-full bg-violet-300/50 blur-3xl sm:h-36 sm:w-36" />
+          <div className="relative order-first mx-auto w-full max-w-[430px] lg:order-none lg:mx-0 lg:max-w-[500px] lg:justify-self-end xl:max-w-[540px]">
+            <div className="absolute inset-4 rounded-[2rem] bg-gradient-to-br from-blue-200 via-cyan-100 to-purple-200 opacity-45 blur-3xl" />
+            <div className="absolute -right-4 top-10 h-24 w-24 rounded-full bg-cyan-300/45 blur-3xl sm:h-28 sm:w-28" />
+            <div className="absolute bottom-6 left-0 h-24 w-24 rounded-full bg-violet-300/45 blur-3xl sm:h-28 sm:w-28" />
 
-            <div className="relative mx-auto max-w-[760px] overflow-hidden rounded-[2rem] border border-slate-200/80 bg-slate-950 p-3 shadow-[0_25px_80px_-35px_rgba(30,41,59,0.7)] sm:p-4">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.2),_transparent_34%)]" />
+            <div className="relative overflow-hidden rounded-[1.75rem] border border-slate-200/80 bg-slate-950 p-3 shadow-[0_24px_70px_-38px_rgba(30,41,59,0.75)] sm:p-4">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(168,85,247,0.22),_transparent_34%)]" />
               <div className="relative">
-                <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur">
+                <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 backdrop-blur">
                   <div className="flex items-center gap-2">
                     <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
                     <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
                     <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
                   </div>
-                  <div className="hidden flex-1 items-center justify-center md:flex">
-                    <div className="max-w-xs truncate rounded-full border border-white/10 bg-slate-900/70 px-4 py-1 text-xs text-slate-300">
-                      studyflow.ai/dashboard
-                    </div>
+                  <div className="max-w-[170px] truncate rounded-full border border-white/10 bg-slate-900/70 px-3 py-1 text-[11px] text-slate-300 sm:max-w-[210px]">
+                    studyflow.ai/dashboard
                   </div>
-                  <div className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-200">
-                    IA activa
+                  <div className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[11px] font-medium text-emerald-200">
+                    IA
                   </div>
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-[180px,1fr]">
-                  <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-4 backdrop-blur">
-                    <div className="mb-6 flex items-center gap-3">
+                <div className="grid gap-3 sm:grid-cols-[120px,1fr]">
+                  <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-3 backdrop-blur">
+                    <div className="mb-5 flex items-center gap-2">
                       <img
                         src="/branding/favicon.png"
                         alt="StudyFlow AI"
-                        className="h-11 w-11 rounded-2xl ring-1 ring-white/10"
+                        className="h-9 w-9 rounded-2xl ring-1 ring-white/10"
                       />
                       <div>
-                        <p className="text-sm font-semibold text-white">StudyFlow AI</p>
-                        <p className="text-xs text-slate-400">Panel web academico</p>
+                        <p className="text-xs font-semibold text-white">StudyFlow</p>
+                        <p className="text-[11px] text-slate-400">Vista web</p>
                       </div>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       {accesosHero.map((item) => (
                         <div
                           key={item.etiqueta}
-                          className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm ${
+                          className={`flex items-center gap-2 rounded-xl px-2.5 py-2 text-xs ${
                             item.activo
                               ? "bg-gradient-to-r from-blue-500/20 to-violet-500/20 text-white"
                               : "text-slate-300"
                           }`}
                         >
-                          <item.icono className="h-4 w-4" />
+                          <item.icono className="h-3.5 w-3.5" />
                           <span>{item.etiqueta}</span>
                         </div>
                       ))}
                     </div>
-
-                    <div className="mt-6 rounded-2xl border border-white/10 bg-slate-900/70 p-3">
-                      <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Estado</p>
-                      <p className="mt-2 text-sm font-semibold text-white">Semana en control</p>
-                      <p className="mt-1 text-xs text-slate-400">5 cursos sincronizados y tareas priorizadas.</p>
-                    </div>
                   </div>
 
                   <div className="space-y-3">
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      {metricasHero.map((item) => (
-                        <div
-                          key={item.titulo}
-                          className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4 backdrop-blur"
-                        >
-                          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10 text-white">
-                            <item.icono className="h-5 w-5" />
-                          </div>
-                          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{item.titulo}</p>
-                          <p className="mt-2 text-2xl font-semibold text-white">{item.valor}</p>
-                          <p className="text-xs text-slate-300">{item.detalle}</p>
+                    <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-3.5 backdrop-blur">
+                      <div className="mb-3 flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Resumen</p>
+                          <h3 className="mt-1 text-lg font-semibold text-white">Panel en un vistazo</h3>
                         </div>
-                      ))}
-                    </div>
-
-                    <div className="grid gap-3 lg:grid-cols-[1.1fr,0.9fr]">
-                      <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-4 backdrop-blur sm:p-5">
-                        <div className="mb-4 flex items-start justify-between gap-4">
-                          <div>
-                            <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Plan del dia</p>
-                            <h3 className="mt-2 text-xl font-semibold text-white">Tu semana ya tiene foco</h3>
-                          </div>
-                          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-violet-500 text-white">
-                            <BrainCircuit className="h-5 w-5" />
-                          </div>
-                        </div>
-
-                        <div className="space-y-3">
-                          {agendaHero.map((item) => (
-                            <div
-                              key={item.titulo}
-                              className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/70 px-3 py-3"
-                            >
-                              <div className={`h-10 w-2 rounded-full ${item.tono}`} />
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-semibold text-white">{item.titulo}</p>
-                                <p className="text-xs text-slate-400">{item.curso}</p>
-                              </div>
-                              <span className="text-xs font-medium text-slate-300">{item.hora}</span>
-                            </div>
-                          ))}
+                        <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-violet-500 text-white">
+                          <BrainCircuit className="h-4.5 w-4.5" />
                         </div>
                       </div>
 
-                      <div className="space-y-3">
-                        <div className="rounded-[1.75rem] bg-white p-4 shadow-xl shadow-slate-950/20 sm:p-5">
-                          <div className="mb-3 flex items-center gap-2 text-slate-900">
-                            <Sparkles className="h-5 w-5 text-violet-500" />
-                            <h4 className="font-semibold">Asistente IA</h4>
+                      <div className="grid gap-2 sm:grid-cols-3">
+                        {metricasHero.map((item) => (
+                          <div
+                            key={item.titulo}
+                            className="rounded-[1.25rem] border border-white/10 bg-slate-900/65 p-3"
+                          >
+                            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 text-white">
+                              <item.icono className="h-4 w-4" />
+                            </div>
+                            <p className="text-[10px] uppercase tracking-[0.18em] text-slate-400">{item.titulo}</p>
+                            <p className="mt-1 text-xl font-semibold text-white">{item.valor}</p>
+                            <p className="text-[11px] text-slate-300">{item.detalle}</p>
                           </div>
-                          <p className="text-sm leading-relaxed text-slate-600">
-                            Cierra Algoritmos antes de las 6:00 pm y deja un bloque corto para repasar tu parcial.
-                          </p>
-                          <div className="mt-4 rounded-2xl bg-slate-50 p-3">
-                            <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Recomendacion clave</p>
-                            <p className="mt-2 text-sm font-medium text-slate-900">
-                              Reprograma 1 bloque y recupera 2 horas libres el viernes.
-                            </p>
-                          </div>
-                        </div>
+                        ))}
+                      </div>
+                    </div>
 
-                        <div className="rounded-[1.75rem] border border-white/10 bg-white/5 p-4 backdrop-blur sm:p-5">
-                          <div className="mb-4 flex items-center gap-2 text-white">
-                            <TrendingUp className="h-5 w-5 text-emerald-300" />
-                            <h4 className="font-semibold">Progreso semanal</h4>
-                          </div>
-                          <div className="space-y-4">
-                            {progresoHero.map((item) => (
-                              <div key={item.etiqueta}>
-                                <div className="mb-2 flex items-center justify-between text-sm">
-                                  <span className="text-slate-200">{item.etiqueta}</span>
-                                  <span className="font-medium text-white">{item.porcentaje}%</span>
-                                </div>
-                                <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
-                                  <div
-                                    className={`h-full rounded-full bg-gradient-to-r ${item.gradiente}`}
-                                    style={{ width: `${item.porcentaje}%` }}
-                                  />
-                                </div>
+                    <div className="grid gap-3 lg:grid-cols-[1fr,0.95fr]">
+                      <div className="rounded-[1.5rem] bg-white p-3.5 shadow-xl shadow-slate-950/20">
+                        <div className="mb-2.5 flex items-center gap-2 text-slate-900">
+                          <Sparkles className="h-4.5 w-4.5 text-violet-500" />
+                          <h4 className="text-sm font-semibold">Asistente IA</h4>
+                        </div>
+                        <p className="text-xs leading-relaxed text-slate-600">
+                          Prioriza Algoritmos hoy y deja un bloque corto para repasar tu parcial.
+                        </p>
+                        <div className="mt-3 rounded-xl bg-slate-50 p-3">
+                          <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Sugerencia</p>
+                          <p className="mt-1 text-xs font-medium text-slate-900">
+                            Reordena 1 bloque y recupera 2 horas libres el viernes.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-3.5 backdrop-blur">
+                        <div className="mb-3 flex items-center gap-2 text-white">
+                          <TrendingUp className="h-4.5 w-4.5 text-emerald-300" />
+                          <h4 className="text-sm font-semibold">Progreso</h4>
+                        </div>
+                        <div className="space-y-3">
+                          {progresoHero.slice(0, 2).map((item) => (
+                            <div key={item.etiqueta}>
+                              <div className="mb-1.5 flex items-center justify-between text-xs">
+                                <span className="text-slate-200">{item.etiqueta}</span>
+                                <span className="font-medium text-white">{item.porcentaje}%</span>
                               </div>
-                            ))}
-                          </div>
+                              <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                                <div
+                                  className={`h-full rounded-full bg-gradient-to-r ${item.gradiente}`}
+                                  style={{ width: `${item.porcentaje}%` }}
+                                />
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
@@ -309,14 +261,9 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="absolute -bottom-4 left-4 hidden items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-lg lg:flex">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-violet-500 text-white">
-                <GraduationCap className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-slate-900">Vista web pensada para escritorio</p>
-                <p className="text-xs text-slate-500">Cursos, agenda, IA y progreso en un mismo panel</p>
-              </div>
+            <div className="absolute -bottom-3 -left-3 hidden rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-lg lg:block">
+              <p className="text-[11px] font-semibold text-slate-900">Referencia visual</p>
+              <p className="text-[11px] text-slate-500">Asi se veria el panel web</p>
             </div>
           </div>
         </div>
