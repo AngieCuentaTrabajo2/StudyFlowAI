@@ -85,7 +85,7 @@ export default function LandingPage() {
             </div>
             </div>
 
-            <div className="relative mx-auto mt-10 w-full max-w-[400px] md:absolute md:right-0 md:top-[-4.5rem] md:mt-0 md:max-w-[470px] lg:top-[-6rem] lg:max-w-[560px] xl:top-[-6.5rem] xl:max-w-[600px]">
+            <div className="relative mx-auto mt-10 w-full max-w-[400px] md:absolute md:right-0 md:top-[-2.5rem] md:mt-0 md:max-w-[470px] lg:top-[-3.5rem] lg:max-w-[560px] xl:top-[-4rem] xl:max-w-[600px]">
               <div className="absolute inset-4 rounded-[2rem] bg-gradient-to-br from-blue-200 via-cyan-100 to-purple-200 opacity-45 blur-3xl" />
               <div className="absolute -right-4 top-10 h-24 w-24 rounded-full bg-cyan-300/45 blur-3xl sm:h-28 sm:w-28" />
               <div className="absolute bottom-6 left-0 h-24 w-24 rounded-full bg-violet-300/45 blur-3xl sm:h-28 sm:w-28" />
