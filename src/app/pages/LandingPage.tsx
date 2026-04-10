@@ -16,6 +16,7 @@ import {
   Star,
   TrendingUp,
 } from "lucide-react";
+import { ImageWithFallback } from "../components/shared/ImageWithFallback";
 
 const planes = [
   {
