@@ -1,0 +1,143 @@
+<svg width="1200" height="940" viewBox="0 0 1200 940" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="panelBg" x1="120" y1="90" x2="1080" y2="840" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1326"/>
+      <stop offset="1" stop-color="#17112F"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="264" y1="0" x2="936" y2="940" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#39C6F4" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#A855F7" stop-opacity="0.2"/>
+    </linearGradient>
+    <linearGradient id="button" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#3B82F6"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="progressA" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#22D3EE"/>
+      <stop offset="1" stop-color="#3B82F6"/>
+    </linearGradient>
+    <linearGradient id="progressB" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#C084FC"/>
+      <stop offset="1" stop-color="#D946EF"/>
+    </linearGradient>
+    <linearGradient id="progressC" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#34D399"/>
+      <stop offset="1" stop-color="#14B8A6"/>
+    </linearGradient>
+    <filter id="shadow" x="32" y="52" width="1136" height="836" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="24" stdDeviation="22" flood-color="#0F172A" flood-opacity="0.28"/>
+    </filter>
+    <filter id="soft" x="0" y="0" width="1200" height="940" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#soft)" opacity="0.7">
+    <circle cx="292" cy="248" r="110" fill="#93C5FD"/>
+    <circle cx="935" cy="232" r="126" fill="#A5F3FC"/>
+    <circle cx="910" cy="728" r="132" fill="#C084FC"/>
+  </g>
+
+  <g filter="url(#shadow)">
+    <rect x="72" y="92" width="1056" height="744" rx="42" fill="url(#panelBg)"/>
+    <rect x="72" y="92" width="1056" height="744" rx="42" fill="url(#accent)"/>
+    <rect x="72.75" y="92.75" width="1054.5" height="742.5" rx="41.25" stroke="#CBD5E1" stroke-opacity="0.12" stroke-width="1.5"/>
+  </g>
+
+  <rect x="102" y="122" width="996" height="74" rx="22" fill="#162338"/>
+  <rect x="102.75" y="122.75" width="994.5" height="72.5" rx="21.25" stroke="#E2E8F0" stroke-opacity="0.1" stroke-width="1.5"/>
+
+  <circle cx="142" cy="159" r="8" fill="#FB7185"/>
+  <circle cx="168" cy="159" r="8" fill="#FBBF24"/>
+  <circle cx="194" cy="159" r="8" fill="#34D399"/>
+
+  <rect x="473" y="142" width="254" height="34" rx="17" fill="#0E1729" stroke="#E2E8F0" stroke-opacity="0.08"/>
+  <text x="600" y="164" text-anchor="middle" fill="#CBD5E1" font-size="16" font-family="Segoe UI, Arial, sans-serif">studyflow.ai/dashboard</text>
+
+  <rect x="1016" y="137" width="52" height="44" rx="22" fill="#073B38" stroke="#5EEAD4" stroke-opacity="0.25"/>
+  <text x="1042" y="164" text-anchor="middle" fill="#A7F3D0" font-size="18" font-weight="700" font-family="Segoe UI, Arial, sans-serif">IA</text>
+
+  <rect x="102" y="218" width="996" height="104" rx="28" fill="#141E33"/>
+  <rect x="102.75" y="218.75" width="994.5" height="102.5" rx="27.25" stroke="#E2E8F0" stroke-opacity="0.09" stroke-width="1.5"/>
+
+  <circle cx="152" cy="270" r="24" fill="url(#button)"/>
+  <circle cx="152" cy="270" r="19" fill="#E2E8F0" fill-opacity="0.92"/>
+  <text x="152" y="276" text-anchor="middle" fill="#5B21B6" font-size="18" font-weight="700" font-family="Segoe UI, Arial, sans-serif">S</text>
+  <text x="190" y="264" fill="#FFFFFF" font-size="26" font-weight="700" font-family="Segoe UI, Arial, sans-serif">StudyFlow</text>
+  <text x="190" y="292" fill="#94A3B8" font-size="18" font-family="Segoe UI, Arial, sans-serif">Vista web de escritorio</text>
+
+  <rect x="900" y="248" width="170" height="42" rx="21" fill="#0D3B58" stroke="#67E8F9" stroke-opacity="0.25"/>
+  <text x="985" y="274" text-anchor="middle" fill="#BAE6FD" font-size="16" font-weight="600" font-family="Segoe UI, Arial, sans-serif">5 cursos sincronizados</text>
+
+  <rect x="102" y="342" width="312" height="42" rx="18" fill="#273A7A" stroke="#60A5FA" stroke-opacity="0.35"/>
+  <text x="162" y="368" fill="#FFFFFF" font-size="17" font-weight="600" font-family="Segoe UI, Arial, sans-serif">Cursos</text>
+  <circle cx="136" cy="363" r="9" fill="#60A5FA"/>
+
+  <rect x="432" y="342" width="286" height="42" rx="18" fill="#111A2A" stroke="#E2E8F0" stroke-opacity="0.12"/>
+  <text x="492" y="368" fill="#CBD5E1" font-size="17" font-weight="600" font-family="Segoe UI, Arial, sans-serif">Agenda</text>
+  <rect x="466" y="354" width="14" height="12" rx="2" stroke="#CBD5E1" stroke-width="2"/>
+  <path d="M470 348V356M476 348V356" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
+
+  <rect x="736" y="342" width="362" height="42" rx="18" fill="#111A2A" stroke="#E2E8F0" stroke-opacity="0.12"/>
+  <text x="796" y="368" fill="#CBD5E1" font-size="17" font-weight="600" font-family="Segoe UI, Arial, sans-serif">Alertas</text>
+  <path d="M770 367C770 360 774 355 780 353V350C780 347 782 345 785 345C788 345 790 347 790 350V353C796 355 800 360 800 367H770Z" stroke="#CBD5E1" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M781 371C782 374 784 376 785 376C786 376 788 374 789 371" stroke="#CBD5E1" stroke-width="2" stroke-linecap="round"/>
+
+  <rect x="102" y="408" width="996" height="182" rx="28" fill="#151F33"/>
+  <rect x="102.75" y="408.75" width="994.5" height="180.5" rx="27.25" stroke="#E2E8F0" stroke-opacity="0.1" stroke-width="1.5"/>
+  <text x="132" y="450" fill="#7C8AA8" font-size="14" letter-spacing="2.4" font-family="Segoe UI, Arial, sans-serif">RESUMEN</text>
+  <text x="132" y="488" fill="#FFFFFF" font-size="34" font-weight="700" font-family="Segoe UI, Arial, sans-serif">Panel en un vistazo</text>
+
+  <circle cx="1042" cy="462" r="22" fill="url(#button)"/>
+  <path d="M1034 462H1050M1042 454V470" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round"/>
+
+  <rect x="132" y="510" width="286" height="118" rx="22" fill="#101827" stroke="#E2E8F0" stroke-opacity="0.09"/>
+  <circle cx="172" cy="560" r="18" fill="#FFFFFF" fill-opacity="0.08"/>
+  <path d="M165 550H179V570H165V550ZM169 554V566M175 554V566" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"/>
+  <text x="152" y="604" fill="#94A3B8" font-size="14" letter-spacing="2.2" font-family="Segoe UI, Arial, sans-serif">CURSOS</text>
+  <text x="152" y="648" fill="#FFFFFF" font-size="42" font-weight="700" font-family="Segoe UI, Arial, sans-serif">5</text>
+  <text x="152" y="678" fill="#CBD5E1" font-size="18" font-family="Segoe UI, Arial, sans-serif">sincronizados</text>
+
+  <rect x="456" y="510" width="286" height="118" rx="22" fill="#101827" stroke="#E2E8F0" stroke-opacity="0.09"/>
+  <circle cx="496" cy="560" r="18" fill="#FFFFFF" fill-opacity="0.08"/>
+  <circle cx="496" cy="560" r="8" stroke="#FFFFFF" stroke-width="2.6"/>
+  <path d="M496 548V560L503 564" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="476" y="604" fill="#94A3B8" font-size="14" letter-spacing="2.2" font-family="Segoe UI, Arial, sans-serif">TAREAS</text>
+  <text x="476" y="648" fill="#FFFFFF" font-size="42" font-weight="700" font-family="Segoe UI, Arial, sans-serif">12</text>
+  <text x="476" y="678" fill="#CBD5E1" font-size="18" font-family="Segoe UI, Arial, sans-serif">priorizadas</text>
+
+  <rect x="780" y="510" width="286" height="118" rx="22" fill="#101827" stroke="#E2E8F0" stroke-opacity="0.09"/>
+  <circle cx="820" cy="560" r="18" fill="#FFFFFF" fill-opacity="0.08"/>
+  <circle cx="820" cy="560" r="8" stroke="#FFFFFF" stroke-width="2.6"/>
+  <path d="M820 560L820 552" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round"/>
+  <text x="800" y="604" fill="#94A3B8" font-size="14" letter-spacing="2.2" font-family="Segoe UI, Arial, sans-serif">HORAS</text>
+  <text x="800" y="648" fill="#FFFFFF" font-size="42" font-weight="700" font-family="Segoe UI, Arial, sans-serif">14h</text>
+  <text x="800" y="678" fill="#CBD5E1" font-size="18" font-family="Segoe UI, Arial, sans-serif">esta semana</text>
+
+  <rect x="102" y="614" width="600" height="148" rx="28" fill="#FFFFFF"/>
+  <text x="140" y="662" fill="#5B21B6" font-size="20" font-weight="700" font-family="Segoe UI, Arial, sans-serif">Asistente IA</text>
+  <path d="M114 654L122 646L130 654L122 662L114 654Z" fill="url(#button)"/>
+  <path d="M122 640V668M108 654H136" stroke="#8B5CF6" stroke-width="2.5" stroke-linecap="round" opacity="0.75"/>
+  <text x="140" y="698" fill="#64748B" font-size="18" font-family="Segoe UI, Arial, sans-serif">Prioriza Algoritmos hoy y deja un bloque corto para repasar tu parcial.</text>
+  <rect x="132" y="714" width="540" height="34" rx="12" fill="#F8FAFC"/>
+  <text x="152" y="736" fill="#64748B" font-size="14" letter-spacing="1.8" font-family="Segoe UI, Arial, sans-serif">SUGERENCIA</text>
+  <text x="152" y="760" fill="#0F172A" font-size="16" font-weight="600" font-family="Segoe UI, Arial, sans-serif">Reordena 1 bloque y recupera 2 horas libres el viernes.</text>
+
+  <rect x="728" y="614" width="370" height="222" rx="28" fill="#19152F"/>
+  <rect x="728.75" y="614.75" width="368.5" height="220.5" rx="27.25" stroke="#E2E8F0" stroke-opacity="0.1" stroke-width="1.5"/>
+  <path d="M770 668L780 658L790 668L804 646" stroke="#86EFAC" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="820" y="670" fill="#FFFFFF" font-size="24" font-weight="700" font-family="Segoe UI, Arial, sans-serif">Progreso</text>
+
+  <text x="770" y="716" fill="#CBD5E1" font-size="16" font-family="Segoe UI, Arial, sans-serif">Tareas completadas</text>
+  <text x="1058" y="716" text-anchor="end" fill="#FFFFFF" font-size="16" font-weight="700" font-family="Segoe UI, Arial, sans-serif">82%</text>
+  <rect x="770" y="732" width="288" height="12" rx="6" fill="#FFFFFF" fill-opacity="0.08"/>
+  <rect x="770" y="732" width="236" height="12" rx="6" fill="url(#progressA)"/>
+
+  <text x="770" y="778" fill="#CBD5E1" font-size="16" font-family="Segoe UI, Arial, sans-serif">Preparacion de examenes</text>
+  <text x="1058" y="778" text-anchor="end" fill="#FFFFFF" font-size="16" font-weight="700" font-family="Segoe UI, Arial, sans-serif">68%</text>
+  <rect x="770" y="794" width="288" height="12" rx="6" fill="#FFFFFF" fill-opacity="0.08"/>
+  <rect x="770" y="794" width="196" height="12" rx="6" fill="url(#progressB)"/>
+
+  <text x="132" y="828" fill="#0F172A" font-size="15" font-weight="700" font-family="Segoe UI, Arial, sans-serif">Referencia visual</text>
+  <text x="132" y="850" fill="#64748B" font-size="14" font-family="Segoe UI, Arial, sans-serif">Asi se veria el panel web de StudyFlow AI.</text>
+</svg>
