@@ -45,17 +45,17 @@ export default function Settings() {
     const contenido = {
       gratis: {
         etiqueta: "Plan Gratis",
-        descripcion: "Ideal para organizar cursos, tareas y recordatorios sin complicarte.",
+        descripcion: "Ideal para organizar cursos y tareas con uso limitado del agente.",
         estilo: "bg-slate-100 text-slate-700",
       },
       estudiante: {
         etiqueta: "Plan Premium",
-        descripcion: "Incluye planificador inteligente, asistente academico y automatizaciones clave.",
+        descripcion: "Incluye planificador inteligente y uso ilimitado del agente para estudiar.",
         estilo: "bg-blue-100 text-blue-700",
       },
       premium: {
         etiqueta: "Plan Premium",
-        descripcion: "Incluye planificador inteligente, asistente academico y automatizaciones clave.",
+        descripcion: "Incluye planificador inteligente y uso ilimitado del agente para estudiar.",
         estilo: "bg-purple-100 text-purple-700",
       },
     };

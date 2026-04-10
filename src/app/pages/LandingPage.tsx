@@ -17,7 +17,12 @@ const planes = [
     nombre: "Gratis",
     subtitulo: "Para empezar con orden y sin complicarte",
     precio: "S/ 0",
-    caracteristicas: ["Hasta 5 cursos", "Tareas y examenes en un solo lugar", "Recordatorios esenciales"],
+    caracteristicas: [
+      "Hasta 5 cursos",
+      "Tareas y examenes en un solo lugar",
+      "Tokens del agente limitados",
+      "Recordatorios esenciales",
+    ],
     destino: "/register?plan=gratis",
     cta: "Empezar gratis",
     destacado: false,
@@ -25,9 +30,10 @@ const planes = [
   {
     nombre: "Premium",
     subtitulo: "Para estudiantes que quieren apoyo real de IA",
-    precio: "S/ 19",
+    precio: "S/ 9.99",
     caracteristicas: [
       "Todo en Gratis",
+      "Tokens del agente ilimitados",
       "Planificador inteligente",
       "Asistente IA para organizar y resolver dudas",
       "Resumenes y prioridades automaticas",
