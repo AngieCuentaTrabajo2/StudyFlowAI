@@ -18,6 +18,9 @@ import {
   TrendingUp,
 } from "lucide-react";
 import {
+  esTareaActiva,
+  esTareaPendienteVigente,
+  esTareaAtrasada,
   formatearFechaCorta,
   obtenerDiasRestantes,
   obtenerEstadoVisualTarea,
@@ -36,11 +39,15 @@ export default function Dashboard() {
   const { usuarioActual, cursos, examenes, tareas, bloquesPlanificador, alternarTareaCompletada } =
     useStudyFlow();
 
-  const tareasPendientes = tareas.filter((tarea) => obtenerEstadoVisualTarea(tarea) !== "completed");
+  const tareasActivas = tareas.filter(esTareaActiva);
+  const tareasPendientesVigentes = tareas.filter(esTareaPendienteVigente);
+  const tareasAtrasadas = tareas.filter(esTareaAtrasada);
   const examenesProximos = [...examenes].sort((a, b) => a.fecha.localeCompare(b.fecha)).slice(0, 3);
-  const tareasPrioritarias = [...tareasPendientes]
+  const tareasPrioritarias = [...tareasActivas]
     .sort((a, b) => a.fechaEntrega.localeCompare(b.fechaEntrega))
     .slice(0, 4);
+  const tareaRecomendada = [...tareasPendientesVigentes, ...tareasAtrasadas]
+    .sort((a, b) => a.fechaEntrega.localeCompare(b.fechaEntrega))[0];
 
   const horasSemana = etiquetasDias.map((dia, indice) => {
     const horas = bloquesPlanificador
@@ -55,7 +62,7 @@ export default function Dashboard() {
   const horasSugeridas = Math.max(1, Number(Math.max(objetivoSemanal - totalHoras, 1).toFixed(1)));
   const avanceHorario = Math.min(100, Math.round((totalHoras / objetivoSemanal) * 100));
   const progresoSemanal = obtenerPorcentajeCumplimiento(tareas);
-  const tareasUrgentes = tareasPendientes.filter((tarea) => tarea.prioridad === "high").length;
+  const tareasUrgentes = tareasActivas.filter((tarea) => tarea.prioridad === "high").length;
   const examenesConBajaPreparacion = examenes.filter((examen) => examen.preparacion < 60).length;
   const cursoExamenPrincipal = cursos.find((curso) => curso.id === examenesProximos[0]?.cursoId);
   const siguienteBloque = bloquesPlanificador
@@ -76,7 +83,7 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={CheckSquare} value={`${tareasPendientes.length}`} label="Tareas pendientes" tone="blue" />
+        <StatCard icon={CheckSquare} value={`${tareasActivas.length}`} label="Tareas activas" tone="blue" />
         <StatCard icon={ClipboardList} value={`${examenesProximos.length}`} label="Examenes proximos" tone="orange" />
         <StatCard icon={Clock} value={`${horasSugeridas}h`} label="Horas de estudio sugeridas" tone="purple" />
         <StatCard icon={TrendingUp} value={`${progresoSemanal}%`} label="Avance semanal" tone="green" />
@@ -234,8 +241,10 @@ export default function Dashboard() {
             <RecommendationCard
               color={estiloCursoPrincipal}
               text={
-                tareasPendientes[0]
-                  ? `Te conviene avanzar "${tareasPendientes[0].titulo}" antes de ${formatearFechaCorta(tareasPendientes[0].fechaEntrega)}.`
+                tareaRecomendada
+                  ? obtenerEstadoVisualTarea(tareaRecomendada) === "overdue"
+                    ? `Tienes atrasada "${tareaRecomendada.titulo}". Conviene retomarla hoy mismo.`
+                    : `Te conviene avanzar "${tareaRecomendada.titulo}" antes de ${formatearFechaCorta(tareaRecomendada.fechaEntrega)}.`
                   : "Tu lista de pendientes esta controlada. Manten el ritmo."
               }
             />

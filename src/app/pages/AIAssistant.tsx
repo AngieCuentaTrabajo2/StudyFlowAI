@@ -10,7 +10,13 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import { formatearFechaCorta, useStudyFlow } from "../data/studyflow-store";
+import {
+  esTareaActiva,
+  esTareaAtrasada,
+  esTareaPendienteVigente,
+  formatearFechaCorta,
+  useStudyFlow,
+} from "../data/studyflow-store";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
@@ -38,7 +44,9 @@ export default function AIAssistant() {
   const [mensajesExpandidos, setMensajesExpandidos] = useState<Record<string, boolean>>({});
 
   const examenesProximos = [...examenes].sort((a, b) => a.fecha.localeCompare(b.fecha)).slice(0, 3);
-  const tareasPendientes = tareas.filter((tarea) => tarea.estado !== "completed");
+  const tareasActivas = tareas.filter(esTareaActiva);
+  const tareasPendientesVigentes = tareas.filter(esTareaPendienteVigente);
+  const tareasAtrasadas = tareas.filter(esTareaAtrasada);
   const bloquesEstudio = bloquesPlanificador.filter((bloque) => bloque.tipo === "study");
   const asistentePensando = mensajesChat.some(
     (item) => item.tipo === "ai" && item.mensaje === "Pensando tu respuesta con Groq...",
@@ -48,7 +56,7 @@ export default function AIAssistant() {
     () => [
       {
         titulo: "Semana academica",
-        descripcion: `${tareasPendientes.length} tareas activas y ${examenesProximos.length} examenes proximos.`,
+        descripcion: `${tareasActivas.length} tareas activas y ${examenesProximos.length} examenes proximos.`,
         icono: CalendarClock,
         accion: "Organiza mi semana",
       },
@@ -65,7 +73,7 @@ export default function AIAssistant() {
         accion: "Resume este tema",
       },
     ],
-    [examenesProximos.length, tareasPendientes.length],
+    [examenesProximos.length, tareasActivas.length],
   );
 
   const manejarEnvio = (event: React.FormEvent) => {
@@ -254,8 +262,12 @@ export default function AIAssistant() {
               <DatoLateral
                 icon={ClipboardList}
                 titulo="Tareas activas"
-                valor={`${tareasPendientes.length}`}
-                detalle="Pendientes o en progreso"
+                valor={`${tareasActivas.length}`}
+                detalle={
+                  tareasAtrasadas.length
+                    ? `${tareasPendientesVigentes.length} vigentes y ${tareasAtrasadas.length} atrasadas`
+                    : "Pendientes o en progreso"
+                }
               />
               <DatoLateral
                 icon={CalendarClock}

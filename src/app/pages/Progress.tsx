@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { Award, CheckCircle, Clock, Target, TrendingUp } from "lucide-react";
-import { obtenerPorcentajeCumplimiento, useStudyFlow } from "../data/studyflow-store";
+import { esTareaActiva, obtenerPorcentajeCumplimiento, useStudyFlow } from "../data/studyflow-store";
 import { Badge } from "../components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 
@@ -21,7 +21,7 @@ export default function ProgressPage() {
   const { tareas, cursos, examenes, usuarioActual, bloquesPlanificador } = useStudyFlow();
 
   const tareasCompletadas = tareas.filter((tarea) => tarea.estado === "completed").length;
-  const tareasPendientes = tareas.filter((tarea) => tarea.estado !== "completed").length;
+  const tareasActivas = tareas.filter(esTareaActiva).length;
   const porcentajeCumplimiento = obtenerPorcentajeCumplimiento(tareas);
   const totalHoras = bloquesPlanificador
     .filter((bloque) => bloque.tipo === "study")
@@ -58,7 +58,7 @@ export default function ProgressPage() {
     return {
       curso: curso.nombre,
       progreso: tareasCurso.length ? Math.round((completadasCurso / tareasCurso.length) * 100) : 0,
-      pendientes: tareasCurso.filter((tarea) => tarea.estado !== "completed").length,
+      activas: tareasCurso.filter(esTareaActiva).length,
       horas: Number(horasCurso.toFixed(1)),
       examenes: promedioExamenes,
       color: curso.color,
@@ -77,7 +77,7 @@ export default function ProgressPage() {
 
   const datosTareas = [
     { name: "Completadas", value: tareasCompletadas, color: "#16a34a" },
-    { name: "Pendientes", value: tareasPendientes, color: "#f59e0b" },
+    { name: "Activas", value: tareasActivas, color: "#f59e0b" },
   ];
 
   const cursoMasDificil = [...progresoCursos].sort((a, b) => a.progreso - b.progreso)[0];
@@ -164,7 +164,7 @@ export default function ProgressPage() {
                   >
                     {curso.progreso}%
                   </Badge>
-                  <span className="text-xs text-gray-500">{curso.pendientes} pendientes</span>
+                  <span className="text-xs text-gray-500">{curso.activas} activas</span>
                 </div>
               </div>
               <div className="h-3 overflow-hidden rounded-full bg-gray-100">

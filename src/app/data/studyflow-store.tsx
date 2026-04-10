@@ -1242,6 +1242,19 @@ export function obtenerEstadoVisualTarea(tarea: Tarea): EstadoTarea {
   return tarea.estado;
 }
 
+export function esTareaActiva(tarea: Tarea) {
+  return obtenerEstadoVisualTarea(tarea) !== "completed";
+}
+
+export function esTareaPendienteVigente(tarea: Tarea) {
+  const estadoVisual = obtenerEstadoVisualTarea(tarea);
+  return estadoVisual === "pending" || estadoVisual === "in-progress";
+}
+
+export function esTareaAtrasada(tarea: Tarea) {
+  return obtenerEstadoVisualTarea(tarea) === "overdue";
+}
+
 export function obtenerTiempoRelativoNotificacion(creadaEn: string) {
   const fecha = new Date(creadaEn);
   const diferenciaMs = Date.now() - fecha.getTime();

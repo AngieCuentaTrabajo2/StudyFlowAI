@@ -197,6 +197,81 @@ function normalizarTexto(valor) {
     .replace(/\p{Diacritic}/gu, "");
 }
 
+function obtenerInicioDelDiaActual() {
+  const fecha = new Date();
+  fecha.setHours(0, 0, 0, 0);
+  return fecha;
+}
+
+function obtenerEstadoVisualTarea(tarea) {
+  if (!tarea) return "pending";
+  if (tarea.estado === "completed") {
+    return "completed";
+  }
+
+  const fechaEntrega = tarea.fechaEntrega ? new Date(tarea.fechaEntrega) : null;
+  if (fechaEntrega && !Number.isNaN(fechaEntrega.getTime()) && fechaEntrega < obtenerInicioDelDiaActual()) {
+    return "overdue";
+  }
+
+  return tarea.estado ?? "pending";
+}
+
+function describirEstadoTarea(estado) {
+  const mapaEstados = {
+    pending: "pendiente",
+    "in-progress": "en progreso",
+    completed: "completada",
+    overdue: "atrasada (ya vencio)",
+  };
+
+  return mapaEstados[estado] ?? String(estado || "pendiente");
+}
+
+function ordenarTareasPorUrgencia(a, b) {
+  const prioridadEstado = {
+    overdue: 0,
+    "in-progress": 1,
+    pending: 2,
+    completed: 3,
+  };
+  const estadoA = a.estadoVisual ?? obtenerEstadoVisualTarea(a);
+  const estadoB = b.estadoVisual ?? obtenerEstadoVisualTarea(b);
+  const diferenciaEstado = (prioridadEstado[estadoA] ?? 9) - (prioridadEstado[estadoB] ?? 9);
+
+  if (diferenciaEstado !== 0) {
+    return diferenciaEstado;
+  }
+
+  return convertirFechaAOrdenable(a.fechaEntrega).localeCompare(convertirFechaAOrdenable(b.fechaEntrega));
+}
+
+function limpiarMarcadoresHerramientas(texto) {
+  return String(texto || "")
+    .replace(/<function(?:=|:)\s*[a-z_][a-z0-9_:-]*[^>]*>/gi, "")
+    .replace(/<\/function>/gi, "")
+    .replace(/<tool(?:=|:)\s*[a-z_][a-z0-9_:-]*[^>]*>/gi, "")
+    .replace(/<\/tool>/gi, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function extraerHerramientasSolicitadasEnTexto(texto, herramientasLocales) {
+  const herramientas = new Set();
+  const patronFuncion = /<function(?:=|:)\s*([a-z_][a-z0-9_]*)[^>]*>/gi;
+  let coincidencia = patronFuncion.exec(texto || "");
+
+  while (coincidencia) {
+    const nombre = coincidencia[1];
+    if (nombre && typeof herramientasLocales[nombre] === "function") {
+      herramientas.add(nombre);
+    }
+    coincidencia = patronFuncion.exec(texto || "");
+  }
+
+  return [...herramientas];
+}
+
 function detectarSolicitudPreguntasPracticaAmbigua(mensaje, cursos) {
   const texto = normalizarTexto(mensaje || "");
   const pidePractica =
@@ -257,17 +332,34 @@ function construirResumenContextualTexto(contextoCompacto) {
     );
   }
 
+  secciones.push(
+    `Resumen de tareas: ${contextoCompacto.resumenContextual.totalTareasActivas} activas en total; ${contextoCompacto.resumenContextual.totalTareasPendientes} pendientes vigentes y ${contextoCompacto.resumenContextual.totalTareasAtrasadas} atrasadas.`,
+  );
+
   if (contextoCompacto.resumenContextual.tareasPendientes.length) {
     secciones.push(
-      `Tareas pendientes reales: ${contextoCompacto.resumenContextual.tareasPendientes
+      `Tareas pendientes vigentes: ${contextoCompacto.resumenContextual.tareasPendientes
         .map(
           (tarea) =>
-            `${tarea.titulo} en ${tarea.curso}, vence ${convertirFechaAOrdenable(tarea.fechaEntrega)}, prioridad ${tarea.prioridad}, estado ${tarea.estado}, progreso ${tarea.progreso}%`,
+            `${tarea.titulo} en ${tarea.curso}, vence ${convertirFechaAOrdenable(tarea.fechaEntrega)}, prioridad ${tarea.prioridad}, estado ${tarea.estadoDescripcion}, progreso ${tarea.progreso}%`,
         )
         .join("; ")}.`,
     );
   } else {
-    secciones.push("No hay tareas pendientes registradas.");
+    secciones.push("No hay tareas pendientes vigentes registradas.");
+  }
+
+  if (contextoCompacto.resumenContextual.tareasAtrasadas.length) {
+    secciones.push(
+      `Tareas atrasadas o ya vencidas: ${contextoCompacto.resumenContextual.tareasAtrasadas
+        .map(
+          (tarea) =>
+            `${tarea.titulo} en ${tarea.curso}, vencio ${convertirFechaAOrdenable(tarea.fechaEntrega)}, prioridad ${tarea.prioridad}, estado ${tarea.estadoDescripcion}, progreso ${tarea.progreso}%`,
+        )
+        .join("; ")}.`,
+    );
+  } else {
+    secciones.push("No hay tareas atrasadas registradas.");
   }
 
   if (contextoCompacto.resumenContextual.examenesProximos.length) {
@@ -287,7 +379,7 @@ function construirResumenContextualTexto(contextoCompacto) {
 }
 
 function ajustarRespuestaAsistente(mensaje) {
-  const texto = String(mensaje || "").trim();
+  const texto = limpiarMarcadoresHerramientas(mensaje);
   if (!texto) {
     return "No pude darte una respuesta clara esta vez. Intenta preguntarme de nuevo con otras palabras o dime si quieres que te ayude con tareas, cursos, examenes o estudio.";
   }
@@ -311,12 +403,18 @@ function ajustarRespuestaAsistente(mensaje) {
 function construirDatosHerramientas(contexto) {
   const cursos = deduplicarPorClave(contexto.cursos, (curso) => `${curso.nombre}-${curso.docente}-${curso.horario}`);
   const cursosPorId = new Map(cursos.map((curso) => [curso.id, curso]));
-  const tareasPendientes = deduplicarPorClave(
-    contexto.tareas.filter((tarea) => tarea.estado !== "completed"),
+  const tareasActivas = deduplicarPorClave(
+    contexto.tareas
+      .map((tarea) => ({
+        ...tarea,
+        estadoVisual: obtenerEstadoVisualTarea(tarea),
+      }))
+      .filter((tarea) => tarea.estadoVisual !== "completed"),
     (tarea) => `${tarea.titulo}-${tarea.cursoId}-${convertirFechaAOrdenable(tarea.fechaEntrega)}`,
   )
-    .sort((a, b) => convertirFechaAOrdenable(a.fechaEntrega).localeCompare(convertirFechaAOrdenable(b.fechaEntrega)))
-    .slice(0, 4);
+    .sort(ordenarTareasPorUrgencia);
+  const tareasPendientes = tareasActivas.filter((tarea) => tarea.estadoVisual !== "overdue");
+  const tareasAtrasadas = tareasActivas.filter((tarea) => tarea.estadoVisual === "overdue");
   const examenesProximos = deduplicarPorClave(
     contexto.examenes,
     (examen) => `${examen.titulo}-${examen.cursoId}-${convertirFechaAOrdenable(examen.fecha)}-${examen.hora}`,
@@ -324,11 +422,22 @@ function construirDatosHerramientas(contexto) {
     .sort((a, b) => convertirFechaAOrdenable(a.fecha).localeCompare(convertirFechaAOrdenable(b.fecha)))
     .slice(0, 2);
 
-  return { cursos, cursosPorId, tareasPendientes, examenesProximos };
+  return { cursos, cursosPorId, tareasActivas, tareasPendientes, tareasAtrasadas, examenesProximos };
 }
 
 function construirHerramientasLocales(contexto) {
-  const { cursos, cursosPorId, tareasPendientes, examenesProximos } = construirDatosHerramientas(contexto);
+  const { cursos, cursosPorId, tareasActivas, tareasPendientes, tareasAtrasadas, examenesProximos } =
+    construirDatosHerramientas(contexto);
+  const mapearTareaHerramienta = (tarea) => ({
+    titulo: tarea.titulo,
+    curso: cursosPorId.get(tarea.cursoId)?.nombre ?? "Curso no identificado",
+    fechaEntrega: formatearFechaRespuesta(tarea.fechaEntrega),
+    prioridad: tarea.prioridad,
+    estado: tarea.estadoVisual,
+    estadoDescripcion: describirEstadoTarea(tarea.estadoVisual),
+    vencida: tarea.estadoVisual === "overdue",
+    progreso: tarea.progreso,
+  });
 
   return {
     obtener_cursos_actuales: () => ({
@@ -341,15 +450,17 @@ function construirHerramientasLocales(contexto) {
       })),
     }),
     listar_tareas_pendientes: () => ({
-      total: tareasPendientes.length,
-      tareas: tareasPendientes.map((tarea) => ({
-        titulo: tarea.titulo,
-        curso: cursosPorId.get(tarea.cursoId)?.nombre ?? "Curso no identificado",
-        fechaEntrega: formatearFechaRespuesta(tarea.fechaEntrega),
-        prioridad: tarea.prioridad,
-        estado: tarea.estado,
-        progreso: tarea.progreso,
-      })),
+      total: tareasActivas.length,
+      totalActivas: tareasActivas.length,
+      totalPendientes: tareasPendientes.length,
+      totalPendientesVigentes: tareasPendientes.length,
+      totalAtrasadas: tareasAtrasadas.length,
+      notaEstados:
+        "Si una tarea aparece con estado overdue, significa que esta atrasada y su fecha de entrega ya vencio.",
+      notaConteo:
+        "Las listas incluidas aqui son una muestra corta. Para responder cantidades usa totalActivas, totalPendientesVigentes y totalAtrasadas.",
+      tareasMuestra: tareasActivas.slice(0, 4).map(mapearTareaHerramienta),
+      tareasAtrasadasMuestra: tareasAtrasadas.slice(0, 3).map(mapearTareaHerramienta),
     }),
     listar_examenes_proximos: () => ({
       total: examenesProximos.length,
@@ -363,11 +474,22 @@ function construirHerramientasLocales(contexto) {
     }),
     obtener_prioridades_hoy: () => ({
       prioridades: [
+        ...tareasAtrasadas.slice(0, 2).map((tarea) => ({
+          tipo: "tarea_atrasada",
+          texto: `${tarea.titulo} en ${cursosPorId.get(tarea.cursoId)?.nombre ?? "Curso no identificado"}`,
+          fecha: formatearFechaRespuesta(tarea.fechaEntrega),
+          prioridad: tarea.prioridad,
+          estado: tarea.estadoVisual,
+          estadoDescripcion: describirEstadoTarea(tarea.estadoVisual),
+          progreso: tarea.progreso,
+        })),
         ...tareasPendientes.slice(0, 2).map((tarea) => ({
           tipo: "tarea",
           texto: `${tarea.titulo} en ${cursosPorId.get(tarea.cursoId)?.nombre ?? "Curso no identificado"}`,
           fecha: formatearFechaRespuesta(tarea.fechaEntrega),
           prioridad: tarea.prioridad,
+          estado: tarea.estadoVisual,
+          estadoDescripcion: describirEstadoTarea(tarea.estadoVisual),
           progreso: tarea.progreso,
         })),
         ...examenesProximos.slice(0, 2).map((examen) => ({
@@ -387,7 +509,10 @@ function construirHerramientasLocales(contexto) {
           }
         : null,
       cursos: cursos.length,
+      tareasActivas: tareasActivas.length,
       tareasPendientes: tareasPendientes.length,
+      tareasPendientesVigentes: tareasPendientes.length,
+      tareasAtrasadas: tareasAtrasadas.length,
       examenesProximos: examenesProximos.length,
       bloquesEstudio: contexto.bloquesPlanificador.filter((bloque) => bloque.tipo === "study").length,
     }),
@@ -450,11 +575,17 @@ function obtenerDefinicionesHerramientas() {
 }
 
 function construirContextoIA(contexto) {
-  const cursosPorId = new Map(contexto.cursos.map((curso) => [curso.id, curso]));
-  const tareasPendientes = contexto.tareas.filter((tarea) => tarea.estado !== "completed");
-  const examenesProximos = [...contexto.examenes]
-    .sort((a, b) => convertirFechaAOrdenable(a.fecha).localeCompare(convertirFechaAOrdenable(b.fecha)))
-    .slice(0, 2);
+  const { cursos, cursosPorId, tareasActivas, tareasPendientes, tareasAtrasadas, examenesProximos } =
+    construirDatosHerramientas(contexto);
+  const mapearTareaContexto = (tarea) => ({
+    titulo: tarea.titulo,
+    curso: cursosPorId.get(tarea.cursoId)?.nombre ?? "Curso no identificado",
+    fechaEntrega: tarea.fechaEntrega,
+    prioridad: tarea.prioridad,
+    estado: tarea.estadoVisual,
+    estadoDescripcion: describirEstadoTarea(tarea.estadoVisual),
+    progreso: tarea.progreso,
+  });
 
   return {
     usuario: contexto.usuario
@@ -470,21 +601,22 @@ function construirContextoIA(contexto) {
           plan: contexto.usuario.plan,
         }
       : null,
-    cursos: contexto.cursos.slice(0, 4).map((curso) => ({
+    cursos: cursos.slice(0, 4).map((curso) => ({
       id: curso.id,
       nombre: curso.nombre,
       docente: curso.docente,
       horario: curso.horario,
       color: curso.color,
     })),
-    tareas: contexto.tareas.slice(0, 4).map((tarea) => ({
+    tareasMuestra: tareasActivas.slice(0, 4).map((tarea) => ({
       id: tarea.id,
       cursoId: tarea.cursoId,
       cursoNombre: cursosPorId.get(tarea.cursoId)?.nombre ?? "Curso no identificado",
       titulo: tarea.titulo,
       fechaEntrega: tarea.fechaEntrega,
       prioridad: tarea.prioridad,
-      estado: tarea.estado,
+      estado: tarea.estadoVisual,
+      estadoDescripcion: describirEstadoTarea(tarea.estadoVisual),
       progreso: tarea.progreso,
       horasEstimadas: tarea.horasEstimadas,
     })),
@@ -508,17 +640,16 @@ function construirContextoIA(contexto) {
       tipo: bloque.tipo,
     })),
     resumenContextual: {
-      totalCursos: contexto.cursos.length,
+      totalCursos: cursos.length,
       totalTareas: contexto.tareas.length,
+      totalTareasActivas: tareasActivas.length,
       totalTareasPendientes: tareasPendientes.length,
-      tareasPendientes: tareasPendientes.slice(0, 3).map((tarea) => ({
-        titulo: tarea.titulo,
-        curso: cursosPorId.get(tarea.cursoId)?.nombre ?? "Curso no identificado",
-        fechaEntrega: tarea.fechaEntrega,
-        prioridad: tarea.prioridad,
-        estado: tarea.estado,
-        progreso: tarea.progreso,
-      })),
+      totalTareasPendientesVigentes: tareasPendientes.length,
+      totalTareasAtrasadas: tareasAtrasadas.length,
+      notaConteo:
+        "Para responder cantidades usa estos totales. Las listas de tareas del contexto son solo una muestra corta.",
+      tareasPendientes: tareasPendientes.slice(0, 3).map(mapearTareaContexto),
+      tareasAtrasadas: tareasAtrasadas.slice(0, 3).map(mapearTareaContexto),
       examenesProximos: examenesProximos.slice(0, 2).map((examen) => ({
         titulo: examen.titulo,
         curso: cursosPorId.get(examen.cursoId)?.nombre ?? "Curso no identificado",
@@ -545,7 +676,7 @@ async function generarRespuestaConIA({ mensaje, contexto }) {
     {
       role: "system",
       content:
-        `Eres StudyFlow AI, un asistente academico universitario en espanol. Responde con tono claro, util, conversacional, humano y profesional. ${instruccionTono} Debes basarte en los datos reales del sistema y en las herramientas disponibles. No inventes datos del estudiante. Si el usuario pregunta por tareas, cursos, examenes, prioridades, seguimiento de lo hablado o referencias como 'eso', 'esas tareas', 'lo anterior', debes apoyarte en el historial reciente y en los resultados reales de herramientas antes de responder. Nunca digas que falta informacion si ya existe en el contexto o en las herramientas base cargadas. Evita sonar como bot automatico o menu fijo; responde como un asesor academico que recuerda la conversacion.`,
+        `Eres StudyFlow AI, un asistente academico universitario en espanol. Responde con tono claro, util, conversacional, humano y profesional. ${instruccionTono} Debes basarte en los datos reales del sistema y en las herramientas disponibles. No inventes datos del estudiante. Si el usuario pregunta por tareas, cursos, examenes, prioridades, seguimiento de lo hablado o referencias como 'eso', 'esas tareas', 'lo anterior', debes apoyarte en el historial reciente y en los resultados reales de herramientas antes de responder. Cuando hables de cantidades, usa siempre los totales explicitos del contexto y de las herramientas; no infieras cantidades por el largo de listas de muestra o preview porque pueden venir truncadas. Si aplica, distingue entre tareas activas, pendientes vigentes y atrasadas. Nunca digas que falta informacion si ya existe en el contexto o en las herramientas base cargadas. Evita sonar como bot automatico o menu fijo; responde como un asesor academico que recuerda la conversacion.`,
     },
     {
       role: "system",
