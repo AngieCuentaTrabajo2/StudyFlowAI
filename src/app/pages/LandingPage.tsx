@@ -134,7 +134,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="relative order-first mx-auto w-full max-w-[430px] lg:order-none lg:mx-0 lg:max-w-[500px] lg:justify-self-end xl:max-w-[540px]">
+          <div className="relative order-first mx-auto w-full max-w-[440px] lg:order-none lg:mx-0 lg:max-w-[520px] lg:-translate-y-8 lg:justify-self-start xl:max-w-[560px]">
             <div className="absolute inset-4 rounded-[2rem] bg-gradient-to-br from-blue-200 via-cyan-100 to-purple-200 opacity-45 blur-3xl" />
             <div className="absolute -right-4 top-10 h-24 w-24 rounded-full bg-cyan-300/45 blur-3xl sm:h-28 sm:w-28" />
             <div className="absolute bottom-6 left-0 h-24 w-24 rounded-full bg-violet-300/45 blur-3xl sm:h-28 sm:w-28" />
@@ -156,9 +156,9 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-[120px,1fr]">
-                  <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-3 backdrop-blur">
-                    <div className="mb-5 flex items-center gap-2">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-3 rounded-[1.5rem] border border-white/10 bg-white/5 px-3 py-3 backdrop-blur">
+                    <div className="flex items-center gap-2">
                       <img
                         src="/branding/favicon.png"
                         alt="StudyFlow AI"
@@ -166,94 +166,95 @@ export default function LandingPage() {
                       />
                       <div>
                         <p className="text-xs font-semibold text-white">StudyFlow</p>
-                        <p className="text-[11px] text-slate-400">Vista web</p>
+                        <p className="text-[11px] text-slate-400">Vista web de escritorio</p>
+                      </div>
+                    </div>
+                    <div className="hidden rounded-full border border-cyan-400/20 bg-cyan-400/10 px-2.5 py-1 text-[11px] text-cyan-200 sm:block">
+                      5 cursos sincronizados
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    {accesosHero.map((item) => (
+                      <div
+                        key={item.etiqueta}
+                        className={`flex items-center gap-2 rounded-[1.15rem] px-3 py-2.5 text-xs ${
+                          item.activo
+                            ? "border border-blue-400/20 bg-gradient-to-r from-blue-500/20 to-violet-500/20 text-white"
+                            : "border border-white/10 bg-white/5 text-slate-300"
+                        }`}
+                      >
+                        <item.icono className="h-3.5 w-3.5" />
+                        <span>{item.etiqueta}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-3.5 backdrop-blur">
+                    <div className="mb-3 flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Resumen</p>
+                        <h3 className="mt-1 text-lg font-semibold text-white">Panel en un vistazo</h3>
+                      </div>
+                      <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-violet-500 text-white">
+                        <BrainCircuit className="h-4.5 w-4.5" />
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      {accesosHero.map((item) => (
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      {metricasHero.map((item) => (
                         <div
-                          key={item.etiqueta}
-                          className={`flex items-center gap-2 rounded-xl px-2.5 py-2 text-xs ${
-                            item.activo
-                              ? "bg-gradient-to-r from-blue-500/20 to-violet-500/20 text-white"
-                              : "text-slate-300"
-                          }`}
+                          key={item.titulo}
+                          className="rounded-[1.25rem] border border-white/10 bg-slate-900/65 p-3"
                         >
-                          <item.icono className="h-3.5 w-3.5" />
-                          <span>{item.etiqueta}</span>
+                          <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 text-white">
+                            <item.icono className="h-4 w-4" />
+                          </div>
+                          <p className="text-[10px] uppercase tracking-[0.18em] text-slate-400">{item.titulo}</p>
+                          <p className="mt-1 text-xl font-semibold text-white">{item.valor}</p>
+                          <p className="text-[11px] text-slate-300">{item.detalle}</p>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-3.5 backdrop-blur">
-                      <div className="mb-3 flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Resumen</p>
-                          <h3 className="mt-1 text-lg font-semibold text-white">Panel en un vistazo</h3>
-                        </div>
-                        <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-violet-500 text-white">
-                          <BrainCircuit className="h-4.5 w-4.5" />
-                        </div>
+                  <div className="grid gap-3 md:grid-cols-[1.08fr,0.92fr]">
+                    <div className="rounded-[1.5rem] bg-white p-3.5 shadow-xl shadow-slate-950/20">
+                      <div className="mb-2.5 flex items-center gap-2 text-slate-900">
+                        <Sparkles className="h-4.5 w-4.5 text-violet-500" />
+                        <h4 className="text-sm font-semibold">Asistente IA</h4>
                       </div>
-
-                      <div className="grid gap-2 sm:grid-cols-3">
-                        {metricasHero.map((item) => (
-                          <div
-                            key={item.titulo}
-                            className="rounded-[1.25rem] border border-white/10 bg-slate-900/65 p-3"
-                          >
-                            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 text-white">
-                              <item.icono className="h-4 w-4" />
-                            </div>
-                            <p className="text-[10px] uppercase tracking-[0.18em] text-slate-400">{item.titulo}</p>
-                            <p className="mt-1 text-xl font-semibold text-white">{item.valor}</p>
-                            <p className="text-[11px] text-slate-300">{item.detalle}</p>
-                          </div>
-                        ))}
+                      <p className="text-xs leading-relaxed text-slate-600">
+                        Prioriza Algoritmos hoy y deja un bloque corto para repasar tu parcial.
+                      </p>
+                      <div className="mt-3 rounded-xl bg-slate-50 p-3">
+                        <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Sugerencia</p>
+                        <p className="mt-1 text-xs font-medium text-slate-900">
+                          Reordena 1 bloque y recupera 2 horas libres el viernes.
+                        </p>
                       </div>
                     </div>
 
-                    <div className="grid gap-3 lg:grid-cols-[1fr,0.95fr]">
-                      <div className="rounded-[1.5rem] bg-white p-3.5 shadow-xl shadow-slate-950/20">
-                        <div className="mb-2.5 flex items-center gap-2 text-slate-900">
-                          <Sparkles className="h-4.5 w-4.5 text-violet-500" />
-                          <h4 className="text-sm font-semibold">Asistente IA</h4>
-                        </div>
-                        <p className="text-xs leading-relaxed text-slate-600">
-                          Prioriza Algoritmos hoy y deja un bloque corto para repasar tu parcial.
-                        </p>
-                        <div className="mt-3 rounded-xl bg-slate-50 p-3">
-                          <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Sugerencia</p>
-                          <p className="mt-1 text-xs font-medium text-slate-900">
-                            Reordena 1 bloque y recupera 2 horas libres el viernes.
-                          </p>
-                        </div>
+                    <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-3.5 backdrop-blur">
+                      <div className="mb-3 flex items-center gap-2 text-white">
+                        <TrendingUp className="h-4.5 w-4.5 text-emerald-300" />
+                        <h4 className="text-sm font-semibold">Progreso</h4>
                       </div>
-
-                      <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-3.5 backdrop-blur">
-                        <div className="mb-3 flex items-center gap-2 text-white">
-                          <TrendingUp className="h-4.5 w-4.5 text-emerald-300" />
-                          <h4 className="text-sm font-semibold">Progreso</h4>
-                        </div>
-                        <div className="space-y-3">
-                          {progresoHero.slice(0, 2).map((item) => (
-                            <div key={item.etiqueta}>
-                              <div className="mb-1.5 flex items-center justify-between text-xs">
-                                <span className="text-slate-200">{item.etiqueta}</span>
-                                <span className="font-medium text-white">{item.porcentaje}%</span>
-                              </div>
-                              <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                                <div
-                                  className={`h-full rounded-full bg-gradient-to-r ${item.gradiente}`}
-                                  style={{ width: `${item.porcentaje}%` }}
-                                />
-                              </div>
+                      <div className="space-y-3">
+                        {progresoHero.slice(0, 2).map((item) => (
+                          <div key={item.etiqueta}>
+                            <div className="mb-1.5 flex items-center justify-between text-xs">
+                              <span className="text-slate-200">{item.etiqueta}</span>
+                              <span className="font-medium text-white">{item.porcentaje}%</span>
                             </div>
-                          ))}
-                        </div>
+                            <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                              <div
+                                className={`h-full rounded-full bg-gradient-to-r ${item.gradiente}`}
+                                style={{ width: `${item.porcentaje}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
@@ -261,7 +262,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="absolute -bottom-3 -left-3 hidden rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-lg lg:block">
+            <div className="absolute -bottom-3 -left-3 hidden rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-lg xl:block">
               <p className="text-[11px] font-semibold text-slate-900">Referencia visual</p>
               <p className="text-[11px] text-slate-500">Asi se veria el panel web</p>
             </div>
