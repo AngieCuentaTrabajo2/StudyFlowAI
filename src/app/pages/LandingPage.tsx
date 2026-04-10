@@ -51,7 +51,7 @@ export default function LandingPage() {
 
       <section id="inicio" className="overflow-hidden px-4 pb-14 pt-24 sm:px-6 sm:pb-20 sm:pt-32">
         <div className="mx-auto max-w-7xl">
-          <div className="relative md:min-h-[34rem] lg:min-h-[38rem] xl:min-h-[40rem]">
+          <div className="relative md:min-h-[30rem] lg:min-h-[33rem] xl:min-h-[35rem]">
             <div className="max-w-2xl md:max-w-[28rem] lg:max-w-[30rem]">
             <div className="mb-5 inline-flex max-w-full items-center gap-2 rounded-full bg-blue-50 px-4 py-2">
               <Sparkles className="h-4 w-4 text-blue-600" />
@@ -85,7 +85,7 @@ export default function LandingPage() {
             </div>
             </div>
 
-            <div className="relative mx-auto mt-10 w-full max-w-[400px] md:absolute md:right-0 md:top-[-2.5rem] md:mt-0 md:max-w-[470px] lg:top-[-3.5rem] lg:max-w-[560px] xl:top-[-4rem] xl:max-w-[600px]">
+            <div className="relative mx-auto mt-10 w-full max-w-[400px] md:absolute md:right-0 md:top-6 md:mt-0 md:max-w-[470px] lg:top-4 lg:max-w-[560px] xl:top-3 xl:max-w-[600px]">
               <div className="absolute inset-4 rounded-[2rem] bg-gradient-to-br from-blue-200 via-cyan-100 to-purple-200 opacity-45 blur-3xl" />
               <div className="absolute -right-4 top-10 h-24 w-24 rounded-full bg-cyan-300/45 blur-3xl sm:h-28 sm:w-28" />
               <div className="absolute bottom-6 left-0 h-24 w-24 rounded-full bg-violet-300/45 blur-3xl sm:h-28 sm:w-28" />
@@ -100,7 +100,6 @@ export default function LandingPage() {
 
               <div className="absolute -bottom-3 -left-3 hidden rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-lg xl:block">
                 <p className="text-[11px] font-semibold text-slate-900">Referencia visual</p>
-                <p className="text-[11px] text-slate-500">Asi se veria el panel web</p>
               </div>
             </div>
           </div>
