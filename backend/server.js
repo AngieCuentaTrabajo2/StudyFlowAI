@@ -311,6 +311,43 @@ function textoIncluyeAlguno(texto, terminos) {
   return terminos.some((termino) => texto.includes(termino));
 }
 
+function detectarConsultaDirectaCursos(mensaje) {
+  const texto = normalizarTexto(mensaje || "");
+  return textoIncluyeAlguno(texto, [
+    "cuantos cursos",
+    "cuantos curso",
+    "que cursos tengo",
+    "cuales son mis cursos",
+    "que materias tengo",
+    "cuales son mis materias",
+  ]);
+}
+
+function detectarConsultaDirectaTareas(mensaje) {
+  const texto = normalizarTexto(mensaje || "");
+  return textoIncluyeAlguno(texto, [
+    "cuantas tareas",
+    "cuantas tarea",
+    "cuantos pendientes tengo",
+    "que tareas tengo",
+    "cuales son mis tareas",
+    "que pendientes tengo",
+    "cuantas tareas tengo",
+    "cuantos pendientes",
+  ]);
+}
+
+function detectarConsultaDirectaExamenes(mensaje) {
+  const texto = normalizarTexto(mensaje || "");
+  return textoIncluyeAlguno(texto, [
+    "cuantos examenes",
+    "cuantos examenes tengo",
+    "que examenes tengo",
+    "cuales son mis examenes",
+    "que evaluaciones tengo",
+  ]);
+}
+
 function unirListaNatural(elementos) {
   const lista = elementos.filter(Boolean);
   if (!lista.length) return "";
@@ -445,6 +482,53 @@ function construirRespuestaGeneralSistema({ contexto, detalleError }) {
     `${cursos.length ? `Tambien puedo ayudarte con ${unirListaNatural(cursos)}. ` : ""}` +
     "Si quieres, te organizo la semana, te resumo un tema, te doy prioridades o te hago preguntas de practica."
   );
+}
+
+function construirRespuestaDirectaPanel({ mensaje, contexto }) {
+  const cursos = obtenerCursosUnicos(contexto);
+  const { cursosPorId, tareasActivas, tareasPendientes, tareasAtrasadas, examenesProximos } =
+    construirDatosHerramientas(contexto);
+
+  if (detectarConsultaDirectaCursos(mensaje)) {
+    if (!cursos.length) {
+      return "Ahora mismo no veo cursos registrados en tu panel.";
+    }
+
+    return `Ahora mismo tienes ${cursos.length} curso${cursos.length === 1 ? "" : "s"}: ${unirListaNatural(
+      cursos.slice(0, 6).map((curso) => curso.nombre),
+    )}.`;
+  }
+
+  if (detectarConsultaDirectaTareas(mensaje)) {
+    if (!tareasActivas.length) {
+      return "Ahora mismo no tienes tareas activas registradas.";
+    }
+
+    const muestra = tareasActivas
+      .slice(0, 3)
+      .map(
+        (tarea) =>
+          `${tarea.titulo} en ${cursosPorId.get(tarea.cursoId)?.nombre ?? "Curso no identificado"}, para ${formatearFechaRespuesta(tarea.fechaEntrega)}`,
+      )
+      .join("; ");
+
+    return `Ahora mismo tienes ${tareasActivas.length} tareas activas: ${tareasPendientes.length} pendientes vigentes y ${tareasAtrasadas.length} atrasadas. Las mas cercanas son: ${muestra}.`;
+  }
+
+  if (detectarConsultaDirectaExamenes(mensaje)) {
+    if (!examenesProximos.length) {
+      return "Ahora mismo no veo examenes proximos registrados.";
+    }
+
+    return `Tienes ${examenesProximos.length} examen${examenesProximos.length === 1 ? "" : "es"} proximo${examenesProximos.length === 1 ? "" : "s"}: ${unirListaNatural(
+      examenesProximos.map(
+        (examen) =>
+          `${examen.titulo} de ${cursosPorId.get(examen.cursoId)?.nombre ?? "Curso no identificado"} el ${formatearFechaRespuesta(examen.fecha)}`,
+      ),
+    )}.`;
+  }
+
+  return null;
 }
 
 function construirRespuestaSistemaRapida({ mensaje, contexto, detalleError }) {
@@ -586,6 +670,53 @@ function crearPromesaTimeout(ms) {
   return new Promise((_, reject) => {
     setTimeout(() => reject(new Error("Groq tardo demasiado en responder.")), ms);
   });
+}
+
+async function registrarIntercambioChat(estudianteId, mensajeUsuarioTexto, respuestaAsistenteTexto) {
+  const cliente = await pool.connect();
+  try {
+    await cliente.query("begin");
+
+    const mensajeUsuario = await cliente.query(
+      `
+      insert into mensajes_chat (estudiante_id, rol, mensaje)
+      values ($1, 'user', $2)
+      returning
+        id,
+        rol as tipo,
+        mensaje,
+        to_char(creado_en, 'HH24:MI') as hora,
+        creado_en as "creadaEn"
+      `,
+      [estudianteId, mensajeUsuarioTexto],
+    );
+
+    const mensajeAsistente = await cliente.query(
+      `
+      insert into mensajes_chat (estudiante_id, rol, mensaje)
+      values ($1, 'ai', $2)
+      returning
+        id,
+        rol as tipo,
+        mensaje,
+        to_char(creado_en, 'HH24:MI') as hora,
+        creado_en as "creadaEn"
+      `,
+      [estudianteId, respuestaAsistenteTexto],
+    );
+
+    await cliente.query("commit");
+
+    return [
+      mapearMensajeChat(mensajeUsuario.rows[0]),
+      mapearMensajeChat(mensajeAsistente.rows[0]),
+    ];
+  } catch (error) {
+    await cliente.query("rollback");
+    throw error;
+  } finally {
+    cliente.release();
+  }
 }
 
 async function generarRespuestaAsistente({ mensaje, contexto, timeoutMs = 18000 }) {
@@ -889,7 +1020,7 @@ function construirContextoIA(contexto) {
   const mapearTareaContexto = (tarea) => ({
     titulo: tarea.titulo,
     curso: cursosPorId.get(tarea.cursoId)?.nombre ?? "Curso no identificado",
-    fechaEntrega: tarea.fechaEntrega,
+    fechaEntrega: formatearFechaRespuesta(tarea.fechaEntrega),
     prioridad: tarea.prioridad,
     estado: tarea.estadoVisual,
     estadoDescripcion: describirEstadoTarea(tarea.estadoVisual),
@@ -922,7 +1053,7 @@ function construirContextoIA(contexto) {
       cursoId: tarea.cursoId,
       cursoNombre: cursosPorId.get(tarea.cursoId)?.nombre ?? "Curso no identificado",
       titulo: tarea.titulo,
-      fechaEntrega: tarea.fechaEntrega,
+      fechaEntrega: formatearFechaRespuesta(tarea.fechaEntrega),
       prioridad: tarea.prioridad,
       estado: tarea.estadoVisual,
       estadoDescripcion: describirEstadoTarea(tarea.estadoVisual),
@@ -934,7 +1065,7 @@ function construirContextoIA(contexto) {
       cursoId: examen.cursoId,
       cursoNombre: cursosPorId.get(examen.cursoId)?.nombre ?? "Curso no identificado",
       titulo: examen.titulo,
-      fecha: examen.fecha,
+      fecha: formatearFechaRespuesta(examen.fecha),
       hora: examen.hora,
       temas: examen.temas,
       preparacion: examen.preparacion,
@@ -962,7 +1093,7 @@ function construirContextoIA(contexto) {
       examenesProximos: examenesProximos.slice(0, 2).map((examen) => ({
         titulo: examen.titulo,
         curso: cursosPorId.get(examen.cursoId)?.nombre ?? "Curso no identificado",
-        fecha: examen.fecha,
+        fecha: formatearFechaRespuesta(examen.fecha),
         hora: examen.hora,
         preparacion: examen.preparacion,
       })),
@@ -2030,108 +2161,35 @@ app.post("/api/chat/:estudianteId", async (request, response) => {
 
   try {
     const contexto = await obtenerContextoEstudiante(estudianteId);
+    const respuestaDirecta = construirRespuestaDirectaPanel({ mensaje, contexto });
+
+    if (respuestaDirecta) {
+      const mensajes = await registrarIntercambioChat(estudianteId, mensaje, respuestaDirecta);
+      response.status(201).json({
+        mensajes,
+        fuente: "sistema",
+      });
+      return;
+    }
+
     if (detectarSolicitudPreguntasPracticaAmbigua(mensaje, contexto.cursos)) {
       const respuestaSistema = construirRespuestaAclaratoriaPractica(contexto);
-      const cliente = await pool.connect();
-      try {
-        await cliente.query("begin");
-
-        const mensajeUsuario = await cliente.query(
-          `
-          insert into mensajes_chat (estudiante_id, rol, mensaje)
-          values ($1, 'user', $2)
-          returning
-            id,
-            rol as tipo,
-            mensaje,
-            to_char(creado_en, 'HH24:MI') as hora,
-            creado_en as "creadaEn"
-          `,
-          [estudianteId, mensaje],
-        );
-
-        const mensajeAsistente = await cliente.query(
-          `
-          insert into mensajes_chat (estudiante_id, rol, mensaje)
-          values ($1, 'ai', $2)
-          returning
-            id,
-            rol as tipo,
-            mensaje,
-            to_char(creado_en, 'HH24:MI') as hora,
-            creado_en as "creadaEn"
-          `,
-          [estudianteId, respuestaSistema],
-        );
-
-        await cliente.query("commit");
-
-        response.status(201).json({
-          mensajes: [
-            mapearMensajeChat(mensajeUsuario.rows[0]),
-            mapearMensajeChat(mensajeAsistente.rows[0]),
-          ],
-          fuente: "sistema",
-        });
-        return;
-      } catch (error) {
-        await cliente.query("rollback");
-        throw error;
-      } finally {
-        cliente.release();
-      }
+      const mensajes = await registrarIntercambioChat(estudianteId, mensaje, respuestaSistema);
+      response.status(201).json({
+        mensajes,
+        fuente: "sistema",
+      });
+      return;
     }
 
     try {
       const respuestaIa = await generarRespuestaAsistente({ mensaje, contexto });
-      const cliente = await pool.connect();
-      try {
-        await cliente.query("begin");
-
-        const mensajeUsuario = await cliente.query(
-          `
-          insert into mensajes_chat (estudiante_id, rol, mensaje)
-          values ($1, 'user', $2)
-          returning
-            id,
-            rol as tipo,
-            mensaje,
-            to_char(creado_en, 'HH24:MI') as hora,
-            creado_en as "creadaEn"
-          `,
-          [estudianteId, mensaje],
-        );
-
-        const mensajeAsistente = await cliente.query(
-          `
-          insert into mensajes_chat (estudiante_id, rol, mensaje)
-          values ($1, 'ai', $2)
-          returning
-            id,
-            rol as tipo,
-            mensaje,
-            to_char(creado_en, 'HH24:MI') as hora,
-            creado_en as "creadaEn"
-          `,
-          [estudianteId, respuestaIa.mensaje],
-        );
-
-        await cliente.query("commit");
-
-        response.status(201).json({
-          mensajes: [
-            mapearMensajeChat(mensajeUsuario.rows[0]),
-            mapearMensajeChat(mensajeAsistente.rows[0]),
-          ],
-          fuente: respuestaIa.fuente,
-        });
-        return;
-      } catch (error) {
-        await cliente.query("rollback");
-        throw error;
-      } finally {
-        cliente.release();
-      }
+      const mensajes = await registrarIntercambioChat(estudianteId, mensaje, respuestaIa.mensaje);
+      response.status(201).json({
+        mensajes,
+        fuente: respuestaIa.fuente,
+      });
+      return;
     } catch (error) {
       response.status(500).json({ mensaje: "No se pudo preparar la respuesta del asistente.", error: error.message });
       return;
