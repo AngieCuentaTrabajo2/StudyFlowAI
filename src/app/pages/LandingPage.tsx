@@ -100,8 +100,8 @@ export default function LandingPage() {
       <Navbar />
 
       <section id="inicio" className="overflow-hidden px-4 pb-14 pt-24 sm:px-6 sm:pb-20 sm:pt-32">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1.12fr,0.88fr] lg:gap-14">
-          <div className="max-w-2xl">
+        <div className="mx-auto grid max-w-7xl items-center gap-8 md:grid-cols-[1.05fr,0.95fr] md:gap-8 lg:grid-cols-[1.12fr,0.88fr] lg:gap-12">
+          <div className="max-w-2xl md:max-w-none">
             <div className="mb-5 inline-flex max-w-full items-center gap-2 rounded-full bg-blue-50 px-4 py-2">
               <Sparkles className="h-4 w-4 text-blue-600" />
               <span className="truncate text-sm font-medium text-blue-600">Asistente academico con IA</span>
@@ -134,7 +134,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="relative order-first mx-auto w-full max-w-[440px] lg:order-none lg:mx-0 lg:max-w-[520px] lg:-translate-y-8 lg:justify-self-start xl:max-w-[560px]">
+          <div className="relative mx-auto w-full max-w-[400px] md:mx-0 md:max-w-[420px] md:justify-self-end lg:max-w-[500px] xl:max-w-[540px]">
             <div className="absolute inset-4 rounded-[2rem] bg-gradient-to-br from-blue-200 via-cyan-100 to-purple-200 opacity-45 blur-3xl" />
             <div className="absolute -right-4 top-10 h-24 w-24 rounded-full bg-cyan-300/45 blur-3xl sm:h-28 sm:w-28" />
             <div className="absolute bottom-6 left-0 h-24 w-24 rounded-full bg-violet-300/45 blur-3xl sm:h-28 sm:w-28" />
