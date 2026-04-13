@@ -165,7 +165,7 @@ export default function DashboardHeader() {
   return (
     <>
       <Dialog open={dialogoNotificacionesAbierto} onOpenChange={setDialogoNotificacionesAbierto}>
-        <DialogContent className="w-[min(100%-1.5rem,80rem)] overflow-hidden rounded-[32px] border-none p-0 shadow-2xl md:w-[min(100%-3rem,74rem)] xl:w-[min(100%-6rem,80rem)]">
+        <DialogContent className="w-full max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-[calc(100vw-2rem)] lg:max-w-[74rem] xl:max-w-[80rem]">
           <div className="grid max-h-[84vh] overflow-hidden bg-white lg:grid-cols-[1fr_1.16fr] xl:grid-cols-[0.98fr_1.22fr]">
             <div className="border-b border-white/10 bg-gradient-to-br from-slate-950 via-blue-950 to-purple-900 p-6 text-white md:p-7 lg:border-b-0 lg:border-r lg:border-r-white/10 lg:p-8">
               <DialogHeader className="space-y-3 text-left">
