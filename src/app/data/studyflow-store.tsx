@@ -132,6 +132,7 @@ type DatosRegistro = {
 
 type ValorContextoStudyFlow = EstadoStudyFlow & {
   iniciarSesion: (correo: string, contrasena: string) => Promise<boolean>;
+  iniciarSesionConGoogle: (credential: string) => Promise<boolean>;
   registrarUsuario: (datos: DatosRegistro) => Promise<boolean>;
   cerrarSesion: () => void;
   actualizarPerfil: (cambios: Partial<PerfilUsuario>) => void;
@@ -728,6 +729,26 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
             contrasena === CUENTA_DEMO.contrasena;
 
           return Boolean(coincide);
+        }
+      },
+      iniciarSesionConGoogle: async (credential) => {
+        try {
+          const resultado = await api.iniciarSesionConGoogle({ credential });
+          const usuario = resultado.usuario;
+          if (!usuario) {
+            return false;
+          }
+
+          setEstado((actual) => ({
+            ...actual,
+            usuarioActual: normalizarUsuarioApi(usuario, {
+              base: actual.usuarioActual,
+            }),
+          }));
+
+          return true;
+        } catch (_error) {
+          return false;
         }
       },
       registrarUsuario: async (datos) => {

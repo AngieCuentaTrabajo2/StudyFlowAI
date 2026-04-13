@@ -146,6 +146,12 @@ export const api = {
       body: JSON.stringify(payload),
     });
   },
+  iniciarSesionConGoogle(payload: { credential: string }) {
+    return request<{ usuario: UsuarioApi | null }>("/api/auth/google", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
   registrarUsuario(payload: {
     nombres: string;
     apellidos: string;

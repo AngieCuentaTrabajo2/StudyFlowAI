@@ -5,6 +5,7 @@ create table if not exists estudiantes (
   nombres text not null,
   apellidos text not null,
   correo text not null unique,
+  google_sub text,
   hash_contrasena text not null,
   universidad text not null,
   carrera text not null,
@@ -29,6 +30,8 @@ create table if not exists estudiantes (
 
 alter table estudiantes add column if not exists plan text not null default 'gratis';
 alter table estudiantes add column if not exists tono_asistente text not null default 'responsable';
+alter table estudiantes add column if not exists google_sub text;
+create unique index if not exists estudiantes_google_sub_unique on estudiantes (google_sub) where google_sub is not null;
 
 alter table estudiantes add column if not exists notif_tareas boolean not null default true;
 alter table estudiantes add column if not exists notif_examenes boolean not null default true;

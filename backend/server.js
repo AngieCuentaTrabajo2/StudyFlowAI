@@ -2,6 +2,7 @@ import "dotenv/config";
 import cors from "cors";
 import express from "express";
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { OAuth2Client } from "google-auth-library";
 import OpenAI from "openai";
 import pkg from "pg";
 
@@ -12,6 +13,7 @@ const puerto = Number(process.env.PORT || 4000);
 const urlBaseDeDatos = process.env.DATABASE_URL;
 const groqApiKey = process.env.GROQ_API_KEY;
 const modeloGroq = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
+const googleClientId = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
 
 app.use(cors());
 app.use(express.json());
@@ -23,6 +25,7 @@ const clienteGroq = groqApiKey
       baseURL: "https://api.groq.com/openai/v1",
     })
   : null;
+const clienteGoogle = googleClientId ? new OAuth2Client(googleClientId) : null;
 
 function crearHashContrasena(contrasena) {
   const salt = randomBytes(16).toString("hex");
@@ -48,6 +51,29 @@ function verificarContrasena(contrasena, hashGuardado) {
   }
 
   return timingSafeEqual(hashOriginal, hashCalculado);
+}
+
+function obtenerNombreYApellidosGoogle(payload) {
+  const nombreCompleto = String(payload?.name || "").trim();
+  const nombres = String(payload?.given_name || "").trim();
+  const apellidos = String(payload?.family_name || "").trim();
+
+  if (nombres || apellidos) {
+    return {
+      nombres: nombres || nombreCompleto || "Estudiante",
+      apellidos,
+    };
+  }
+
+  const [primerNombre = "Estudiante", ...resto] = nombreCompleto.split(" ").filter(Boolean);
+  return {
+    nombres: primerNombre,
+    apellidos: resto.join(" "),
+  };
+}
+
+function crearHashTemporalGoogle() {
+  return crearHashContrasena(randomBytes(24).toString("hex"));
 }
 
 function responderSinBase(response) {
@@ -1399,6 +1425,15 @@ async function obtenerContextoEstudiante(estudianteId) {
   };
 }
 
+async function asegurarColumnasGoogleAuth() {
+  if (!pool) return;
+
+  await pool.query("alter table estudiantes add column if not exists google_sub text");
+  await pool.query(
+    "create unique index if not exists estudiantes_google_sub_unique on estudiantes (google_sub) where google_sub is not null",
+  );
+}
+
 app.post("/api/auth/login", async (request, response) => {
   if (!pool) return responderSinBase(response);
 
@@ -1461,6 +1496,153 @@ app.post("/api/auth/login", async (request, response) => {
     response.json({ usuario: mapearUsuario(usuario) });
   } catch (error) {
     response.status(500).json({ mensaje: "No se pudo iniciar sesion.", error: error.message });
+  }
+});
+
+app.post("/api/auth/google", async (request, response) => {
+  if (!pool) return responderSinBase(response);
+
+  if (!clienteGoogle || !googleClientId) {
+    response.status(500).json({ mensaje: "GOOGLE_CLIENT_ID no configurado en el backend." });
+    return;
+  }
+
+  const { credential } = request.body;
+  if (!credential) {
+    response.status(400).json({ mensaje: "No se recibio el token de Google." });
+    return;
+  }
+
+  try {
+    const ticket = await clienteGoogle.verifyIdToken({
+      idToken: credential,
+      audience: googleClientId,
+    });
+    const payload = ticket.getPayload();
+
+    if (!payload?.sub || !payload?.email) {
+      response.status(400).json({ mensaje: "No se pudo validar la cuenta de Google." });
+      return;
+    }
+
+    if (payload.email_verified === false) {
+      response.status(403).json({ mensaje: "La cuenta de Google no tiene el correo verificado." });
+      return;
+    }
+
+    const { nombres, apellidos } = obtenerNombreYApellidosGoogle(payload);
+    const correo = String(payload.email).trim();
+    const googleSub = String(payload.sub).trim();
+
+    const existente = await pool.query(
+      `
+      select
+        id,
+        nombres,
+        apellidos,
+        correo,
+        universidad,
+        carrera,
+        semestre,
+        plan,
+        horas_disponibles as "horasDisponibles",
+        metodo_estudio as "metodoEstudio",
+        tono_asistente as "tonoAsistente",
+        metas,
+        horas_estudio_diarias as "horasEstudioDiarias",
+        horas_sueno as "horasSueno",
+        notif_tareas as "notificacionesTareas",
+        notif_examenes as "notificacionesExamenes",
+        notif_ia as "notificacionesIa",
+        notif_semanal as "notificacionesSemanal",
+        notif_correo as "notificacionesCorreo",
+        app_modo_oscuro as "aplicacionModoOscuro",
+        app_google_calendar as "aplicacionGoogleCalendar",
+        app_sugerencias_automaticas as "aplicacionSugerenciasAutomaticas",
+        google_sub as "googleSub"
+      from estudiantes
+      where google_sub = $1 or lower(correo) = lower($2)
+      order by case when google_sub = $1 then 0 else 1 end
+      limit 1
+      `,
+      [googleSub, correo],
+    );
+
+    const usuarioExistente = existente.rows[0];
+
+    if (usuarioExistente) {
+      if (usuarioExistente.googleSub && usuarioExistente.googleSub !== googleSub) {
+        response.status(409).json({ mensaje: "Ese correo ya esta vinculado a otra cuenta de Google." });
+        return;
+      }
+
+      if (!usuarioExistente.googleSub) {
+        await pool.query("update estudiantes set google_sub = $1 where id = $2", [googleSub, usuarioExistente.id]);
+        usuarioExistente.googleSub = googleSub;
+      }
+
+      response.json({ usuario: mapearUsuario(usuarioExistente) });
+      return;
+    }
+
+    const resultado = await pool.query(
+      `
+      insert into estudiantes (
+        nombres,
+        apellidos,
+        correo,
+        google_sub,
+        hash_contrasena,
+        universidad,
+        carrera,
+        semestre,
+        plan,
+        horas_disponibles,
+        metodo_estudio,
+        tono_asistente,
+        metas,
+        horas_estudio_diarias,
+        horas_sueno,
+        notif_tareas,
+        notif_examenes,
+        notif_ia,
+        notif_semanal,
+        notif_correo,
+        app_modo_oscuro,
+        app_google_calendar,
+        app_sugerencias_automaticas
+      )
+      values ($1, $2, $3, $4, $5, 'Por definir', 'Por definir', '1', 'gratis', '4-6', 'pomodoro', 'responsable', '', 4, 8, true, true, true, true, false, false, false, true)
+      returning
+        id,
+        nombres,
+        apellidos,
+        correo,
+        universidad,
+        carrera,
+        semestre,
+        plan,
+        horas_disponibles as "horasDisponibles",
+        metodo_estudio as "metodoEstudio",
+        tono_asistente as "tonoAsistente",
+        metas,
+        horas_estudio_diarias as "horasEstudioDiarias",
+        horas_sueno as "horasSueno",
+        notif_tareas as "notificacionesTareas",
+        notif_examenes as "notificacionesExamenes",
+        notif_ia as "notificacionesIa",
+        notif_semanal as "notificacionesSemanal",
+        notif_correo as "notificacionesCorreo",
+        app_modo_oscuro as "aplicacionModoOscuro",
+        app_google_calendar as "aplicacionGoogleCalendar",
+        app_sugerencias_automaticas as "aplicacionSugerenciasAutomaticas"
+      `,
+      [nombres, apellidos, correo, googleSub, crearHashTemporalGoogle()],
+    );
+
+    response.status(201).json({ usuario: mapearUsuario(resultado.rows[0]) });
+  } catch (error) {
+    response.status(500).json({ mensaje: "No se pudo iniciar sesion con Google.", error: error.message });
   }
 });
 
@@ -2210,6 +2392,12 @@ app.delete("/api/chat/:estudianteId", async (request, response) => {
   }
 });
 
-app.listen(puerto, () => {
-  console.log(`StudyFlow API lista en http://localhost:${puerto}`);
-});
+asegurarColumnasGoogleAuth()
+  .catch((error) => {
+    console.error("No se pudo preparar el esquema de Google Auth:", error);
+  })
+  .finally(() => {
+    app.listen(puerto, () => {
+      console.log(`StudyFlow API lista en http://localhost:${puerto}`);
+    });
+  });
