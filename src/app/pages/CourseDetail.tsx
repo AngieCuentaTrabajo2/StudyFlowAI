@@ -19,10 +19,14 @@ import { Label } from "../components/ui/label";
 export default function CourseDetail() {
   const navigate = useNavigate();
   const { courseId } = useParams();
-  const { obtenerCursoPorId, tareas, examenes, actualizarCurso, eliminarCurso } = useStudyFlow();
+  const { obtenerCursoPorId, tareas, examenes, actualizarCurso, eliminarCurso, agendarRepasoCurso } = useStudyFlow();
   const curso = obtenerCursoPorId(courseId);
   const [dialogoEdicionAbierto, setDialogoEdicionAbierto] = useState(false);
+  const [dialogoRepasoAbierto, setDialogoRepasoAbierto] = useState(false);
   const [errorHorario, setErrorHorario] = useState("");
+  const [horasRepasoCurso, setHorasRepasoCurso] = useState("2");
+  const [mensajeRepasoCurso, setMensajeRepasoCurso] = useState("");
+  const [repasoCursoProgramado, setRepasoCursoProgramado] = useState(false);
   const [formulario, setFormulario] = useState(() =>
     curso
       ? {
@@ -131,6 +135,80 @@ export default function CourseDetail() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Dialog
+              open={dialogoRepasoAbierto}
+              onOpenChange={(abierto) => {
+                setDialogoRepasoAbierto(abierto);
+                if (!abierto) {
+                  setHorasRepasoCurso("2");
+                  setMensajeRepasoCurso("");
+                  setRepasoCursoProgramado(false);
+                }
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Agregar repaso
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Programar repaso del curso</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="font-semibold text-slate-900">{curso.nombre}</p>
+                    <div className="mt-2 flex flex-wrap gap-3 text-sm text-slate-600">
+                      <span>{curso.docente}</span>
+                      <span>{curso.horario}</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="horas-repaso-curso">Horas de repaso a reservar</Label>
+                    <Input
+                      id="horas-repaso-curso"
+                      type="number"
+                      min="1"
+                      max="8"
+                      value={horasRepasoCurso}
+                      onChange={(event) => {
+                        setHorasRepasoCurso(event.target.value);
+                        setMensajeRepasoCurso("");
+                        setRepasoCursoProgramado(false);
+                      }}
+                    />
+                    <p className="mt-2 text-sm text-slate-500">
+                      La app buscara espacios libres del calendario y agregara bloques de estudio general para este curso.
+                    </p>
+                  </div>
+
+                  {mensajeRepasoCurso ? (
+                    <div
+                      className={`rounded-2xl border p-3 text-sm ${
+                        repasoCursoProgramado
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : "border-amber-200 bg-amber-50 text-amber-700"
+                      }`}
+                    >
+                      {mensajeRepasoCurso}
+                    </div>
+                  ) : null}
+
+                  <Button
+                    className="w-full bg-gradient-to-r from-blue-600 to-purple-600"
+                    onClick={() => {
+                      const resultado = agendarRepasoCurso(curso.id, Number(horasRepasoCurso));
+                      setMensajeRepasoCurso(resultado.mensaje);
+                      setRepasoCursoProgramado(resultado.ok);
+                    }}
+                  >
+                    Reservar repaso para este curso
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
             <Dialog
               open={dialogoEdicionAbierto}
               onOpenChange={(abierto) => {

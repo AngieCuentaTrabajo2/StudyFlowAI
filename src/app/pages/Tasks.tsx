@@ -49,7 +49,7 @@ export default function Tasks() {
     agregarTarea,
     alternarTareaCompletada,
     actualizarTarea,
-    agendarRepasoParaTarea,
+    agendarTareaEnCalendario,
   } = useStudyFlow();
   const [searchParams, setSearchParams] = useSearchParams();
   const tareaDestacadaId = searchParams.get("focus");
@@ -59,11 +59,11 @@ export default function Tasks() {
   const [filtroEstado, setFiltroEstado] = useState("all");
   const [dialogoCrearAbierto, setDialogoCrearAbierto] = useState(false);
   const [tareaEnEdicion, setTareaEnEdicion] = useState<Tarea | null>(null);
-  const [tareaParaRepaso, setTareaParaRepaso] = useState<Tarea | null>(null);
+  const [tareaParaCalendario, setTareaParaCalendario] = useState<Tarea | null>(null);
   const [borradorTarea, setBorradorTarea] = useState<FormularioTarea>(crearFormularioVacio(cursos[0]?.id ?? ""));
-  const [horasRepasoDeseadas, setHorasRepasoDeseadas] = useState("2");
-  const [mensajeRepaso, setMensajeRepaso] = useState("");
-  const [repasoProgramado, setRepasoProgramado] = useState(false);
+  const [horasCalendarioDeseadas, setHorasCalendarioDeseadas] = useState("2");
+  const [mensajeCalendario, setMensajeCalendario] = useState("");
+  const [tareaProgramada, setTareaProgramada] = useState(false);
 
   useEffect(() => {
     if (!tareaDestacadaId) return;
@@ -375,13 +375,13 @@ export default function Tasks() {
                       </DialogContent>
                     </Dialog>
                     <Dialog
-                      open={tareaParaRepaso?.id === tarea.id}
+                      open={tareaParaCalendario?.id === tarea.id}
                       onOpenChange={(abierto) => {
                         if (!abierto) {
-                          setTareaParaRepaso(null);
-                          setHorasRepasoDeseadas("2");
-                          setMensajeRepaso("");
-                          setRepasoProgramado(false);
+                          setTareaParaCalendario(null);
+                          setHorasCalendarioDeseadas("2");
+                          setMensajeCalendario("");
+                          setTareaProgramada(false);
                         }
                       }}
                     >
@@ -391,74 +391,74 @@ export default function Tasks() {
                           size="sm"
                           className="w-full sm:w-auto"
                           onClick={() => {
-                            setTareaParaRepaso(tarea);
-                            setHorasRepasoDeseadas(String(Math.min(Math.max(tarea.horasEstimadas, 1), 4)));
-                            setMensajeRepaso("");
-                            setRepasoProgramado(false);
+                            setTareaParaCalendario(tarea);
+                            setHorasCalendarioDeseadas(String(Math.min(Math.max(tarea.horasEstimadas, 1), 4)));
+                            setMensajeCalendario("");
+                            setTareaProgramada(false);
                           }}
                         >
                           <Sparkles className="mr-2 h-4 w-4" />
-                          Agregar repaso
+                          Agregar al calendario
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
                         <DialogHeader>
-                          <DialogTitle>Programar repaso automatico</DialogTitle>
+                          <DialogTitle>Programar tarea en el calendario</DialogTitle>
                         </DialogHeader>
-                        {tareaParaRepaso ? (
+                        {tareaParaCalendario ? (
                           <div className="space-y-4">
                             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                              <p className="font-semibold text-slate-900">{tareaParaRepaso.titulo}</p>
+                              <p className="font-semibold text-slate-900">{tareaParaCalendario.titulo}</p>
                               <div className="mt-2 flex flex-wrap gap-3 text-sm text-slate-600">
                                 <span>{curso?.nombre ?? "Sin curso"}</span>
-                                <span>{formatearFechaCorta(tareaParaRepaso.fechaEntrega)}</span>
-                                <span>{tareaParaRepaso.progreso}% avanzado</span>
+                                <span>{formatearFechaCorta(tareaParaCalendario.fechaEntrega)}</span>
+                                <span>{tareaParaCalendario.progreso}% avanzado</span>
                               </div>
                             </div>
 
                             <div>
-                              <Label htmlFor={`horas-repaso-${tarea.id}`}>Horas de repaso a reservar</Label>
+                              <Label htmlFor={`horas-calendario-${tarea.id}`}>Horas para trabajar esta tarea</Label>
                               <Input
-                                id={`horas-repaso-${tarea.id}`}
+                                id={`horas-calendario-${tarea.id}`}
                                 type="number"
                                 min="1"
                                 max="8"
-                                value={horasRepasoDeseadas}
+                                value={horasCalendarioDeseadas}
                                 onChange={(event) => {
-                                  setHorasRepasoDeseadas(event.target.value);
-                                  setMensajeRepaso("");
-                                  setRepasoProgramado(false);
+                                  setHorasCalendarioDeseadas(event.target.value);
+                                  setMensajeCalendario("");
+                                  setTareaProgramada(false);
                                 }}
                               />
                               <p className="mt-2 text-sm text-slate-500">
-                                La app buscara espacios libres antes de la entrega y los agregara sola al planificador.
+                                La app buscara espacios libres antes de la entrega y agregara bloques para avanzar esa tarea.
                               </p>
                             </div>
 
-                            {mensajeRepaso ? (
+                            {mensajeCalendario ? (
                               <div
                                 className={`rounded-2xl border p-3 text-sm ${
-                                  repasoProgramado
+                                  tareaProgramada
                                     ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                                     : "border-amber-200 bg-amber-50 text-amber-700"
                                 }`}
                               >
-                                {mensajeRepaso}
+                                {mensajeCalendario}
                               </div>
                             ) : null}
 
                             <Button
                               className="w-full bg-gradient-to-r from-blue-600 to-purple-600"
                               onClick={() => {
-                                const resultado = agendarRepasoParaTarea(
-                                  tareaParaRepaso.id,
-                                  Number(horasRepasoDeseadas),
+                                const resultado = agendarTareaEnCalendario(
+                                  tareaParaCalendario.id,
+                                  Number(horasCalendarioDeseadas),
                                 );
-                                setMensajeRepaso(resultado.mensaje);
-                                setRepasoProgramado(resultado.ok);
+                                setMensajeCalendario(resultado.mensaje);
+                                setTareaProgramada(resultado.ok);
                               }}
                             >
-                              Reservar repaso en el planificador
+                              Reservar horas para esta tarea
                             </Button>
                           </div>
                         ) : null}

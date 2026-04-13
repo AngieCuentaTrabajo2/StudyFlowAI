@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Calendar, Clock, GripVertical, Move, Pencil, Settings, Sparkles, Trash2 } from "lucide-react";
+import { BookOpen, Calendar, Clock, Coffee, GripVertical, Move, Pencil, Settings, Sparkles, Trash2, type LucideIcon } from "lucide-react";
 import {
   obtenerColorValor,
   obtenerEtiquetaDiaPlanificador,
@@ -36,6 +36,201 @@ function bloqueSeSolapa(
     return inicio < finExistente && fin > inicioExistente;
   });
 }
+
+type TipoVisualBloque = "class" | "task" | "review" | "exam" | "break" | "study";
+
+type MetaBloqueVisual = {
+  tipoVisual: TipoVisualBloque;
+  etiqueta: string;
+  descripcion: string;
+  detalle: string;
+  titulo: string;
+  Icono: LucideIcon;
+};
+
+function convertirHexARGB(hex: string) {
+  const valor = hex.replace("#", "");
+  const normalizado =
+    valor.length === 3
+      ? valor
+          .split("")
+          .map((segmento) => `${segmento}${segmento}`)
+          .join("")
+      : valor;
+
+  const numero = Number.parseInt(normalizado, 16);
+
+  return {
+    r: (numero >> 16) & 255,
+    g: (numero >> 8) & 255,
+    b: numero & 255,
+  };
+}
+
+function mezclarColor(hex: string, destino: "white" | "black", intensidad: number) {
+  const rgb = convertirHexARGB(hex);
+  const objetivo = destino === "white" ? 255 : 0;
+  const peso = Math.max(0, Math.min(1, intensidad));
+
+  const canal = (valor: number) => Math.round(valor + (objetivo - valor) * peso);
+
+  return `rgb(${canal(rgb.r)} ${canal(rgb.g)} ${canal(rgb.b)})`;
+}
+
+function obtenerMetaBloqueVisual(bloque: BloquePlanificador): MetaBloqueVisual {
+  const titulo = bloque.titulo.trim();
+
+  if (bloque.tipo === "class") {
+    return {
+      tipoVisual: "class",
+      etiqueta: "Clase",
+      descripcion: "Horario fijo",
+      detalle: "Bloque reservado",
+      titulo,
+      Icono: Calendar,
+    };
+  }
+
+  if (bloque.tipo === "exam") {
+    return {
+      tipoVisual: "exam",
+      etiqueta: "Examen",
+      descripcion: "Evaluacion",
+      detalle: "No lo muevas sin revisar",
+      titulo,
+      Icono: Clock,
+    };
+  }
+
+  if (bloque.tipo === "break") {
+    return {
+      tipoVisual: "break",
+      etiqueta: "Descanso",
+      descripcion: "Pausa activa",
+      detalle: "Recuperacion",
+      titulo,
+      Icono: Coffee,
+    };
+  }
+
+  if (titulo.toLowerCase().startsWith("tarea:")) {
+    return {
+      tipoVisual: "task",
+      etiqueta: "Tarea",
+      descripcion: "Trabajo puntual",
+      detalle: "Bloque editable",
+      titulo: titulo.replace(/^tarea:\s*/i, ""),
+      Icono: Pencil,
+    };
+  }
+
+  if (titulo.toLowerCase().startsWith("repaso:")) {
+    return {
+      tipoVisual: "review",
+      etiqueta: "Repaso",
+      descripcion: "Estudio del curso",
+      detalle: "Bloque editable",
+      titulo: titulo.replace(/^repaso:\s*/i, ""),
+      Icono: BookOpen,
+    };
+  }
+
+  return {
+    tipoVisual: "study",
+    etiqueta: "Estudio",
+    descripcion: "Bloque libre",
+    detalle: "Bloque editable",
+    titulo,
+    Icono: BookOpen,
+  };
+}
+
+function obtenerSuperficieBloque(colorBase: string, tipoVisual: TipoVisualBloque) {
+  if (tipoVisual === "break") {
+    return {
+      background: "linear-gradient(135deg, #64748b 0%, #334155 100%)",
+      borderColor: "rgba(255,255,255,0.2)",
+      boxShadow: "0 18px 35px rgba(15, 23, 42, 0.18)",
+    };
+  }
+
+  switch (tipoVisual) {
+    case "class":
+      return {
+        background: `linear-gradient(145deg, ${mezclarColor(colorBase, "white", 0.06)} 0%, ${mezclarColor(colorBase, "black", 0.18)} 100%)`,
+        borderColor: "rgba(255,255,255,0.2)",
+        boxShadow: `0 18px 32px ${mezclarColor(colorBase, "black", 0.55)}`,
+      };
+    case "task":
+      return {
+        background: `linear-gradient(145deg, ${mezclarColor(colorBase, "white", 0.02)} 0%, ${mezclarColor(colorBase, "black", 0.24)} 100%)`,
+        borderColor: "rgba(255,255,255,0.22)",
+        boxShadow: `0 16px 28px ${mezclarColor(colorBase, "black", 0.6)}`,
+      };
+    case "review":
+      return {
+        background: `linear-gradient(145deg, ${mezclarColor(colorBase, "white", 0.22)} 0%, ${mezclarColor(colorBase, "black", 0.08)} 100%)`,
+        borderColor: "rgba(255,255,255,0.28)",
+        boxShadow: `0 14px 26px ${mezclarColor(colorBase, "black", 0.48)}`,
+      };
+    case "exam":
+      return {
+        background: `linear-gradient(145deg, ${mezclarColor(colorBase, "black", 0.08)} 0%, ${mezclarColor(colorBase, "black", 0.3)} 100%)`,
+        borderColor: "rgba(255,255,255,0.16)",
+        boxShadow: `0 18px 30px ${mezclarColor(colorBase, "black", 0.62)}`,
+      };
+    default:
+      return {
+        background: `linear-gradient(145deg, ${mezclarColor(colorBase, "white", 0.12)} 0%, ${mezclarColor(colorBase, "black", 0.14)} 100%)`,
+        borderColor: "rgba(255,255,255,0.18)",
+        boxShadow: `0 14px 28px ${mezclarColor(colorBase, "black", 0.5)}`,
+      };
+  }
+}
+
+const leyendaBloques: Array<{
+  clave: string;
+  etiqueta: string;
+  descripcion: string;
+  Icono: LucideIcon;
+  clase: string;
+}> = [
+  {
+    clave: "class",
+    etiqueta: "Clase",
+    descripcion: "Horario fijo del curso",
+    Icono: Calendar,
+    clase: "border-blue-100 bg-blue-50 text-blue-700",
+  },
+  {
+    clave: "task",
+    etiqueta: "Tarea",
+    descripcion: "Trabajo concreto agendado",
+    Icono: Pencil,
+    clase: "border-violet-100 bg-violet-50 text-violet-700",
+  },
+  {
+    clave: "review",
+    etiqueta: "Repaso",
+    descripcion: "Estudio general del curso",
+    Icono: BookOpen,
+    clase: "border-emerald-100 bg-emerald-50 text-emerald-700",
+  },
+  {
+    clave: "exam",
+    etiqueta: "Examen",
+    descripcion: "Evaluacion o prueba",
+    Icono: Clock,
+    clase: "border-rose-100 bg-rose-50 text-rose-700",
+  },
+  {
+    clave: "break",
+    etiqueta: "Descanso",
+    descripcion: "Pausa o respiro",
+    Icono: Coffee,
+    clase: "border-slate-200 bg-slate-100 text-slate-700",
+  },
+];
 
 export default function Planner() {
   const {
@@ -176,6 +371,23 @@ export default function Planner() {
             </div>
           </CardHeader>
           <CardContent className="min-w-0 space-y-4">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-semibold text-slate-900">
+                El color principal identifica el curso y la pastilla te dice el tipo de bloque.
+              </p>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+                {leyendaBloques.map(({ clave, etiqueta, descripcion, Icono, clase }) => (
+                  <div key={clave} className={`rounded-2xl border px-3 py-2 ${clase}`}>
+                    <div className="flex items-center gap-2 text-sm font-semibold">
+                      <Icono className="h-4 w-4" />
+                      {etiqueta}
+                    </div>
+                    <p className="mt-1 text-xs opacity-80">{descripcion}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="rounded-2xl bg-blue-50 px-3 py-2 text-xs text-blue-700 sm:hidden">
               Desliza horizontalmente para ver toda la semana. Compactamos el tablero para que se lea mejor en movil.
             </div>
@@ -442,6 +654,12 @@ function CalendarioPlanificador({
               const celdaId = `${diaIndex}-${hora}`;
               const bloque = bloquesPlanificador.find((item) => item.dia === diaIndex && item.horaInicio === hora);
               const activa = celdaActiva === celdaId;
+              const metaVisual = bloque ? obtenerMetaBloqueVisual(bloque) : null;
+              const colorBase = bloque ? obtenerColorValor(bloque.color) : null;
+              const superficieBloque =
+                bloque && colorBase && metaVisual
+                  ? obtenerSuperficieBloque(colorBase, metaVisual.tipoVisual)
+                  : null;
 
               return (
                 <div
@@ -505,30 +723,49 @@ function CalendarioPlanificador({
                         compacto ? "p-2" : "p-3"
                       }`}
                       style={{
-                        backgroundColor: obtenerColorValor(bloque.color),
+                        background: superficieBloque?.background,
+                        border: `1px solid ${superficieBloque?.borderColor ?? "rgba(255,255,255,0.18)"}`,
+                        boxShadow: superficieBloque?.boxShadow,
                         height: `${Math.max(compacto ? 42 : 60, bloque.duracion * altoCelda - 8)}px`,
                         zIndex: 10,
                       }}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className={`leading-tight ${compacto ? "text-[11px] font-semibold" : "font-semibold"}`}>
-                          {bloque.titulo}
+                        <div
+                          className={`inline-flex items-center gap-1 rounded-full bg-white/15 font-semibold uppercase tracking-[0.14em] text-white/90 ${
+                            compacto ? "px-1.5 py-1 text-[8px]" : "px-2 py-1 text-[9px]"
+                          }`}
+                        >
+                          {metaVisual ? <metaVisual.Icono className={`${compacto ? "h-2.5 w-2.5" : "h-3 w-3"}`} /> : null}
+                          {metaVisual?.etiqueta ?? bloque.tipo}
                         </div>
                         <div className="flex items-center gap-1">
                           {bloque.tipo === "class" ? (
-                            <Calendar className={`${compacto ? "h-3 w-3" : "h-3.5 w-3.5"} shrink-0 text-white/80`} />
+                            <span
+                              className={`rounded-full bg-white/15 px-1.5 py-0.5 font-medium text-white/85 ${
+                                compacto ? "text-[8px]" : "text-[9px]"
+                              }`}
+                            >
+                              Fijo
+                            </span>
                           ) : (
-                            <>
-                              <Pencil className={`${compacto ? "h-3 w-3" : "h-3.5 w-3.5"} shrink-0 text-white/80`} />
-                              <GripVertical className={`${compacto ? "h-3.5 w-3.5" : "h-4 w-4"} shrink-0 text-white/80`} />
-                            </>
+                            <GripVertical className={`${compacto ? "h-3 w-3" : "h-3.5 w-3.5"} shrink-0 text-white/80`} />
                           )}
                         </div>
                       </div>
-                      <div className={`mt-1.5 flex items-center gap-1 text-white/85 ${compacto ? "text-[10px]" : "text-xs"}`}>
-                        <Clock className={`${compacto ? "h-2.5 w-2.5" : "h-3 w-3"}`} />
-                        {bloque.duracion}h
+                      <div className={`mt-2 break-words font-semibold leading-tight ${compacto ? "text-[10px]" : "text-sm"}`}>
+                        {metaVisual?.titulo ?? bloque.titulo}
                       </div>
+                      <div className={`mt-1.5 flex items-center justify-between gap-2 text-white/85 ${compacto ? "text-[9px]" : "text-xs"}`}>
+                        <Clock className={`${compacto ? "h-2.5 w-2.5" : "h-3 w-3"}`} />
+                        <span className="mr-auto">{bloque.duracion}h</span>
+                        {!compacto ? <span className="truncate text-white/75">{metaVisual?.detalle}</span> : null}
+                      </div>
+                      {!compacto ? (
+                        <div className="mt-1 text-[10px] font-medium text-white/70">
+                          {metaVisual?.descripcion}
+                        </div>
+                      ) : null}
                     </div>
                   ) : (
                     <div

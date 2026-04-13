@@ -159,8 +159,12 @@ type ValorContextoStudyFlow = EstadoStudyFlow & {
   ) => void;
   actualizarTarea: (tareaId: string, cambios: Partial<Tarea>) => void;
   alternarTareaCompletada: (tareaId: string) => void;
-  agendarRepasoParaTarea: (
+  agendarTareaEnCalendario: (
     tareaId: string,
+    horas: number,
+  ) => { ok: boolean; mensaje: string; horasProgramadas: number };
+  agendarRepasoCurso: (
+    cursoId: string,
     horas: number,
   ) => { ok: boolean; mensaje: string; horasProgramadas: number };
   agregarCurso: (curso: Omit<Curso, "id" | "materiales"> & { materiales?: Curso["materiales"] }) => void;
@@ -258,9 +262,9 @@ function haySolapamientoBloque(
   });
 }
 
-function obtenerDiasCandidatosRepaso(fechaEntrega: string) {
+function obtenerDiasCandidatosPlanificacion(fechaObjetivo: string) {
   const hoy = startOfToday();
-  const fechaLimite = parseISO(fechaEntrega);
+  const fechaLimite = parseISO(fechaObjetivo);
   const diferencia = differenceInCalendarDays(fechaLimite, hoy);
   const cantidadDias = diferencia < 0 ? 7 : Math.min(diferencia + 1, 7);
 
@@ -277,16 +281,20 @@ function obtenerHorasCandidatasRepaso(dia: number) {
   return HORAS_PREFERIDAS_REPASO.filter((hora) => (dia === diaActual ? hora > horaActual : true));
 }
 
-function programarBloquesRepasoAutomaticos(
-  tarea: Tarea,
-  curso: Curso | undefined,
+function programarBloquesAutomaticos(
+  configuracion: {
+    titulo: string;
+    cursoId: string;
+    color: string;
+    fechaObjetivo: string;
+  },
   bloquesActuales: BloquePlanificador[],
   horasSolicitadas: number,
 ) {
   const bloquesProgramados: BloquePlanificador[] = [];
   let horasRestantes = Math.max(1, Math.round(horasSolicitadas));
 
-  for (const dia of obtenerDiasCandidatosRepaso(tarea.fechaEntrega)) {
+  for (const dia of obtenerDiasCandidatosPlanificacion(configuracion.fechaObjetivo)) {
     for (const hora of obtenerHorasCandidatasRepaso(dia)) {
       if (horasRestantes <= 0) {
         break;
@@ -310,9 +318,9 @@ function programarBloquesRepasoAutomaticos(
         dia,
         horaInicio: hora,
         duracion,
-        titulo: `Repaso: ${tarea.titulo}`,
-        cursoId: tarea.cursoId,
-        color: curso?.color ?? "purple",
+        titulo: configuracion.titulo,
+        cursoId: configuracion.cursoId,
+        color: configuracion.color,
         tipo: "study",
       });
       horasRestantes -= duracion;
@@ -327,6 +335,20 @@ function programarBloquesRepasoAutomaticos(
     bloques: bloquesProgramados,
     horasProgramadas: Math.max(0, Math.round(horasSolicitadas) - horasRestantes),
   };
+}
+
+function obtenerFechaObjetivoCurso(cursoId: string, tareas: Tarea[], examenes: Examen[]) {
+  const hoy = startOfToday();
+  const candidatos = [
+    ...tareas
+      .filter((tarea) => tarea.cursoId === cursoId && obtenerEstadoVisualTarea(tarea) !== "completed")
+      .map((tarea) => tarea.fechaEntrega),
+    ...examenes
+      .filter((examen) => differenceInCalendarDays(parseISO(examen.fecha), hoy) >= 0 && examen.cursoId === cursoId)
+      .map((examen) => examen.fecha),
+  ].sort();
+
+  return candidatos[0] ?? format(addDays(hoy, 7), "yyyy-MM-dd");
 }
 
 function esErrorConexion(error: unknown) {
@@ -1142,12 +1164,12 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           }
         }
       },
-      agendarRepasoParaTarea: (tareaId, horas) => {
+      agendarTareaEnCalendario: (tareaId, horas) => {
         const tareaObjetivo = estado.tareas.find((item) => item.id === tareaId);
         if (!tareaObjetivo) {
           return {
             ok: false,
-            mensaje: "No pude encontrar esa tarea para programar el repaso.",
+            mensaje: "No pude encontrar esa tarea para llevarla al calendario.",
             horasProgramadas: 0,
           };
         }
@@ -1157,9 +1179,13 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           ? Math.max(1, Math.round(horasNumericas))
           : 1;
         const curso = estado.cursos.find((item) => item.id === tareaObjetivo.cursoId);
-        const resultado = programarBloquesRepasoAutomaticos(
-          tareaObjetivo,
-          curso,
+        const resultado = programarBloquesAutomaticos(
+          {
+            titulo: `Tarea: ${tareaObjetivo.titulo}`,
+            cursoId: tareaObjetivo.cursoId,
+            color: curso?.color ?? "purple",
+            fechaObjetivo: tareaObjetivo.fechaEntrega,
+          },
           estado.bloquesPlanificador,
           horasSolicitadas,
         );
@@ -1182,12 +1208,12 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           tipo: resultado.horasProgramadas < horasSolicitadas ? "warning" : "success",
           titulo:
             resultado.horasProgramadas < horasSolicitadas
-              ? "Repaso programado parcialmente"
-              : "Repaso agregado al planificador",
+              ? "Tarea programada parcialmente"
+              : "Tarea agregada al calendario",
           mensaje:
             resultado.horasProgramadas < horasSolicitadas
               ? `Solo pude reservar ${resultado.horasProgramadas}h de ${horasSolicitadas}h para "${tareaObjetivo.titulo}".`
-              : `Reserve ${resultado.horasProgramadas}h para "${tareaObjetivo.titulo}" en espacios libres de tu planificador.`,
+              : `Reserve ${resultado.horasProgramadas}h para trabajar "${tareaObjetivo.titulo}" en espacios libres del calendario.`,
           creadaEn: new Date().toISOString(),
           noLeida: true,
         };
@@ -1208,7 +1234,81 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           mensaje:
             resultado.horasProgramadas < horasSolicitadas
               ? `Se programaron ${resultado.horasProgramadas}h. No encontre mas huecos libres por ahora.`
-              : `Listo. Ya te reserve ${resultado.horasProgramadas}h de repaso en el planificador.`,
+              : `Listo. Ya te reserve ${resultado.horasProgramadas}h para esa tarea en el calendario.`,
+          horasProgramadas: resultado.horasProgramadas,
+        };
+      },
+      agendarRepasoCurso: (cursoId, horas) => {
+        const cursoObjetivo = estado.cursos.find((item) => item.id === cursoId);
+        if (!cursoObjetivo) {
+          return {
+            ok: false,
+            mensaje: "No pude encontrar ese curso para programar el repaso.",
+            horasProgramadas: 0,
+          };
+        }
+
+        const horasNumericas = Number(horas);
+        const horasSolicitadas = Number.isFinite(horasNumericas)
+          ? Math.max(1, Math.round(horasNumericas))
+          : 1;
+        const fechaObjetivo = obtenerFechaObjetivoCurso(cursoId, estado.tareas, estado.examenes);
+        const resultado = programarBloquesAutomaticos(
+          {
+            titulo: `Repaso: ${cursoObjetivo.nombre}`,
+            cursoId,
+            color: cursoObjetivo.color,
+            fechaObjetivo,
+          },
+          estado.bloquesPlanificador,
+          horasSolicitadas,
+        );
+
+        if (resultado.horasProgramadas === 0) {
+          return {
+            ok: false,
+            mensaje: "No encontre espacios libres para ese curso. Prueba con menos horas o libera bloques en el planificador.",
+            horasProgramadas: 0,
+          };
+        }
+
+        const bloquesActualizados = ordenarBloquesPlanificador([
+          ...estado.bloquesPlanificador,
+          ...resultado.bloques,
+        ]);
+
+        const notificacionLocal: NotificacionItem = {
+          id: crearId("notif"),
+          tipo: resultado.horasProgramadas < horasSolicitadas ? "warning" : "success",
+          titulo:
+            resultado.horasProgramadas < horasSolicitadas
+              ? "Repaso de curso programado parcialmente"
+              : "Repaso de curso agregado al planificador",
+          mensaje:
+            resultado.horasProgramadas < horasSolicitadas
+              ? `Solo pude reservar ${resultado.horasProgramadas}h de ${horasSolicitadas}h para ${cursoObjetivo.nombre}.`
+              : `Reserve ${resultado.horasProgramadas}h de repaso general para ${cursoObjetivo.nombre}.`,
+          creadaEn: new Date().toISOString(),
+          noLeida: true,
+        };
+
+        setEstado((actual) => ({
+          ...actual,
+          bloquesPlanificador: bloquesActualizados,
+          notificaciones: [notificacionLocal, ...actual.notificaciones],
+        }));
+
+        if (estado.usuarioActual?.id) {
+          api.guardarPlanificador(estado.usuarioActual.id, bloquesActualizados).catch(() => {});
+          persistirNotificacion(estado.usuarioActual.id, notificacionLocal);
+        }
+
+        return {
+          ok: true,
+          mensaje:
+            resultado.horasProgramadas < horasSolicitadas
+              ? `Se programaron ${resultado.horasProgramadas}h de repaso para el curso.`
+              : `Listo. Ya te reserve ${resultado.horasProgramadas}h de repaso para ese curso.`,
           horasProgramadas: resultado.horasProgramadas,
         };
       },
