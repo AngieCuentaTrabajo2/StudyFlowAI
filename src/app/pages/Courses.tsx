@@ -1,7 +1,13 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { BookOpen, Calendar, Plus, Search, User } from "lucide-react";
+import CourseScheduleEditor from "../components/CourseScheduleEditor";
 import { useStudyFlow } from "../data/studyflow-store";
+import {
+  crearFilaHorarioCurso,
+  formatearHorarioCurso,
+  validarHorarioCurso,
+} from "../data/course-schedule";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
@@ -20,14 +26,51 @@ export default function Courses() {
   const { cursos, tareas, examenes, usuarioActual, agregarCurso } = useStudyFlow();
   const [busqueda, setBusqueda] = useState("");
   const [filtroSemestre, setFiltroSemestre] = useState("all");
+  const [dialogoCursoAbierto, setDialogoCursoAbierto] = useState(false);
+  const [errorNuevoCurso, setErrorNuevoCurso] = useState("");
   const [nuevoCurso, setNuevoCurso] = useState({
     nombre: "",
     docente: "",
-    horario: "",
     semestre: usuarioActual?.semestre ?? "5",
     color: "blue",
     descripcion: "",
   });
+  const [horariosNuevoCurso, setHorariosNuevoCurso] = useState([crearFilaHorarioCurso()]);
+
+  const reiniciarFormularioCurso = () => {
+    setNuevoCurso({
+      nombre: "",
+      docente: "",
+      semestre: usuarioActual?.semestre ?? "5",
+      color: "blue",
+      descripcion: "",
+    });
+    setHorariosNuevoCurso([crearFilaHorarioCurso()]);
+    setErrorNuevoCurso("");
+  };
+
+  const guardarCurso = () => {
+    if (!nuevoCurso.nombre.trim() || !nuevoCurso.docente.trim()) {
+      setErrorNuevoCurso("Completa al menos el nombre del curso y el docente.");
+      return;
+    }
+
+    const errorHorario = validarHorarioCurso(horariosNuevoCurso);
+    if (errorHorario) {
+      setErrorNuevoCurso(errorHorario);
+      return;
+    }
+
+    agregarCurso({
+      ...nuevoCurso,
+      nombre: nuevoCurso.nombre.trim(),
+      docente: nuevoCurso.docente.trim(),
+      horario: formatearHorarioCurso(horariosNuevoCurso),
+      descripcion: nuevoCurso.descripcion.trim(),
+    });
+    reiniciarFormularioCurso();
+    setDialogoCursoAbierto(false);
+  };
 
   const cursosFiltrados = useMemo(
     () =>
@@ -51,7 +94,15 @@ export default function Courses() {
           </p>
         </div>
 
-        <Dialog>
+        <Dialog
+          open={dialogoCursoAbierto}
+          onOpenChange={(abierto) => {
+            setDialogoCursoAbierto(abierto);
+            if (!abierto) {
+              reiniciarFormularioCurso();
+            }
+          }}
+        >
           <DialogTrigger asChild>
             <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 sm:w-auto">
               <Plus className="mr-2 h-5 w-5" />
@@ -68,7 +119,10 @@ export default function Courses() {
                 <Input
                   id="nombre-curso"
                   value={nuevoCurso.nombre}
-                  onChange={(event) => setNuevoCurso({ ...nuevoCurso, nombre: event.target.value })}
+                  onChange={(event) => {
+                    setNuevoCurso({ ...nuevoCurso, nombre: event.target.value });
+                    setErrorNuevoCurso("");
+                  }}
                 />
               </div>
               <div>
@@ -76,39 +130,34 @@ export default function Courses() {
                 <Input
                   id="docente-curso"
                   value={nuevoCurso.docente}
-                  onChange={(event) => setNuevoCurso({ ...nuevoCurso, docente: event.target.value })}
+                  onChange={(event) => {
+                    setNuevoCurso({ ...nuevoCurso, docente: event.target.value });
+                    setErrorNuevoCurso("");
+                  }}
                 />
               </div>
-              <div>
-                <Label htmlFor="horario-curso">Horario</Label>
-                <Input
-                  id="horario-curso"
-                  value={nuevoCurso.horario}
-                  onChange={(event) => setNuevoCurso({ ...nuevoCurso, horario: event.target.value })}
-                  placeholder="Lun y Mie 08:00 - 10:00"
-                />
-              </div>
+              <CourseScheduleEditor
+                filas={horariosNuevoCurso}
+                onChange={(filas) => {
+                  setHorariosNuevoCurso(filas);
+                  setErrorNuevoCurso("");
+                }}
+                error={errorNuevoCurso}
+              />
               <div>
                 <Label htmlFor="descripcion-curso">Resumen</Label>
                 <Input
                   id="descripcion-curso"
                   value={nuevoCurso.descripcion}
-                  onChange={(event) => setNuevoCurso({ ...nuevoCurso, descripcion: event.target.value })}
+                  onChange={(event) => {
+                    setNuevoCurso({ ...nuevoCurso, descripcion: event.target.value });
+                    setErrorNuevoCurso("");
+                  }}
                 />
               </div>
               <Button
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600"
-                onClick={() => {
-                  agregarCurso(nuevoCurso);
-                  setNuevoCurso({
-                    nombre: "",
-                    docente: "",
-                    horario: "",
-                    semestre: usuarioActual?.semestre ?? "5",
-                    color: "blue",
-                    descripcion: "",
-                  });
-                }}
+                onClick={guardarCurso}
               >
                 Guardar curso
               </Button>

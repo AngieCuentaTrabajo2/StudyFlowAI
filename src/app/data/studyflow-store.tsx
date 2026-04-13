@@ -15,6 +15,7 @@ import {
   startOfToday,
 } from "date-fns";
 import { api, type ContextoApi, type UsuarioApi } from "./api";
+import { construirBloquesClaseDesdeCurso } from "./course-schedule";
 
 export type Prioridad = "low" | "medium" | "high";
 export type EstadoTarea = "pending" | "in-progress" | "completed" | "overdue";
@@ -158,6 +159,10 @@ type ValorContextoStudyFlow = EstadoStudyFlow & {
   ) => void;
   actualizarTarea: (tareaId: string, cambios: Partial<Tarea>) => void;
   alternarTareaCompletada: (tareaId: string) => void;
+  agendarRepasoParaTarea: (
+    tareaId: string,
+    horas: number,
+  ) => { ok: boolean; mensaje: string; horasProgramadas: number };
   agregarCurso: (curso: Omit<Curso, "id" | "materiales"> & { materiales?: Curso["materiales"] }) => void;
   actualizarCurso: (cursoId: string, cambios: Partial<Curso>) => void;
   eliminarCurso: (cursoId: string) => void;
@@ -179,6 +184,9 @@ type ValorContextoStudyFlow = EstadoStudyFlow & {
 
 const CLAVE_ALMACENAMIENTO = "studyflow-ai-state-v1";
 const etiquetasDias = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"];
+const HORA_MIN_PLANIFICADOR = 7;
+const HORA_MAX_PLANIFICADOR = 23;
+const HORAS_PREFERIDAS_REPASO = [18, 19, 20, 16, 17, 14, 15, 10, 11, 12, 13, 8, 9, 21, 7];
 const CUENTA_DEMO = {
   correo: "jhan.perez@universidad.edu",
   contrasena: "123456",
@@ -205,6 +213,120 @@ function usuarioRequiereCompletarPerfilAcademico(
 
 function crearId(prefijo: string) {
   return `${prefijo}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function ordenarBloquesPlanificador(bloques: BloquePlanificador[]) {
+  return [...bloques].sort((a, b) => a.dia - b.dia || a.horaInicio - b.horaInicio);
+}
+
+function sincronizarBloquesClaseConCursos(cursos: Curso[], bloquesPlanificador: BloquePlanificador[]) {
+  const bloquesNoClase = bloquesPlanificador.filter((bloque) => bloque.tipo !== "class");
+  const bloquesClaseActuales = bloquesPlanificador.filter((bloque) => bloque.tipo === "class");
+  const bloquesClaseDerivados = cursos.flatMap((curso) => {
+    const bloquesDesdeHorario = construirBloquesClaseDesdeCurso(curso);
+    if (bloquesDesdeHorario.length > 0) {
+      return bloquesDesdeHorario;
+    }
+
+    return bloquesClaseActuales.filter((bloque) => bloque.cursoId === curso.id);
+  });
+
+  return ordenarBloquesPlanificador([
+    ...bloquesNoClase,
+    ...bloquesClaseDerivados,
+  ]);
+}
+
+function obtenerDiaPlanificadorDesdeFecha(fecha: Date) {
+  return (fecha.getDay() + 6) % 7;
+}
+
+function haySolapamientoBloque(
+  bloques: BloquePlanificador[],
+  dia: number,
+  horaInicio: number,
+  duracion: number,
+) {
+  const inicio = horaInicio;
+  const fin = horaInicio + duracion;
+
+  return bloques.some((bloque) => {
+    if (bloque.dia !== dia) return false;
+    const inicioExistente = bloque.horaInicio;
+    const finExistente = bloque.horaInicio + bloque.duracion;
+    return inicio < finExistente && fin > inicioExistente;
+  });
+}
+
+function obtenerDiasCandidatosRepaso(fechaEntrega: string) {
+  const hoy = startOfToday();
+  const fechaLimite = parseISO(fechaEntrega);
+  const diferencia = differenceInCalendarDays(fechaLimite, hoy);
+  const cantidadDias = diferencia < 0 ? 7 : Math.min(diferencia + 1, 7);
+
+  return Array.from({ length: cantidadDias }, (_, indice) =>
+    obtenerDiaPlanificadorDesdeFecha(addDays(hoy, indice)),
+  );
+}
+
+function obtenerHorasCandidatasRepaso(dia: number) {
+  const ahora = new Date();
+  const diaActual = obtenerDiaPlanificadorDesdeFecha(ahora);
+  const horaActual = ahora.getHours();
+
+  return HORAS_PREFERIDAS_REPASO.filter((hora) => (dia === diaActual ? hora > horaActual : true));
+}
+
+function programarBloquesRepasoAutomaticos(
+  tarea: Tarea,
+  curso: Curso | undefined,
+  bloquesActuales: BloquePlanificador[],
+  horasSolicitadas: number,
+) {
+  const bloquesProgramados: BloquePlanificador[] = [];
+  let horasRestantes = Math.max(1, Math.round(horasSolicitadas));
+
+  for (const dia of obtenerDiasCandidatosRepaso(tarea.fechaEntrega)) {
+    for (const hora of obtenerHorasCandidatasRepaso(dia)) {
+      if (horasRestantes <= 0) {
+        break;
+      }
+
+      const bloquesOcupados = [...bloquesActuales, ...bloquesProgramados];
+      let duracion = 0;
+
+      if (horasRestantes >= 2 && hora + 2 <= HORA_MAX_PLANIFICADOR && !haySolapamientoBloque(bloquesOcupados, dia, hora, 2)) {
+        duracion = 2;
+      } else if (hora + 1 <= HORA_MAX_PLANIFICADOR && !haySolapamientoBloque(bloquesOcupados, dia, hora, 1)) {
+        duracion = 1;
+      }
+
+      if (duracion === 0) {
+        continue;
+      }
+
+      bloquesProgramados.push({
+        id: crearId("planner"),
+        dia,
+        horaInicio: hora,
+        duracion,
+        titulo: `Repaso: ${tarea.titulo}`,
+        cursoId: tarea.cursoId,
+        color: curso?.color ?? "purple",
+        tipo: "study",
+      });
+      horasRestantes -= duracion;
+    }
+
+    if (horasRestantes <= 0) {
+      break;
+    }
+  }
+
+  return {
+    bloques: bloquesProgramados,
+    horasProgramadas: Math.max(0, Math.round(horasSolicitadas) - horasRestantes),
+  };
 }
 
 function esErrorConexion(error: unknown) {
@@ -553,7 +675,7 @@ function crearEstadoInicial(): EstadoStudyFlow {
     cursos,
     tareas,
     examenes,
-    bloquesPlanificador,
+    bloquesPlanificador: sincronizarBloquesClaseConCursos(cursos, bloquesPlanificador),
     notificaciones,
     mensajesChat,
     fuenteAsistente: null,
@@ -626,6 +748,11 @@ function generarHorarioDesdeEstado(estado: EstadoStudyFlow) {
 }
 
 function integrarContexto(estadoActual: EstadoStudyFlow, contexto: ContextoApi) {
+  const cursos = contexto.cursos.map((curso) => ({
+    ...curso,
+    materiales: estadoActual.cursos.find((item) => item.id === curso.id)?.materiales ?? [],
+  }));
+
   return {
     ...estadoActual,
     usuarioActual: estadoActual.usuarioActual
@@ -653,13 +780,10 @@ function integrarContexto(estadoActual: EstadoStudyFlow, contexto: ContextoApi) 
           aplicacion: contexto.usuario?.aplicacion ?? estadoActual.usuarioActual.aplicacion,
         }
       : estadoActual.usuarioActual,
-    cursos: contexto.cursos.map((curso) => ({
-      ...curso,
-      materiales: estadoActual.cursos.find((item) => item.id === curso.id)?.materiales ?? [],
-    })),
+    cursos,
     tareas: normalizarTareas(contexto.tareas),
     examenes: contexto.examenes,
-    bloquesPlanificador: contexto.bloquesPlanificador,
+    bloquesPlanificador: sincronizarBloquesClaseConCursos(cursos, contexto.bloquesPlanificador),
     notificaciones: contexto.notificaciones,
     mensajesChat: contexto.mensajesChat,
   };
@@ -680,10 +804,16 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
 
     try {
       const parseado = JSON.parse(guardado) as EstadoStudyFlow;
+      const cursos = parseado.cursos ?? [];
       return {
         ...parseado,
         usuarioActual: normalizarUsuarioPersistido(parseado.usuarioActual),
+        cursos,
         tareas: normalizarTareas(parseado.tareas ?? []),
+        bloquesPlanificador: sincronizarBloquesClaseConCursos(
+          cursos,
+          parseado.bloquesPlanificador ?? [],
+        ),
       };
     } catch {
       return crearEstadoInicial();
@@ -1012,6 +1142,76 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           }
         }
       },
+      agendarRepasoParaTarea: (tareaId, horas) => {
+        const tareaObjetivo = estado.tareas.find((item) => item.id === tareaId);
+        if (!tareaObjetivo) {
+          return {
+            ok: false,
+            mensaje: "No pude encontrar esa tarea para programar el repaso.",
+            horasProgramadas: 0,
+          };
+        }
+
+        const horasNumericas = Number(horas);
+        const horasSolicitadas = Number.isFinite(horasNumericas)
+          ? Math.max(1, Math.round(horasNumericas))
+          : 1;
+        const curso = estado.cursos.find((item) => item.id === tareaObjetivo.cursoId);
+        const resultado = programarBloquesRepasoAutomaticos(
+          tareaObjetivo,
+          curso,
+          estado.bloquesPlanificador,
+          horasSolicitadas,
+        );
+
+        if (resultado.horasProgramadas === 0) {
+          return {
+            ok: false,
+            mensaje: "No encontre espacios libres antes de la entrega. Prueba con menos horas o mueve bloques en el planificador.",
+            horasProgramadas: 0,
+          };
+        }
+
+        const bloquesActualizados = ordenarBloquesPlanificador([
+          ...estado.bloquesPlanificador,
+          ...resultado.bloques,
+        ]);
+
+        const notificacionLocal: NotificacionItem = {
+          id: crearId("notif"),
+          tipo: resultado.horasProgramadas < horasSolicitadas ? "warning" : "success",
+          titulo:
+            resultado.horasProgramadas < horasSolicitadas
+              ? "Repaso programado parcialmente"
+              : "Repaso agregado al planificador",
+          mensaje:
+            resultado.horasProgramadas < horasSolicitadas
+              ? `Solo pude reservar ${resultado.horasProgramadas}h de ${horasSolicitadas}h para "${tareaObjetivo.titulo}".`
+              : `Reserve ${resultado.horasProgramadas}h para "${tareaObjetivo.titulo}" en espacios libres de tu planificador.`,
+          creadaEn: new Date().toISOString(),
+          noLeida: true,
+        };
+
+        setEstado((actual) => ({
+          ...actual,
+          bloquesPlanificador: bloquesActualizados,
+          notificaciones: [notificacionLocal, ...actual.notificaciones],
+        }));
+
+        if (estado.usuarioActual?.id) {
+          api.guardarPlanificador(estado.usuarioActual.id, bloquesActualizados).catch(() => {});
+          persistirNotificacion(estado.usuarioActual.id, notificacionLocal);
+        }
+
+        return {
+          ok: true,
+          mensaje:
+            resultado.horasProgramadas < horasSolicitadas
+              ? `Se programaron ${resultado.horasProgramadas}h. No encontre mas huecos libres por ahora.`
+              : `Listo. Ya te reserve ${resultado.horasProgramadas}h de repaso en el planificador.`,
+          horasProgramadas: resultado.horasProgramadas,
+        };
+      },
       agregarCurso: (curso) => {
         const cursoLocal: Curso = {
           ...curso,
@@ -1022,6 +1222,10 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         setEstado((actual) => ({
           ...actual,
           cursos: [cursoLocal, ...actual.cursos],
+          bloquesPlanificador: sincronizarBloquesClaseConCursos(
+            [cursoLocal, ...actual.cursos],
+            actual.bloquesPlanificador,
+          ),
         }));
 
         if (estado.usuarioActual?.id) {
@@ -1036,36 +1240,78 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
               descripcion: curso.descripcion,
             })
             .then((cursoBackend) => {
-              setEstado((actual) => ({
-                ...actual,
-                cursos: actual.cursos.map((item) =>
+              let bloquesActualizados: BloquePlanificador[] = [];
+
+              setEstado((actual) => {
+                const cursosActualizados = actual.cursos.map((item) =>
                   item.id === cursoLocal.id
                     ? { ...cursoBackend, materiales: item.materiales }
                     : item,
-                ),
-              }));
+                );
+                bloquesActualizados = sincronizarBloquesClaseConCursos(
+                  cursosActualizados,
+                  actual.bloquesPlanificador.filter((bloque) => bloque.cursoId !== cursoLocal.id),
+                );
+
+                return {
+                  ...actual,
+                  cursos: cursosActualizados,
+                  bloquesPlanificador: bloquesActualizados,
+                };
+              });
+
+              api.guardarPlanificador(estado.usuarioActual.id, bloquesActualizados).catch(() => {});
             })
-              .catch(() => {});
-          }
-        },
+            .catch(() => {});
+        }
+      },
       actualizarCurso: (cursoId, cambios) => {
-        setEstado((actual) => ({
-          ...actual,
-          cursos: actual.cursos.map((curso) => (curso.id === cursoId ? { ...curso, ...cambios } : curso)),
-        }));
+        let bloquesActualizados: BloquePlanificador[] = [];
+
+        setEstado((actual) => {
+          const cursosActualizados = actual.cursos.map((curso) =>
+            curso.id === cursoId ? { ...curso, ...cambios } : curso,
+          );
+          bloquesActualizados = sincronizarBloquesClaseConCursos(
+            cursosActualizados,
+            actual.bloquesPlanificador,
+          );
+
+          return {
+            ...actual,
+            cursos: cursosActualizados,
+            bloquesPlanificador: bloquesActualizados,
+          };
+        });
 
         api.actualizarCurso(cursoId, cambios).catch(() => {});
+        if (estado.usuarioActual?.id) {
+          api.guardarPlanificador(estado.usuarioActual.id, bloquesActualizados).catch(() => {});
+        }
       },
       eliminarCurso: (cursoId) => {
-        setEstado((actual) => ({
-          ...actual,
-          cursos: actual.cursos.filter((curso) => curso.id !== cursoId),
-          tareas: actual.tareas.filter((tarea) => tarea.cursoId !== cursoId),
-          examenes: actual.examenes.filter((examen) => examen.cursoId !== cursoId),
-          bloquesPlanificador: actual.bloquesPlanificador.filter((bloque) => bloque.cursoId !== cursoId),
-        }));
+        let bloquesActualizados: BloquePlanificador[] = [];
+
+        setEstado((actual) => {
+          const cursosActualizados = actual.cursos.filter((curso) => curso.id !== cursoId);
+          bloquesActualizados = sincronizarBloquesClaseConCursos(
+            cursosActualizados,
+            actual.bloquesPlanificador.filter((bloque) => bloque.cursoId !== cursoId),
+          );
+
+          return {
+            ...actual,
+            cursos: cursosActualizados,
+            tareas: actual.tareas.filter((tarea) => tarea.cursoId !== cursoId),
+            examenes: actual.examenes.filter((examen) => examen.cursoId !== cursoId),
+            bloquesPlanificador: bloquesActualizados,
+          };
+        });
 
         api.eliminarCurso(cursoId).catch(() => {});
+        if (estado.usuarioActual?.id) {
+          api.guardarPlanificador(estado.usuarioActual.id, bloquesActualizados).catch(() => {});
+        }
       },
       agregarExamen: (examen) => {
         const examenLocal: Examen = { ...examen, id: crearId("exam") };
@@ -1233,6 +1479,11 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         return;
       },
       moverBloquePlanificador: (bloqueId, dia, horaInicio) => {
+        const bloqueObjetivo = estado.bloquesPlanificador.find((bloque) => bloque.id === bloqueId);
+        if (bloqueObjetivo?.tipo === "class") {
+          return;
+        }
+
         const bloquesActualizados = estado.bloquesPlanificador.map((bloque) =>
           bloque.id === bloqueId ? { ...bloque, dia, horaInicio } : bloque,
         );
@@ -1254,6 +1505,11 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         }
       },
       actualizarBloquePlanificador: (bloqueId, cambios) => {
+        const bloqueObjetivo = estado.bloquesPlanificador.find((bloque) => bloque.id === bloqueId);
+        if (bloqueObjetivo?.tipo === "class") {
+          return;
+        }
+
         const bloquesActualizados = estado.bloquesPlanificador.map((bloque) =>
           bloque.id === bloqueId ? { ...bloque, ...cambios } : bloque,
         );
@@ -1278,6 +1534,11 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         }
       },
       eliminarBloquePlanificador: (bloqueId) => {
+        const bloqueObjetivo = estado.bloquesPlanificador.find((bloque) => bloque.id === bloqueId);
+        if (bloqueObjetivo?.tipo === "class") {
+          return;
+        }
+
         const bloquesActualizados = estado.bloquesPlanificador.filter((bloque) => bloque.id !== bloqueId);
 
         setEstado((actual) => ({

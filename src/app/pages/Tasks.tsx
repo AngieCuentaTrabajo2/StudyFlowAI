@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
-import { AlertCircle, BookOpen, Calendar, Clock, Pencil, Plus, Search } from "lucide-react";
+import { AlertCircle, BookOpen, Calendar, Clock, Pencil, Plus, Search, Sparkles } from "lucide-react";
 import {
   formatearFechaCorta,
   obtenerEstadoVisualTarea,
@@ -43,7 +43,14 @@ function crearFormularioVacio(cursoId: string): FormularioTarea {
 }
 
 export default function Tasks() {
-  const { tareas, cursos, agregarTarea, alternarTareaCompletada, actualizarTarea } = useStudyFlow();
+  const {
+    tareas,
+    cursos,
+    agregarTarea,
+    alternarTareaCompletada,
+    actualizarTarea,
+    agendarRepasoParaTarea,
+  } = useStudyFlow();
   const [searchParams, setSearchParams] = useSearchParams();
   const tareaDestacadaId = searchParams.get("focus");
   const [busqueda, setBusqueda] = useState("");
@@ -52,7 +59,11 @@ export default function Tasks() {
   const [filtroEstado, setFiltroEstado] = useState("all");
   const [dialogoCrearAbierto, setDialogoCrearAbierto] = useState(false);
   const [tareaEnEdicion, setTareaEnEdicion] = useState<Tarea | null>(null);
+  const [tareaParaRepaso, setTareaParaRepaso] = useState<Tarea | null>(null);
   const [borradorTarea, setBorradorTarea] = useState<FormularioTarea>(crearFormularioVacio(cursos[0]?.id ?? ""));
+  const [horasRepasoDeseadas, setHorasRepasoDeseadas] = useState("2");
+  const [mensajeRepaso, setMensajeRepaso] = useState("");
+  const [repasoProgramado, setRepasoProgramado] = useState(false);
 
   useEffect(() => {
     if (!tareaDestacadaId) return;
@@ -361,6 +372,96 @@ export default function Tasks() {
                             }}
                           />
                         )}
+                      </DialogContent>
+                    </Dialog>
+                    <Dialog
+                      open={tareaParaRepaso?.id === tarea.id}
+                      onOpenChange={(abierto) => {
+                        if (!abierto) {
+                          setTareaParaRepaso(null);
+                          setHorasRepasoDeseadas("2");
+                          setMensajeRepaso("");
+                          setRepasoProgramado(false);
+                        }
+                      }}
+                    >
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full sm:w-auto"
+                          onClick={() => {
+                            setTareaParaRepaso(tarea);
+                            setHorasRepasoDeseadas(String(Math.min(Math.max(tarea.horasEstimadas, 1), 4)));
+                            setMensajeRepaso("");
+                            setRepasoProgramado(false);
+                          }}
+                        >
+                          <Sparkles className="mr-2 h-4 w-4" />
+                          Agregar repaso
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Programar repaso automatico</DialogTitle>
+                        </DialogHeader>
+                        {tareaParaRepaso ? (
+                          <div className="space-y-4">
+                            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                              <p className="font-semibold text-slate-900">{tareaParaRepaso.titulo}</p>
+                              <div className="mt-2 flex flex-wrap gap-3 text-sm text-slate-600">
+                                <span>{curso?.nombre ?? "Sin curso"}</span>
+                                <span>{formatearFechaCorta(tareaParaRepaso.fechaEntrega)}</span>
+                                <span>{tareaParaRepaso.progreso}% avanzado</span>
+                              </div>
+                            </div>
+
+                            <div>
+                              <Label htmlFor={`horas-repaso-${tarea.id}`}>Horas de repaso a reservar</Label>
+                              <Input
+                                id={`horas-repaso-${tarea.id}`}
+                                type="number"
+                                min="1"
+                                max="8"
+                                value={horasRepasoDeseadas}
+                                onChange={(event) => {
+                                  setHorasRepasoDeseadas(event.target.value);
+                                  setMensajeRepaso("");
+                                  setRepasoProgramado(false);
+                                }}
+                              />
+                              <p className="mt-2 text-sm text-slate-500">
+                                La app buscara espacios libres antes de la entrega y los agregara sola al planificador.
+                              </p>
+                            </div>
+
+                            {mensajeRepaso ? (
+                              <div
+                                className={`rounded-2xl border p-3 text-sm ${
+                                  repasoProgramado
+                                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                    : "border-amber-200 bg-amber-50 text-amber-700"
+                                }`}
+                              >
+                                {mensajeRepaso}
+                              </div>
+                            ) : null}
+
+                            <Button
+                              className="w-full bg-gradient-to-r from-blue-600 to-purple-600"
+                              onClick={() => {
+                                const resultado = agendarRepasoParaTarea(
+                                  tareaParaRepaso.id,
+                                  Number(horasRepasoDeseadas),
+                                );
+                                setMensajeRepaso(resultado.mensaje);
+                                setRepasoProgramado(resultado.ok);
+                              }}
+                            >
+                              Reservar repaso en el planificador
+                            </Button>
+                          </div>
+                        ) : null}
                       </DialogContent>
                     </Dialog>
                     <Button

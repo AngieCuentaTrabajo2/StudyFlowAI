@@ -15,7 +15,7 @@ import { Label } from "../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Slider } from "../components/ui/slider";
 
-const horas = Array.from({ length: 14 }, (_, index) => index + 8);
+const horas = Array.from({ length: 16 }, (_, index) => index + 7);
 const ALTO_CELDA = 72;
 const ALTO_CELDA_MOVIL = 52;
 
@@ -143,7 +143,7 @@ export default function Planner() {
                 Edicion manual activa
               </div>
               <p>
-                Arrastra un bloque a otra celda para reorganizar tu semana. La IA propone y tu decides el ajuste final.
+                Arrastra tus bloques de estudio a otra celda para reorganizar tu semana. Los bloques de clase vienen desde cada curso y quedan reservados.
               </p>
             </div>
 
@@ -476,8 +476,13 @@ function CalendarioPlanificador({
                 >
                   {bloque ? (
                     <div
-                      draggable
+                      draggable={bloque.tipo !== "class"}
                       onDragStart={(event) => {
+                        if (bloque.tipo === "class") {
+                          event.preventDefault();
+                          onSetMensajeEdicion("Ese bloque corresponde al horario del curso. Editalo desde Mis cursos.");
+                          return;
+                        }
                         event.dataTransfer.setData("text/plain", bloque.id);
                         onSetBloqueArrastradoId(bloque.id);
                       }}
@@ -485,8 +490,16 @@ function CalendarioPlanificador({
                         onSetBloqueArrastradoId(null);
                         onSetCeldaActiva(null);
                       }}
-                      onClick={() => onEditarBloque(bloque)}
-                      className={`absolute left-1 right-1 top-1 cursor-grab rounded-xl text-white shadow-md transition-all active:cursor-grabbing ${
+                      onClick={() => {
+                        if (bloque.tipo === "class") {
+                          onSetMensajeEdicion("Ese bloque corresponde al horario del curso. Editalo desde Mis cursos.");
+                          return;
+                        }
+                        onEditarBloque(bloque);
+                      }}
+                      className={`absolute left-1 right-1 top-1 rounded-xl text-white shadow-md transition-all ${
+                        bloque.tipo === "class" ? "cursor-default" : "cursor-grab active:cursor-grabbing"
+                      } ${
                         bloqueArrastradoId === bloque.id ? "scale-95 opacity-70" : "hover:-translate-y-0.5"
                       } ${bloqueRecienteId === bloque.id ? "ring-4 ring-blue-200/80 animate-pulse" : ""} ${
                         compacto ? "p-2" : "p-3"
@@ -502,8 +515,14 @@ function CalendarioPlanificador({
                           {bloque.titulo}
                         </div>
                         <div className="flex items-center gap-1">
-                          <Pencil className={`${compacto ? "h-3 w-3" : "h-3.5 w-3.5"} shrink-0 text-white/80`} />
-                          <GripVertical className={`${compacto ? "h-3.5 w-3.5" : "h-4 w-4"} shrink-0 text-white/80`} />
+                          {bloque.tipo === "class" ? (
+                            <Calendar className={`${compacto ? "h-3 w-3" : "h-3.5 w-3.5"} shrink-0 text-white/80`} />
+                          ) : (
+                            <>
+                              <Pencil className={`${compacto ? "h-3 w-3" : "h-3.5 w-3.5"} shrink-0 text-white/80`} />
+                              <GripVertical className={`${compacto ? "h-3.5 w-3.5" : "h-4 w-4"} shrink-0 text-white/80`} />
+                            </>
+                          )}
                         </div>
                       </div>
                       <div className={`mt-1.5 flex items-center gap-1 text-white/85 ${compacto ? "text-[10px]" : "text-xs"}`}>

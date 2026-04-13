@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { ArrowLeft, BookOpen, Calendar, FileText, Pencil, Sparkles, Trash2, User } from "lucide-react";
+import CourseScheduleEditor from "../components/CourseScheduleEditor";
+import {
+  crearFilaHorarioCurso,
+  formatearHorarioCurso,
+  parsearHorarioCurso,
+  validarHorarioCurso,
+} from "../data/course-schedule";
 import { formatearFechaCorta, useStudyFlow } from "../data/studyflow-store";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -14,12 +21,13 @@ export default function CourseDetail() {
   const { courseId } = useParams();
   const { obtenerCursoPorId, tareas, examenes, actualizarCurso, eliminarCurso } = useStudyFlow();
   const curso = obtenerCursoPorId(courseId);
+  const [dialogoEdicionAbierto, setDialogoEdicionAbierto] = useState(false);
+  const [errorHorario, setErrorHorario] = useState("");
   const [formulario, setFormulario] = useState(() =>
     curso
       ? {
           nombre: curso.nombre,
           docente: curso.docente,
-          horario: curso.horario,
           semestre: curso.semestre,
           color: curso.color,
           descripcion: curso.descripcion,
@@ -27,16 +35,59 @@ export default function CourseDetail() {
       : {
           nombre: "",
           docente: "",
-          horario: "",
           semestre: "1",
           color: "blue",
           descripcion: "",
         },
   );
+  const [horariosFormulario, setHorariosFormulario] = useState(() =>
+    curso
+      ? (() => {
+          const filas = parsearHorarioCurso(curso.horario);
+          return filas.length ? filas : [crearFilaHorarioCurso()];
+        })()
+      : [crearFilaHorarioCurso()],
+  );
 
   if (!curso) {
     return <div className="rounded-2xl bg-white p-8 shadow">Curso no encontrado.</div>;
   }
+
+  const reiniciarFormularioCurso = () => {
+    setFormulario({
+      nombre: curso.nombre,
+      docente: curso.docente,
+      semestre: curso.semestre,
+      color: curso.color,
+      descripcion: curso.descripcion,
+    });
+    const filas = parsearHorarioCurso(curso.horario);
+    setHorariosFormulario(filas.length ? filas : [crearFilaHorarioCurso()]);
+    setErrorHorario("");
+  };
+
+  const guardarCambiosCurso = () => {
+    if (!formulario.nombre.trim() || !formulario.docente.trim()) {
+      setErrorHorario("Completa al menos el nombre del curso y el docente.");
+      return;
+    }
+
+    const error = validarHorarioCurso(horariosFormulario);
+    if (error) {
+      setErrorHorario(error);
+      return;
+    }
+
+    actualizarCurso(curso.id, {
+      ...formulario,
+      nombre: formulario.nombre.trim(),
+      docente: formulario.docente.trim(),
+      horario: formatearHorarioCurso(horariosFormulario),
+      descripcion: formulario.descripcion.trim(),
+    });
+    setErrorHorario("");
+    setDialogoEdicionAbierto(false);
+  };
 
   const estiloCurso = obtenerEstiloCurso(curso.color);
   const tareasCurso = tareas.filter((tarea) => tarea.cursoId === curso.id);
@@ -80,7 +131,15 @@ export default function CourseDetail() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Dialog>
+            <Dialog
+              open={dialogoEdicionAbierto}
+              onOpenChange={(abierto) => {
+                setDialogoEdicionAbierto(abierto);
+                if (!abierto) {
+                  reiniciarFormularioCurso();
+                }
+              }}
+            >
               <DialogTrigger asChild>
                 <Button variant="outline">
                   <Pencil className="mr-2 h-4 w-4" />
@@ -94,21 +153,43 @@ export default function CourseDetail() {
                 <div className="space-y-4">
                   <div>
                     <Label>Nombre</Label>
-                    <Input value={formulario.nombre} onChange={(event) => setFormulario({ ...formulario, nombre: event.target.value })} />
+                    <Input
+                      value={formulario.nombre}
+                      onChange={(event) => {
+                        setFormulario({ ...formulario, nombre: event.target.value });
+                        setErrorHorario("");
+                      }}
+                    />
                   </div>
                   <div>
                     <Label>Docente</Label>
-                    <Input value={formulario.docente} onChange={(event) => setFormulario({ ...formulario, docente: event.target.value })} />
+                    <Input
+                      value={formulario.docente}
+                      onChange={(event) => {
+                        setFormulario({ ...formulario, docente: event.target.value });
+                        setErrorHorario("");
+                      }}
+                    />
                   </div>
-                  <div>
-                    <Label>Horario</Label>
-                    <Input value={formulario.horario} onChange={(event) => setFormulario({ ...formulario, horario: event.target.value })} />
-                  </div>
+                  <CourseScheduleEditor
+                    filas={horariosFormulario}
+                    onChange={(filas) => {
+                      setHorariosFormulario(filas);
+                      setErrorHorario("");
+                    }}
+                    error={errorHorario}
+                  />
                   <div>
                     <Label>Descripcion</Label>
-                    <Input value={formulario.descripcion} onChange={(event) => setFormulario({ ...formulario, descripcion: event.target.value })} />
+                    <Input
+                      value={formulario.descripcion}
+                      onChange={(event) => {
+                        setFormulario({ ...formulario, descripcion: event.target.value });
+                        setErrorHorario("");
+                      }}
+                    />
                   </div>
-                  <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600" onClick={() => actualizarCurso(curso.id, formulario)}>
+                  <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600" onClick={guardarCambiosCurso}>
                     Guardar cambios
                   </Button>
                 </div>
