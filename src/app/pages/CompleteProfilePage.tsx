@@ -87,6 +87,9 @@ export default function CompleteProfilePage() {
             Tu cuenta de Google ya quedo conectada. Solo nos faltan estos datos para personalizar tu panel.
           </p>
           <p className="mb-8 text-sm text-gray-500">{usuarioActual.correo}</p>
+          <p className="mb-6 text-xs text-gray-400">
+            Si el backend esta despertando en Render, este paso puede tardar cerca de 1 minuto.
+          </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
@@ -145,7 +148,7 @@ export default function CompleteProfilePage() {
               disabled={cargando}
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
-              {cargando ? "Guardando..." : "Guardar y continuar"}
+              {cargando ? "Guardando tu perfil..." : "Guardar y continuar"}
             </Button>
           </form>
 

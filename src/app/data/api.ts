@@ -2,10 +2,18 @@ const URL_API =
   (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_API_URL ??
   "http://localhost:4000";
 const TIEMPO_ESPERA_API = 35000;
+const TIEMPO_ESPERA_API_LENTO = 70000;
 
-async function request<T>(ruta: string, init?: RequestInit): Promise<T> {
+type OpcionesRequest = RequestInit & {
+  timeoutMs?: number;
+};
+
+async function request<T>(ruta: string, init?: OpcionesRequest): Promise<T> {
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), TIEMPO_ESPERA_API);
+  const timeout = window.setTimeout(
+    () => controller.abort(),
+    init?.timeoutMs ?? TIEMPO_ESPERA_API,
+  );
 
   let response: Response;
 
@@ -149,12 +157,14 @@ export const api = {
     return request<RespuestaInicioSesionApi>("/api/auth/login", {
       method: "POST",
       body: JSON.stringify(payload),
+      timeoutMs: TIEMPO_ESPERA_API_LENTO,
     });
   },
   iniciarSesionConGoogle(payload: { credential: string }) {
     return request<RespuestaInicioSesionApi>("/api/auth/google", {
       method: "POST",
       body: JSON.stringify(payload),
+      timeoutMs: TIEMPO_ESPERA_API_LENTO,
     });
   },
   registrarUsuario(payload: {
@@ -173,7 +183,9 @@ export const api = {
     });
   },
   obtenerContexto(estudianteId: string) {
-    return request<ContextoApi>(`/api/contexto/${estudianteId}`);
+    return request<ContextoApi>(`/api/contexto/${estudianteId}`, {
+      timeoutMs: TIEMPO_ESPERA_API_LENTO,
+    });
   },
   actualizarPerfil(
     estudianteId: string,
@@ -182,6 +194,7 @@ export const api = {
     return request<{ usuario: UsuarioApi }>(`/api/perfil/${estudianteId}`, {
       method: "PATCH",
       body: JSON.stringify(payload),
+      timeoutMs: TIEMPO_ESPERA_API_LENTO,
     });
   },
   crearCurso(payload: {
