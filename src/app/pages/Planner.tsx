@@ -630,7 +630,7 @@ function CalendarioPlanificador({
   compacto?: boolean;
 }) {
   const altoCelda = compacto ? ALTO_CELDA_MOVIL : ALTO_CELDA;
-  const minWidth = compacto ? "min-w-[720px]" : "min-w-[1120px]";
+  const minWidth = compacto ? "min-w-[720px]" : "min-w-[1280px]";
 
   return (
     <div className={`w-max ${minWidth}`}>
