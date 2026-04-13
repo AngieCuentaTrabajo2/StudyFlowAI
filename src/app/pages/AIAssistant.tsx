@@ -64,6 +64,8 @@ type FlujoPlanificacionChat = {
   modoTodo: ModoPlanificacionTodo;
 };
 
+type TonoPlanificadorLocal = "amigable" | "responsable" | "frio";
+
 const flujoPlanificacionInicial: FlujoPlanificacionChat = {
   activo: false,
   paso: "modo",
@@ -73,6 +75,113 @@ const flujoPlanificacionInicial: FlujoPlanificacionChat = {
   jornada: "flexible",
   modoTodo: "solo-calendarizado",
 };
+
+function resolverTonoPlanificadorLocal(
+  tono: "frio" | "amigable" | "responsable" | null | undefined,
+): TonoPlanificadorLocal {
+  if (tono === "amigable" || tono === "frio" || tono === "responsable") {
+    return tono;
+  }
+
+  return "responsable";
+}
+
+function mensajeSegunTonoPlanificador(
+  tono: TonoPlanificadorLocal,
+  variantes: {
+    amigable: string;
+    responsable?: string;
+    frio?: string;
+  },
+) {
+  if (tono === "amigable") {
+    return variantes.amigable;
+  }
+
+  if (tono === "frio") {
+    return variantes.frio ?? variantes.responsable ?? variantes.amigable;
+  }
+
+  return variantes.responsable ?? variantes.amigable;
+}
+
+function adaptarMensajePlanificadorAlTono(
+  mensaje: string,
+  tono: TonoPlanificadorLocal,
+) {
+  if (tono === "responsable") {
+    return mensaje;
+  }
+
+  if (tono === "frio") {
+    return mensaje
+      .replace(/^Buenisimo\.\s*/g, "")
+      .replace(/^Claro,\s*/g, "")
+      .replace(/^Claro\.\s*/g, "")
+      .replace(/^Perfecto\.\s*/g, "")
+      .replace(/^Listo\.\s*/g, "")
+      .replace("Si te parece bien, responde `si` para aplicar o `no` para cancelar.", "Responde `si` para aplicar o `no` para cancelar.")
+      .replace("Puedes responder con el numero o con el nombre.", "Responde con numero o nombre.")
+      .replace("Puedes responder con el numero o con algo como `solo calendario`, `tareas`, `repasos` o `todo`.", "Responde con `1`, `2`, `3`, `4` o una opcion equivalente.");
+  }
+
+  return mensaje
+    .replace(
+      "Claro. Puedo ayudarte a planificar tu horario y voy a respetar tu limite actual de ",
+      "Claro, te ayudo encantado. Voy a respetar tu limite actual de ",
+    )
+    .replace(
+      "Perfecto. Antes de mover todo, dime con que base quieres trabajar:",
+      "Buenisimo. Antes de mover todo, quiero respetar como ya vienes organizandote:",
+    )
+    .replace(
+      "Perfecto. Voy a trabajar con ",
+      "Buenisimo. Voy a trabajar con ",
+    )
+    .replace(
+      "Perfecto. Elige la tarea que quieres reorganizar:",
+      "Buenisimo. Elige la tarea que quieres reorganizar:",
+    )
+    .replace(
+      "Perfecto. Dime que curso quieres reforzar:",
+      "Buenisimo. Dime que curso quieres reforzar:",
+    )
+    .replace(
+      "Perfecto. Voy a reorganizar la tarea",
+      "Buenisimo. Voy a reorganizar la tarea",
+    )
+    .replace(
+      "Perfecto. Voy a reorganizar el repaso de",
+      "Buenisimo. Voy a reorganizar el repaso de",
+    )
+    .replace("Perfecto. Ahora dime", "Perfecto. Ahora cuentame")
+    .replace("Ahora mismo no veo tareas activas para reorganizar.", "Por ahora no veo tareas activas para reorganizar.")
+    .replace("Ahora mismo no veo cursos cargados para organizar un repaso.", "Por ahora no veo cursos cargados para organizar un repaso.")
+    .replace("No identifique esa tarea.", "No logre ubicar esa tarea.")
+    .replace("No identifique ese curso.", "No logre ubicar ese curso.")
+    .replace("No pude detectar los dias.", "No llegue a detectar los dias.")
+    .replace(
+      "Listo. Voy a reorganizar ",
+      "Buenisimo. Quedaria asi para reorganizar ",
+    )
+    .replace(
+      "Si te parece bien, responde `si` para aplicar o `no` para cancelar.",
+      "Si te cuadra, responde `si` y la aplico. Si no, dime `no` y la dejamos ahi.",
+    )
+    .replace(
+      "Para seguir necesito que me respondas `si` para aplicar o `no` para cancelar.",
+      "Para seguir necesito que me respondas `si` para aplicarlo o `no` para dejarlo en pausa.",
+    )
+    .replace(
+      "Listo, cancele esta planificacion. Si quieres, luego volvemos a empezar con otra configuracion.",
+      "Listo, lo dejo en pausa por ahora. Si luego quieres retomarlo, lo armamos otra vez sin problema.",
+    )
+    .replace(/^Listo\.\s*/, "Listo, ya te lo deje organizado. ")
+    .replace(
+      /^Aplique la planificacion,\s*/i,
+      "Ya aplique la planificacion. ",
+    );
+}
 
 function normalizarTextoPlanificacion(valor: string) {
   return valor
@@ -136,6 +245,48 @@ function esConfirmacionNegativa(mensaje: string) {
   return ["no", "cancelar", "cancela", "salir", "deten"].some((termino) =>
     texto === termino || texto.includes(termino),
   );
+}
+
+function normalizarTextoConfirmacionSeguro(mensaje: string) {
+  return normalizarTextoPlanificacion(mensaje)
+    .replace(/[.,;:!?¿¡()]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function esConfirmacionPositivaSegura(mensaje: string) {
+  const texto = normalizarTextoConfirmacionSeguro(mensaje);
+  return (
+    ["si", "confirmar", "confirma", "dale", "hazlo", "ok", "aplica"].includes(texto) ||
+    /\b(si|confirmar|confirma|dale|hazlo|ok|aplica)\b/.test(texto)
+  );
+}
+
+function esConfirmacionNegativaSegura(mensaje: string) {
+  const texto = normalizarTextoConfirmacionSeguro(mensaje);
+  return [
+    "no",
+    "mejor no",
+    "cancelar",
+    "cancela",
+    "salir",
+    "deten",
+    "detente",
+  ].includes(texto);
+}
+
+function detectarDudaPlanificacion(mensaje: string) {
+  const texto = normalizarTextoPlanificacion(mensaje);
+  return [
+    "creo",
+    "creeria",
+    "supongo",
+    "tal vez",
+    "quizas",
+    "quiza",
+    "me parece",
+    "puede ser",
+  ].some((termino) => texto.includes(termino));
 }
 
 function detectarModoPlanificacionTodo(mensaje: string): ModoPlanificacionTodo | null {
@@ -270,6 +421,21 @@ export default function AIAssistant() {
     (item) => item.tipo === "ai" && item.mensaje === "Pensando tu respuesta con Groq...",
   );
   const fuenteVisible = flujoPlanificacion.activo ? "sistema" : fuenteAsistente;
+  const tonoPlanificador = resolverTonoPlanificadorLocal(usuarioActual?.tonoAsistente);
+  const anexarMensajesPlanificacion = (
+    mensajes: Array<{ tipo: "user" | "ai"; mensaje: string }>,
+  ) => {
+    anexarMensajesAsistenteLocales(
+      mensajes.map((item) =>
+        item.tipo === "ai"
+          ? {
+              ...item,
+              mensaje: adaptarMensajePlanificadorAlTono(item.mensaje, tonoPlanificador),
+            }
+          : item,
+      ),
+    );
+  };
 
   const sugerenciasContextuales = useMemo(
     () => [
@@ -302,12 +468,21 @@ export default function AIAssistant() {
 
     if (!flujoPlanificacion.activo) {
       const limite = usuarioActual?.horasEstudioDiarias ?? 2;
-      anexarMensajesAsistenteLocales([
+      anexarMensajesPlanificacion([
         {
           tipo: "ai",
           mensaje:
-            `Vamos a planificar tu horario con IA. Tu limite actual es de ${limite}h de estudio por dia.\n\n` +
-            "Puedo reorganizar `todo`, `una tarea` o `un curso`. Escribe una de esas opciones para empezar.",
+            mensajeSegunTonoPlanificador(tonoPlanificador, {
+              amigable:
+                `Buenisimo. Vamos a ordenar tu horario contigo. Tu limite actual es de ${limite}h de estudio por dia.\n\n` +
+                "Puedo reorganizar `todo`, `una tarea` o `un curso`. Dime cual te acomoda mas y seguimos.",
+              responsable:
+                `Vamos a planificar tu horario con IA. Tu limite actual es de ${limite}h de estudio por dia.\n\n` +
+                "Puedo reorganizar `todo`, `una tarea` o `un curso`. Escribe una de esas opciones para empezar.",
+              frio:
+                `Planificacion activa. Limite actual: ${limite}h de estudio por dia.\n\n` +
+                "Elige `todo`, `una tarea` o `un curso`.",
+            }),
         },
       ]);
       setFlujoPlanificacion({
@@ -324,6 +499,7 @@ export default function AIAssistant() {
     flujoPlanificacion.activo,
     searchParams,
     setSearchParams,
+    tonoPlanificador,
     usuarioActual?.horasEstudioDiarias,
   ]);
 
@@ -334,13 +510,22 @@ export default function AIAssistant() {
 
   const iniciarFlujoPlanificacion = (mensajeUsuario?: string) => {
     const limite = usuarioActual?.horasEstudioDiarias ?? 2;
-    anexarMensajesAsistenteLocales([
+    anexarMensajesPlanificacion([
       ...(mensajeUsuario ? [{ tipo: "user" as const, mensaje: mensajeUsuario }] : []),
       {
         tipo: "ai" as const,
         mensaje:
-          `Claro. Puedo ayudarte a planificar tu horario y voy a respetar tu limite actual de ${limite}h por dia.\n\n` +
-          "Dime si quieres reorganizar `todo`, `una tarea` o `un curso`.",
+          mensajeSegunTonoPlanificador(tonoPlanificador, {
+            amigable:
+              `Claro, te ayudo encantado. Voy a respetar tu limite actual de ${limite}h por dia para que el horario te quede manejable.\n\n` +
+              "Dime si quieres reorganizar `todo`, `una tarea` o `un curso` y lo armamos juntos.",
+            responsable:
+              `Claro. Puedo ayudarte a planificar tu horario y voy a respetar tu limite actual de ${limite}h por dia.\n\n` +
+              "Dime si quieres reorganizar `todo`, `una tarea` o `un curso`.",
+            frio:
+              `Puedo reorganizar tu horario con un limite de ${limite}h por dia.\n\n` +
+              "Indica `todo`, `una tarea` o `un curso`.",
+          }),
       },
     ]);
     setFlujoPlanificacion({
@@ -350,10 +535,11 @@ export default function AIAssistant() {
   };
 
   const procesarMensajePlanificacion = (textoOriginal: string) => {
+    const anexarMensajesAsistenteLocales = anexarMensajesPlanificacion;
     const texto = textoOriginal.trim();
     const textoNormalizado = normalizarTextoPlanificacion(texto);
 
-    if (esConfirmacionNegativa(texto) && flujoPlanificacion.activo) {
+    if (esConfirmacionNegativaSegura(texto) && flujoPlanificacion.activo) {
       anexarMensajesAsistenteLocales([
         { tipo: "user", mensaje: texto },
         {
@@ -595,6 +781,7 @@ export default function AIAssistant() {
 
     if (flujoPlanificacion.paso === "jornada") {
       const jornada = detectarJornadaPlanificacion(texto);
+      const expresaDuda = detectarDudaPlanificacion(texto);
 
       if (!jornada) {
         anexarMensajesAsistenteLocales([
@@ -623,6 +810,9 @@ export default function AIAssistant() {
         flujoPlanificacion.alcance === "todo"
           ? `- Base de planificacion: ${obtenerResumenModoTodo(flujoPlanificacion.modoTodo)}\n`
           : "";
+      const detalleDuda = expresaDuda
+        ? `- Nota: te lei inclinandote por ${jornada}. Si no te convence, todavia la cambiamos antes de aplicarla.\n`
+        : "";
 
       anexarMensajesAsistenteLocales([
         { tipo: "user", mensaje: texto },
@@ -631,6 +821,7 @@ export default function AIAssistant() {
           mensaje:
             `Listo. Voy a reorganizar ${resumenObjetivo} con estas reglas:\n\n` +
             detalleModoTodo +
+            detalleDuda +
             `- Dias libres: ${obtenerResumenDiasBloqueados(flujoPlanificacion.diasBloqueados)}\n` +
             `- Franja preferida: ${jornada}\n` +
             `- Limite diario actual: ${usuarioActual?.horasEstudioDiarias ?? 2}h\n\n` +
@@ -646,7 +837,7 @@ export default function AIAssistant() {
     }
 
     if (flujoPlanificacion.paso === "confirmacion") {
-      if (!esConfirmacionPositiva(texto)) {
+      if (!esConfirmacionPositivaSegura(texto)) {
         anexarMensajesAsistenteLocales([
           { tipo: "user", mensaje: texto },
           {
