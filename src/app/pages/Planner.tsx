@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router";
 import { BookOpen, Calendar, Clock, Coffee, GripVertical, Move, Pencil, Settings, Sparkles, Trash2, type LucideIcon } from "lucide-react";
 import {
   obtenerColorValor,
@@ -237,13 +238,13 @@ export default function Planner() {
     usuarioActual,
     bloquesPlanificador,
     actualizarPerfil,
-    generarHorarioInteligente,
     moverBloquePlanificador,
     actualizarBloquePlanificador,
     eliminarBloquePlanificador,
     cursos,
     examenes,
   } = useStudyFlow();
+  const navigate = useNavigate();
   const [bloqueArrastradoId, setBloqueArrastradoId] = useState<string | null>(null);
   const [celdaActiva, setCeldaActiva] = useState<string | null>(null);
   const [bloqueEnEdicion, setBloqueEnEdicion] = useState<BloquePlanificador | null>(null);
@@ -264,12 +265,11 @@ export default function Planner() {
           </p>
         </div>
         <Button
-          disabled
-          className="w-full cursor-not-allowed bg-gradient-to-r from-slate-300 to-slate-400 text-slate-50 opacity-80 hover:from-slate-300 hover:to-slate-400 sm:w-auto"
-          onClick={generarHorarioInteligente}
+          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 sm:w-auto"
+          onClick={() => navigate("/app/assistant?accion=planificar")}
         >
           <Sparkles className="mr-2 h-5 w-5" />
-          Proximamente
+          Planificar con IA
         </Button>
       </div>
 
@@ -283,7 +283,7 @@ export default function Planner() {
           </CardHeader>
           <CardContent className="space-y-5 sm:space-y-6">
             <div>
-              <Label className="mb-3 block">Horas libres para estudiar</Label>
+              <Label className="mb-3 block">Horas libres para estudiar por dia</Label>
               <p className="mb-2 text-xl font-bold text-blue-600 sm:text-2xl">{usuarioActual?.horasEstudioDiarias ?? 4}h</p>
               <Slider
                 value={[usuarioActual?.horasEstudioDiarias ?? 4]}
@@ -345,10 +345,10 @@ export default function Planner() {
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
               <div className="mb-2 flex items-center gap-2 font-semibold text-slate-700">
                 <Sparkles className="h-4 w-4" />
-                Generacion automatica en preparacion
+                Planificacion conversacional
               </div>
               <p>
-                Por ahora el planificador funciona en modo manual para evitar duplicaciones. La generacion inteligente se reactivara cuando el flujo quede estable.
+                Puedes lanzar el flujo inteligente desde el boton superior. El asistente te preguntara si quieres reorganizar todo, una tarea o un curso, y luego aplicara restricciones antes de mover bloques.
               </p>
             </div>
 

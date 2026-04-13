@@ -1,4 +1,5 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router";
 import {
   BookOpen,
   BrainCircuit,
@@ -15,7 +16,12 @@ import {
   esTareaAtrasada,
   esTareaPendienteVigente,
   formatearFechaCorta,
+  obtenerEtiquetaDiaPlanificador,
   useStudyFlow,
+  type AlcancePlanificacion,
+  type Curso,
+  type JornadaPlanificacion,
+  type Tarea,
 } from "../data/studyflow-store";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -24,26 +30,171 @@ import { Input } from "../components/ui/input";
 import { ScrollArea } from "../components/ui/scroll-area";
 
 const accionesRapidas = [
-  "Organiza mi semana",
+  "Planifica mi horario",
   "Explicame base de datos",
   "Hazme preguntas de practica",
   "Resume este tema",
 ];
 
+const aliasDiasPlanificacion: Array<{ indice: number; terminos: string[] }> = [
+  { indice: 0, terminos: ["lunes", "lun"] },
+  { indice: 1, terminos: ["martes", "mar"] },
+  { indice: 2, terminos: ["miercoles", "miércoles", "mie", "mier"] },
+  { indice: 3, terminos: ["jueves", "jue"] },
+  { indice: 4, terminos: ["viernes", "vie"] },
+  { indice: 5, terminos: ["sabado", "sábado", "sab"] },
+  { indice: 6, terminos: ["domingo", "dom"] },
+];
+
+type FlujoPlanificacionChat = {
+  activo: boolean;
+  paso: "modo" | "objetivo-tarea" | "objetivo-curso" | "dias" | "jornada" | "confirmacion";
+  alcance: AlcancePlanificacion | null;
+  objetivoId?: string;
+  diasBloqueados: number[];
+  jornada: JornadaPlanificacion;
+};
+
+const flujoPlanificacionInicial: FlujoPlanificacionChat = {
+  activo: false,
+  paso: "modo",
+  alcance: null,
+  objetivoId: undefined,
+  diasBloqueados: [],
+  jornada: "flexible",
+};
+
+function normalizarTextoPlanificacion(valor: string) {
+  return valor
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .trim();
+}
+
+function detectarSolicitudPlanificacionHorario(mensaje: string) {
+  const texto = normalizarTextoPlanificacion(mensaje);
+  return [
+    "planifica mi horario",
+    "planifica mi semana",
+    "organiza mi semana",
+    "organiza mi horario",
+    "reorganiza mi horario",
+    "acomoda mi semana",
+    "ordena mi semana",
+  ].some((termino) => texto.includes(termino));
+}
+
+function extraerDiasBloqueados(mensaje: string) {
+  const texto = normalizarTextoPlanificacion(mensaje);
+  if (!texto || texto.includes("ninguno") || texto.includes("ningun") || texto.includes("ninguna")) {
+    return [];
+  }
+
+  return aliasDiasPlanificacion
+    .filter(({ terminos }) => terminos.some((termino) => texto.includes(termino)))
+    .map(({ indice }) => indice);
+}
+
+function detectarJornadaPlanificacion(mensaje: string): JornadaPlanificacion | null {
+  const texto = normalizarTextoPlanificacion(mensaje);
+
+  if (texto.includes("manana") || texto.includes("mañana")) return "manana";
+  if (texto.includes("tarde")) return "tarde";
+  if (texto.includes("noche")) return "noche";
+  if (
+    texto.includes("flexible") ||
+    texto.includes("indiferente") ||
+    texto.includes("cualquiera") ||
+    texto.includes("todo el dia")
+  ) {
+    return "flexible";
+  }
+
+  return null;
+}
+
+function esConfirmacionPositiva(mensaje: string) {
+  const texto = normalizarTextoPlanificacion(mensaje);
+  return ["si", "sí", "confirmar", "confirma", "dale", "hazlo", "ok", "aplica"].some((termino) =>
+    texto === termino || texto.includes(termino),
+  );
+}
+
+function esConfirmacionNegativa(mensaje: string) {
+  const texto = normalizarTextoPlanificacion(mensaje);
+  return ["no", "cancelar", "cancela", "salir", "deten"].some((termino) =>
+    texto === termino || texto.includes(termino),
+  );
+}
+
+function obtenerResumenDiasBloqueados(diasBloqueados: number[]) {
+  if (!diasBloqueados.length) {
+    return "sin dias bloqueados";
+  }
+
+  return diasBloqueados.map((dia) => obtenerEtiquetaDiaPlanificador(dia)).join(", ");
+}
+
+function seleccionarTareaDesdeTexto(mensaje: string, tareas: Tarea[]) {
+  const texto = normalizarTextoPlanificacion(mensaje);
+  const numero = Number.parseInt(texto, 10);
+
+  if (Number.isFinite(numero) && numero >= 1 && numero <= tareas.length) {
+    return tareas[numero - 1];
+  }
+
+  return (
+    tareas.find((tarea) => normalizarTextoPlanificacion(tarea.titulo).includes(texto)) ??
+    tareas.find((tarea) => texto.includes(normalizarTextoPlanificacion(tarea.titulo))) ??
+    null
+  );
+}
+
+function seleccionarCursoDesdeTexto(mensaje: string, cursos: Curso[]) {
+  const texto = normalizarTextoPlanificacion(mensaje);
+  const numero = Number.parseInt(texto, 10);
+
+  if (Number.isFinite(numero) && numero >= 1 && numero <= cursos.length) {
+    return cursos[numero - 1];
+  }
+
+  return (
+    cursos.find((curso) => normalizarTextoPlanificacion(curso.nombre).includes(texto)) ??
+    cursos.find((curso) => texto.includes(normalizarTextoPlanificacion(curso.nombre))) ??
+    null
+  );
+}
+
 export default function AIAssistant() {
   const {
+    usuarioActual,
     mensajesChat,
     enviarMensajeAsistente,
+    anexarMensajesAsistenteLocales,
     limpiarMensajesAsistente,
+    replanificarHorarioInteligente,
     tareas,
+    cursos,
     examenes,
     bloquesPlanificador,
     fuenteAsistente,
   } = useStudyFlow();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [mensaje, setMensaje] = useState("");
   const [mensajesExpandidos, setMensajesExpandidos] = useState<Record<string, boolean>>({});
+  const [flujoPlanificacion, setFlujoPlanificacion] = useState<FlujoPlanificacionChat>(flujoPlanificacionInicial);
 
   const examenesProximos = [...examenes].sort((a, b) => a.fecha.localeCompare(b.fecha)).slice(0, 3);
+  const tareasPlanificables = useMemo(
+    () =>
+      tareas
+        .filter((tarea) => esTareaActiva(tarea))
+        .sort((a, b) => a.fechaEntrega.localeCompare(b.fechaEntrega))
+        .slice(0, 6),
+    [tareas],
+  );
+  const cursosPlanificables = useMemo(() => cursos.slice(0, 6), [cursos]);
   const tareasActivas = tareas.filter(esTareaActiva);
   const tareasPendientesVigentes = tareas.filter(esTareaPendienteVigente);
   const tareasAtrasadas = tareas.filter(esTareaAtrasada);
@@ -51,14 +202,15 @@ export default function AIAssistant() {
   const asistentePensando = mensajesChat.some(
     (item) => item.tipo === "ai" && item.mensaje === "Pensando tu respuesta con Groq...",
   );
+  const fuenteVisible = flujoPlanificacion.activo ? "sistema" : fuenteAsistente;
 
   const sugerenciasContextuales = useMemo(
     () => [
       {
-        titulo: "Semana academica",
-        descripcion: `${tareasActivas.length} tareas activas y ${examenesProximos.length} examenes proximos.`,
+        titulo: "Planificacion guiada",
+        descripcion: `${tareasActivas.length} tareas activas y ${examenesProximos.length} examenes para reorganizar.`,
         icono: CalendarClock,
-        accion: "Organiza mi semana",
+        accion: "Planifica mi horario",
       },
       {
         titulo: "Practica guiada",
@@ -76,16 +228,365 @@ export default function AIAssistant() {
     [examenesProximos.length, tareasActivas.length],
   );
 
+  useEffect(() => {
+    if (searchParams.get("accion") !== "planificar") {
+      return;
+    }
+
+    if (!flujoPlanificacion.activo) {
+      const limite = usuarioActual?.horasEstudioDiarias ?? 2;
+      anexarMensajesAsistenteLocales([
+        {
+          tipo: "ai",
+          mensaje:
+            `Vamos a planificar tu horario con IA. Tu limite actual es de ${limite}h de estudio por dia.\n\n` +
+            "Puedo reorganizar `todo`, `una tarea` o `un curso`. Escribe una de esas opciones para empezar.",
+        },
+      ]);
+      setFlujoPlanificacion({
+        ...flujoPlanificacionInicial,
+        activo: true,
+      });
+    }
+
+    const siguiente = new URLSearchParams(searchParams);
+    siguiente.delete("accion");
+    setSearchParams(siguiente, { replace: true });
+  }, [
+    anexarMensajesAsistenteLocales,
+    flujoPlanificacion.activo,
+    searchParams,
+    setSearchParams,
+    usuarioActual?.horasEstudioDiarias,
+  ]);
+
+  const limpiarConversacion = () => {
+    setFlujoPlanificacion(flujoPlanificacionInicial);
+    limpiarMensajesAsistente();
+  };
+
+  const iniciarFlujoPlanificacion = (mensajeUsuario?: string) => {
+    const limite = usuarioActual?.horasEstudioDiarias ?? 2;
+    anexarMensajesAsistenteLocales([
+      ...(mensajeUsuario ? [{ tipo: "user" as const, mensaje: mensajeUsuario }] : []),
+      {
+        tipo: "ai" as const,
+        mensaje:
+          `Claro. Puedo ayudarte a planificar tu horario y voy a respetar tu limite actual de ${limite}h por dia.\n\n` +
+          "Dime si quieres reorganizar `todo`, `una tarea` o `un curso`.",
+      },
+    ]);
+    setFlujoPlanificacion({
+      ...flujoPlanificacionInicial,
+      activo: true,
+    });
+  };
+
+  const procesarMensajePlanificacion = (textoOriginal: string) => {
+    const texto = textoOriginal.trim();
+    const textoNormalizado = normalizarTextoPlanificacion(texto);
+
+    if (esConfirmacionNegativa(texto) && flujoPlanificacion.activo) {
+      anexarMensajesAsistenteLocales([
+        { tipo: "user", mensaje: texto },
+        {
+          tipo: "ai",
+          mensaje: "Listo, cancelé esta planificacion. Si quieres, luego volvemos a empezar con otra configuracion.",
+        },
+      ]);
+      setFlujoPlanificacion(flujoPlanificacionInicial);
+      return;
+    }
+
+    if (!flujoPlanificacion.activo) {
+      iniciarFlujoPlanificacion(texto);
+      return;
+    }
+
+    if (flujoPlanificacion.paso === "modo") {
+      if (textoNormalizado.includes("todo")) {
+        anexarMensajesAsistenteLocales([
+          { tipo: "user", mensaje: texto },
+          {
+            tipo: "ai",
+            mensaje:
+              "Perfecto. Voy a reorganizar tareas y repasos generales.\n\nAhora dime que dias quieres dejar libres. Puedes responder, por ejemplo: `martes y domingo` o `ninguno`.",
+          },
+        ]);
+        setFlujoPlanificacion((actual) => ({
+          ...actual,
+          alcance: "todo",
+          paso: "dias",
+        }));
+        return;
+      }
+
+      if (textoNormalizado.includes("tarea")) {
+        if (!tareasPlanificables.length) {
+          anexarMensajesAsistenteLocales([
+            { tipo: "user", mensaje: texto },
+            {
+              tipo: "ai",
+              mensaje: "Ahora mismo no veo tareas activas para reorganizar. Si quieres, puedo planificar todo o ayudarte con un curso.",
+            },
+          ]);
+          return;
+        }
+
+        anexarMensajesAsistenteLocales([
+          { tipo: "user", mensaje: texto },
+          {
+            tipo: "ai",
+            mensaje:
+              `Perfecto. Elige la tarea que quieres reorganizar:\n\n${tareasPlanificables
+                .map((tarea, indice) => `${indice + 1}. ${tarea.titulo} (${formatearFechaCorta(tarea.fechaEntrega)})`)
+                .join("\n")}\n\nPuedes responder con el numero o con el nombre.`,
+          },
+        ]);
+        setFlujoPlanificacion((actual) => ({
+          ...actual,
+          alcance: "tarea",
+          paso: "objetivo-tarea",
+        }));
+        return;
+      }
+
+      if (textoNormalizado.includes("curso") || textoNormalizado.includes("repaso")) {
+        if (!cursosPlanificables.length) {
+          anexarMensajesAsistenteLocales([
+            { tipo: "user", mensaje: texto },
+            {
+              tipo: "ai",
+              mensaje: "Ahora mismo no veo cursos cargados para organizar un repaso.",
+            },
+          ]);
+          return;
+        }
+
+        anexarMensajesAsistenteLocales([
+          { tipo: "user", mensaje: texto },
+          {
+            tipo: "ai",
+            mensaje:
+              `Perfecto. Dime que curso quieres reforzar:\n\n${cursosPlanificables
+                .map((curso, indice) => `${indice + 1}. ${curso.nombre}`)
+                .join("\n")}\n\nPuedes responder con el numero o con el nombre.`,
+          },
+        ]);
+        setFlujoPlanificacion((actual) => ({
+          ...actual,
+          alcance: "curso",
+          paso: "objetivo-curso",
+        }));
+        return;
+      }
+
+      anexarMensajesAsistenteLocales([
+        { tipo: "user", mensaje: texto },
+        {
+          tipo: "ai",
+          mensaje: "Todavia necesito una de estas tres opciones: `todo`, `una tarea` o `un curso`.",
+        },
+      ]);
+      return;
+    }
+
+    if (flujoPlanificacion.paso === "objetivo-tarea") {
+      const tareaSeleccionada = seleccionarTareaDesdeTexto(texto, tareasPlanificables);
+
+      if (!tareaSeleccionada) {
+        anexarMensajesAsistenteLocales([
+          { tipo: "user", mensaje: texto },
+          {
+            tipo: "ai",
+            mensaje: "No identifiqué esa tarea. Responde con el numero de la lista o con el nombre exacto.",
+          },
+        ]);
+        return;
+      }
+
+      anexarMensajesAsistenteLocales([
+        { tipo: "user", mensaje: texto },
+        {
+          tipo: "ai",
+          mensaje:
+            `Perfecto. Voy a reorganizar la tarea **${tareaSeleccionada.titulo}**.\n\n` +
+            "Ahora dime que dias quieres dejar libres. Puedes responder `martes y domingo` o `ninguno`.",
+        },
+      ]);
+      setFlujoPlanificacion((actual) => ({
+        ...actual,
+        objetivoId: tareaSeleccionada.id,
+        paso: "dias",
+      }));
+      return;
+    }
+
+    if (flujoPlanificacion.paso === "objetivo-curso") {
+      const cursoSeleccionado = seleccionarCursoDesdeTexto(texto, cursosPlanificables);
+
+      if (!cursoSeleccionado) {
+        anexarMensajesAsistenteLocales([
+          { tipo: "user", mensaje: texto },
+          {
+            tipo: "ai",
+            mensaje: "No identifiqué ese curso. Responde con el numero de la lista o con el nombre del curso.",
+          },
+        ]);
+        return;
+      }
+
+      anexarMensajesAsistenteLocales([
+        { tipo: "user", mensaje: texto },
+        {
+          tipo: "ai",
+          mensaje:
+            `Perfecto. Voy a reorganizar el repaso de **${cursoSeleccionado.nombre}**.\n\n` +
+            "Ahora dime que dias quieres dejar libres. Puedes responder `martes y domingo` o `ninguno`.",
+        },
+      ]);
+      setFlujoPlanificacion((actual) => ({
+        ...actual,
+        objetivoId: cursoSeleccionado.id,
+        paso: "dias",
+      }));
+      return;
+    }
+
+    if (flujoPlanificacion.paso === "dias") {
+      const diasBloqueados = extraerDiasBloqueados(texto);
+      const respuestaVacia =
+        !diasBloqueados.length &&
+        !textoNormalizado.includes("ninguno") &&
+        !textoNormalizado.includes("ningun") &&
+        !textoNormalizado.includes("ninguna");
+
+      if (respuestaVacia) {
+        anexarMensajesAsistenteLocales([
+          { tipo: "user", mensaje: texto },
+          {
+            tipo: "ai",
+            mensaje:
+              "No pude detectar los dias. Prueba algo como `martes y domingo` o simplemente escribe `ninguno`.",
+          },
+        ]);
+        return;
+      }
+
+      anexarMensajesAsistenteLocales([
+        { tipo: "user", mensaje: texto },
+        {
+          tipo: "ai",
+          mensaje:
+            "Perfecto. Ahora dime en que franja prefieres estudiar: `mañana`, `tarde`, `noche` o `flexible`.",
+        },
+      ]);
+      setFlujoPlanificacion((actual) => ({
+        ...actual,
+        diasBloqueados,
+        paso: "jornada",
+      }));
+      return;
+    }
+
+    if (flujoPlanificacion.paso === "jornada") {
+      const jornada = detectarJornadaPlanificacion(texto);
+
+      if (!jornada) {
+        anexarMensajesAsistenteLocales([
+          { tipo: "user", mensaje: texto },
+          {
+            tipo: "ai",
+            mensaje: "Todavia necesito una franja valida: `mañana`, `tarde`, `noche` o `flexible`.",
+          },
+        ]);
+        return;
+      }
+
+      const tareaObjetivo = flujoPlanificacion.alcance === "tarea"
+        ? tareas.find((tarea) => tarea.id === flujoPlanificacion.objetivoId)
+        : null;
+      const cursoObjetivo = flujoPlanificacion.alcance === "curso"
+        ? cursos.find((curso) => curso.id === flujoPlanificacion.objetivoId)
+        : null;
+      const resumenObjetivo =
+        flujoPlanificacion.alcance === "todo"
+          ? "todo tu horario de estudio"
+          : flujoPlanificacion.alcance === "tarea"
+            ? `la tarea ${tareaObjetivo?.titulo ?? "seleccionada"}`
+            : `el repaso de ${cursoObjetivo?.nombre ?? "ese curso"}`;
+
+      anexarMensajesAsistenteLocales([
+        { tipo: "user", mensaje: texto },
+        {
+          tipo: "ai",
+          mensaje:
+            `Listo. Voy a reorganizar ${resumenObjetivo} con estas reglas:\n\n` +
+            `- Dias libres: ${obtenerResumenDiasBloqueados(flujoPlanificacion.diasBloqueados)}\n` +
+            `- Franja preferida: ${jornada}\n` +
+            `- Limite diario actual: ${usuarioActual?.horasEstudioDiarias ?? 2}h\n\n` +
+            "Si te parece bien, responde `si` para aplicar o `no` para cancelar.",
+        },
+      ]);
+      setFlujoPlanificacion((actual) => ({
+        ...actual,
+        jornada,
+        paso: "confirmacion",
+      }));
+      return;
+    }
+
+    if (flujoPlanificacion.paso === "confirmacion") {
+      if (!esConfirmacionPositiva(texto)) {
+        anexarMensajesAsistenteLocales([
+          { tipo: "user", mensaje: texto },
+          {
+            tipo: "ai",
+            mensaje: "Para seguir necesito que me respondas `si` para aplicar o `no` para cancelar.",
+          },
+        ]);
+        return;
+      }
+
+      const resultado = replanificarHorarioInteligente({
+        alcance: flujoPlanificacion.alcance ?? "todo",
+        objetivoId: flujoPlanificacion.objetivoId,
+        diasBloqueados: flujoPlanificacion.diasBloqueados,
+        jornada: flujoPlanificacion.jornada,
+      });
+
+      anexarMensajesAsistenteLocales([
+        { tipo: "user", mensaje: texto },
+        {
+          tipo: "ai",
+          mensaje:
+            `${resultado.mensaje}\n\n${resultado.resumen.length ? resultado.resumen.join("\n") : "No hubo cambios adicionales para mostrar."}`,
+        },
+      ]);
+      setFlujoPlanificacion(flujoPlanificacionInicial);
+    }
+  };
+
   const manejarEnvio = (event: React.FormEvent) => {
     event.preventDefault();
     if (asistentePensando) return;
     if (!mensaje.trim()) return;
+    if (flujoPlanificacion.activo || detectarSolicitudPlanificacionHorario(mensaje.trim())) {
+      procesarMensajePlanificacion(mensaje.trim());
+      setMensaje("");
+      return;
+    }
     enviarMensajeAsistente(mensaje.trim());
     setMensaje("");
   };
 
   const ejecutarAccionRapida = (texto: string) => {
     if (asistentePensando) return;
+    if (flujoPlanificacion.activo || detectarSolicitudPlanificacionHorario(texto)) {
+      procesarMensajePlanificacion(texto);
+      setMensaje("");
+      return;
+    }
     enviarMensajeAsistente(texto);
     setMensaje("");
   };
@@ -108,20 +609,22 @@ export default function AIAssistant() {
         </div>
         <Badge
           className={`w-fit px-3 py-2 ${
-            fuenteAsistente === "groq"
+            fuenteVisible === "groq"
               ? "bg-emerald-50 text-emerald-700"
-              : fuenteAsistente === "sistema"
+              : fuenteVisible === "sistema"
                 ? "bg-blue-50 text-blue-700"
-              : fuenteAsistente === "error"
+              : fuenteVisible === "error"
                 ? "bg-rose-50 text-rose-700"
                 : "bg-blue-50 text-blue-700"
           }`}
         >
-          {fuenteAsistente === "groq"
+          {flujoPlanificacion.activo
+            ? "Planificador conversacional activo"
+            : fuenteVisible === "groq"
             ? "Respuestas reales con Groq"
-            : fuenteAsistente === "sistema"
+            : fuenteVisible === "sistema"
               ? "Respuesta directa del sistema"
-            : fuenteAsistente === "error"
+            : fuenteVisible === "error"
               ? "Groq no respondio"
               : "Esperando respuesta del asistente"}
         </Badge>
@@ -138,7 +641,7 @@ export default function AIAssistant() {
                 <div className="min-w-0">
                   <CardTitle className="text-lg sm:text-xl">Asistente academico inteligente</CardTitle>
                   <p className="text-xs text-gray-600 sm:text-sm">
-                    Usa tu contexto academico real y consulta Groq desde el backend.
+                    Usa tu contexto academico real, consulta Groq y ahora tambien puede replanificar tu horario.
                   </p>
                 </div>
               </div>
@@ -149,7 +652,7 @@ export default function AIAssistant() {
                   type="button"
                   variant="outline"
                   className="rounded-full bg-white"
-                  onClick={limpiarMensajesAsistente}
+                  onClick={limpiarConversacion}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Limpiar chat
@@ -159,7 +662,7 @@ export default function AIAssistant() {
             <div className="flex flex-wrap items-center gap-2 xl:hidden">
               <Badge className="bg-emerald-50 text-emerald-700">{bloquesEstudio.length} bloques</Badge>
               <Badge className="bg-purple-50 text-purple-700">{mensajesChat.length} mensajes</Badge>
-              <Button type="button" variant="outline" size="sm" className="rounded-full bg-white" onClick={limpiarMensajesAsistente}>
+              <Button type="button" variant="outline" size="sm" className="rounded-full bg-white" onClick={limpiarConversacion}>
                 <Trash2 className="mr-2 h-4 w-4" />
                 Limpiar
               </Button>
@@ -245,6 +748,11 @@ export default function AIAssistant() {
                 <Send className="h-5 w-5" />
               </Button>
             </form>
+            {flujoPlanificacion.activo ? (
+              <p className="mt-2 text-xs text-blue-600">
+                Flujo activo: responde lo que te pide el planificador para reorganizar tus tareas y repasos.
+              </p>
+            ) : null}
             {asistentePensando ? (
               <p className="mt-2 text-xs text-gray-500">
                 StudyFlow AI esta pensando tu respuesta. Espera un momento antes de enviar otro mensaje.

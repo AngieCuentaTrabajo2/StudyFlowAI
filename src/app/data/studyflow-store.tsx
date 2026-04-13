@@ -20,6 +20,8 @@ import { construirBloquesClaseDesdeCurso } from "./course-schedule";
 export type Prioridad = "low" | "medium" | "high";
 export type EstadoTarea = "pending" | "in-progress" | "completed" | "overdue";
 export type TipoNotificacion = "urgent" | "warning" | "info" | "success";
+export type JornadaPlanificacion = "manana" | "tarde" | "noche" | "flexible";
+export type AlcancePlanificacion = "todo" | "tarea" | "curso";
 
 export type PerfilUsuario = {
   id: string;
@@ -119,6 +121,14 @@ export type MensajeChat = {
   hora: string;
 };
 
+export type ResultadoPlanificacionInteligente = {
+  ok: boolean;
+  mensaje: string;
+  resumen: string[];
+  bloquesCreados: number;
+  horasProgramadas: number;
+};
+
 type EstadoStudyFlow = {
   usuarioActual: PerfilUsuario | null;
   cursos: Curso[];
@@ -177,8 +187,18 @@ type ValorContextoStudyFlow = EstadoStudyFlow & {
   marcarTodasNotificacionesLeidas: () => void;
   limpiarNotificacionesLeidas: () => void;
   enviarMensajeAsistente: (mensaje: string) => void;
+  anexarMensajesAsistenteLocales: (
+    mensajes: Array<{ tipo: "user" | "ai"; mensaje: string }>,
+    fuente?: EstadoStudyFlow["fuenteAsistente"],
+  ) => void;
   limpiarMensajesAsistente: () => void;
   generarHorarioInteligente: () => void;
+  replanificarHorarioInteligente: (configuracion: {
+    alcance: AlcancePlanificacion;
+    objetivoId?: string;
+    diasBloqueados: number[];
+    jornada: JornadaPlanificacion;
+  }) => ResultadoPlanificacionInteligente;
   moverBloquePlanificador: (bloqueId: string, dia: number, horaInicio: number) => void;
   actualizarBloquePlanificador: (bloqueId: string, cambios: Partial<BloquePlanificador>) => void;
   eliminarBloquePlanificador: (bloqueId: string) => void;
@@ -191,9 +211,26 @@ const etiquetasDias = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sab
 const HORA_MIN_PLANIFICADOR = 7;
 const HORA_MAX_PLANIFICADOR = 23;
 const HORAS_PREFERIDAS_REPASO = [18, 19, 20, 16, 17, 14, 15, 10, 11, 12, 13, 8, 9, 21, 7];
+const HORAS_PLANIFICACION_POR_JORNADA: Record<JornadaPlanificacion, number[]> = {
+  manana: [8, 9, 10, 11],
+  tarde: [14, 15, 16, 17, 18],
+  noche: [18, 19, 20, 21],
+  flexible: HORAS_PREFERIDAS_REPASO,
+};
 const CUENTA_DEMO = {
   correo: "jhan.perez@universidad.edu",
   contrasena: "123456",
+};
+
+type ObjetivoPlanificacionAutomatica = {
+  clave: string;
+  titulo: string;
+  cursoId: string;
+  color: string;
+  fechaObjetivo: string;
+  horasSolicitadas: number;
+  tipo: "tarea" | "repaso";
+  resumen: string;
 };
 
 function tieneTextoPerfilAcademicoValido(valor: string | null | undefined) {
@@ -279,6 +316,215 @@ function obtenerHorasCandidatasRepaso(dia: number) {
   const horaActual = ahora.getHours();
 
   return HORAS_PREFERIDAS_REPASO.filter((hora) => (dia === diaActual ? hora > horaActual : true));
+}
+
+function obtenerHorasCandidatasSegunJornada(dia: number, jornada: JornadaPlanificacion) {
+  const horasBase = HORAS_PLANIFICACION_POR_JORNADA[jornada] ?? HORAS_PREFERIDAS_REPASO;
+  const ahora = new Date();
+  const diaActual = obtenerDiaPlanificadorDesdeFecha(ahora);
+  const horaActual = ahora.getHours();
+
+  return horasBase.filter((hora) => (dia === diaActual ? hora > horaActual : true));
+}
+
+function obtenerHorasDeEstudioProgramadasEnDia(bloques: BloquePlanificador[], dia: number) {
+  return bloques
+    .filter((bloque) => bloque.dia === dia && bloque.tipo === "study")
+    .reduce((acumulado, bloque) => acumulado + bloque.duracion, 0);
+}
+
+function calcularHorasRestantesTarea(tarea: Tarea) {
+  const factorPendiente = Math.max(0.25, 1 - tarea.progreso / 100);
+  return Math.max(1, Math.min(6, Math.ceil(tarea.horasEstimadas * factorPendiente)));
+}
+
+function calcularHorasRepasoExamen(examen: Examen) {
+  if (examen.preparacion < 35) return 3;
+  if (examen.preparacion < 70) return 2;
+  return 1;
+}
+
+function limpiarBloquesEstudioSegunAlcance(
+  bloques: BloquePlanificador[],
+  alcance: AlcancePlanificacion,
+  objetivo: { tarea?: Tarea | null; curso?: Curso | null },
+) {
+  if (alcance === "todo") {
+    return bloques.filter((bloque) => bloque.tipo !== "study");
+  }
+
+  if (alcance === "tarea" && objetivo.tarea) {
+    const tituloObjetivo = `Tarea: ${objetivo.tarea.titulo}`.trim().toLowerCase();
+    return bloques.filter(
+      (bloque) => bloque.tipo !== "study" || bloque.titulo.trim().toLowerCase() !== tituloObjetivo,
+    );
+  }
+
+  if (alcance === "curso" && objetivo.curso) {
+    const tituloObjetivo = `Repaso: ${objetivo.curso.nombre}`.trim().toLowerCase();
+    return bloques.filter(
+      (bloque) =>
+        bloque.tipo !== "study" ||
+        !(
+          bloque.cursoId === objetivo.curso?.id &&
+          bloque.titulo.trim().toLowerCase() === tituloObjetivo
+        ),
+    );
+  }
+
+  return bloques;
+}
+
+function construirObjetivosPlanificacionGlobal(
+  cursos: Curso[],
+  tareas: Tarea[],
+  examenes: Examen[],
+) {
+  const objetivosTareas: ObjetivoPlanificacionAutomatica[] = tareas
+    .filter((tarea) => esTareaActiva(tarea))
+    .sort((a, b) => {
+      const diferenciaFecha = a.fechaEntrega.localeCompare(b.fechaEntrega);
+      if (diferenciaFecha !== 0) return diferenciaFecha;
+      const prioridadValor = { high: 0, medium: 1, low: 2 };
+      return prioridadValor[a.prioridad] - prioridadValor[b.prioridad];
+    })
+    .map((tarea) => {
+      const curso = cursos.find((item) => item.id === tarea.cursoId);
+      return {
+        clave: `task-${tarea.id}`,
+        titulo: `Tarea: ${tarea.titulo}`,
+        cursoId: tarea.cursoId,
+        color: curso?.color ?? "purple",
+        fechaObjetivo: tarea.fechaEntrega,
+        horasSolicitadas: calcularHorasRestantesTarea(tarea),
+        tipo: "tarea",
+        resumen: `${tarea.titulo} (${curso?.nombre ?? "Curso"})`,
+      };
+    });
+
+  const examenesPorCurso = new Map<string, Examen>();
+  examenes
+    .slice()
+    .sort((a, b) => a.fecha.localeCompare(b.fecha))
+    .forEach((examen) => {
+      if (!examenesPorCurso.has(examen.cursoId)) {
+        examenesPorCurso.set(examen.cursoId, examen);
+      }
+    });
+
+  const objetivosRepaso: ObjetivoPlanificacionAutomatica[] = [...examenesPorCurso.values()].map((examen) => {
+    const curso = cursos.find((item) => item.id === examen.cursoId);
+    return {
+      clave: `review-${examen.cursoId}`,
+      titulo: `Repaso: ${curso?.nombre ?? "Curso"}`,
+      cursoId: examen.cursoId,
+      color: curso?.color ?? "blue",
+      fechaObjetivo: examen.fecha,
+      horasSolicitadas: calcularHorasRepasoExamen(examen),
+      tipo: "repaso",
+      resumen: `Repaso de ${curso?.nombre ?? "curso"} por ${examen.titulo}`,
+    };
+  });
+
+  return [...objetivosTareas, ...objetivosRepaso].sort((a, b) => {
+    const diferenciaFecha = a.fechaObjetivo.localeCompare(b.fechaObjetivo);
+    if (diferenciaFecha !== 0) return diferenciaFecha;
+    if (a.tipo === b.tipo) return 0;
+    return a.tipo === "tarea" ? -1 : 1;
+  });
+}
+
+function programarObjetivosConRestricciones({
+  objetivos,
+  bloquesBase,
+  horasDiariasMaximas,
+  diasBloqueados,
+  jornada,
+}: {
+  objetivos: ObjetivoPlanificacionAutomatica[];
+  bloquesBase: BloquePlanificador[];
+  horasDiariasMaximas: number;
+  diasBloqueados: number[];
+  jornada: JornadaPlanificacion;
+}) {
+  const bloquesProgramados: BloquePlanificador[] = [];
+  const resumen: string[] = [];
+
+  for (const objetivo of objetivos) {
+    let horasRestantes = objetivo.horasSolicitadas;
+    const diasCandidatos = obtenerDiasCandidatosPlanificacion(objetivo.fechaObjetivo).filter(
+      (dia) => !diasBloqueados.includes(dia),
+    );
+
+    for (const dia of diasCandidatos) {
+      for (const hora of obtenerHorasCandidatasSegunJornada(dia, jornada)) {
+        if (horasRestantes <= 0) {
+          break;
+        }
+
+        const bloquesOcupados = [...bloquesBase, ...bloquesProgramados];
+        const horasEstudioDia = obtenerHorasDeEstudioProgramadasEnDia(bloquesOcupados, dia);
+        const horasRestantesEnDia = Math.max(0, horasDiariasMaximas - horasEstudioDia);
+
+        if (horasRestantesEnDia < 1) {
+          continue;
+        }
+
+        let duracion = 0;
+
+        if (
+          horasRestantes >= 2 &&
+          horasRestantesEnDia >= 2 &&
+          hora + 2 <= HORA_MAX_PLANIFICADOR &&
+          !haySolapamientoBloque(bloquesOcupados, dia, hora, 2)
+        ) {
+          duracion = 2;
+        } else if (
+          hora + 1 <= HORA_MAX_PLANIFICADOR &&
+          !haySolapamientoBloque(bloquesOcupados, dia, hora, 1)
+        ) {
+          duracion = 1;
+        }
+
+        if (duracion === 0) {
+          continue;
+        }
+
+        bloquesProgramados.push({
+          id: crearId("planner"),
+          dia,
+          horaInicio: hora,
+          duracion,
+          titulo: objetivo.titulo,
+          cursoId: objetivo.cursoId,
+          color: objetivo.color,
+          tipo: "study",
+        });
+        horasRestantes -= duracion;
+      }
+
+      if (horasRestantes <= 0) {
+        break;
+      }
+    }
+
+    const horasAsignadas = objetivo.horasSolicitadas - horasRestantes;
+    if (horasAsignadas > 0) {
+      resumen.push(
+        horasAsignadas < objetivo.horasSolicitadas
+          ? `${objetivo.resumen}: ${horasAsignadas}h reservadas de ${objetivo.horasSolicitadas}h.`
+          : `${objetivo.resumen}: ${horasAsignadas}h reservadas.`,
+      );
+    } else {
+      resumen.push(`${objetivo.resumen}: no encontre huecos libres con esas restricciones.`);
+    }
+  }
+
+  return {
+    bloques: bloquesProgramados,
+    resumen,
+    horasProgramadas: bloquesProgramados.reduce((acumulado, bloque) => acumulado + bloque.duracion, 0),
+  };
 }
 
 function programarBloquesAutomaticos(
@@ -1566,6 +1812,25 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           }));
         }
       },
+      anexarMensajesAsistenteLocales: (mensajes, fuente = "sistema") => {
+        if (!mensajes.length) {
+          return;
+        }
+
+        setEstado((actual) => ({
+          ...actual,
+          fuenteAsistente: fuente,
+          mensajesChat: [
+            ...actual.mensajesChat,
+            ...mensajes.map((item) => ({
+              id: crearId("chat"),
+              tipo: item.tipo,
+              mensaje: item.mensaje,
+              hora: formatearHoraChat(),
+            })),
+          ],
+        }));
+      },
       limpiarMensajesAsistente: () => {
         setEstado((actual) => ({
           ...actual,
@@ -1576,6 +1841,166 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         if (usuarioId) {
           api.limpiarMensajesAsistente(usuarioId).catch(() => {});
         }
+      },
+      replanificarHorarioInteligente: ({ alcance, objetivoId, diasBloqueados, jornada }) => {
+        const diasRestringidos = [...new Set(diasBloqueados)].filter((dia) => dia >= 0 && dia <= 6);
+        if (diasRestringidos.length >= 7) {
+          return {
+            ok: false,
+            mensaje: "No puedo planificar si todos los dias estan bloqueados. Deja al menos un dia disponible.",
+            resumen: [],
+            bloquesCreados: 0,
+            horasProgramadas: 0,
+          };
+        }
+
+        const tareaObjetivo = alcance === "tarea" ? estado.tareas.find((item) => item.id === objetivoId) ?? null : null;
+        const cursoObjetivo = alcance === "curso" ? estado.cursos.find((item) => item.id === objetivoId) ?? null : null;
+
+        if (alcance === "tarea" && !tareaObjetivo) {
+          return {
+            ok: false,
+            mensaje: "No encontre la tarea que quieres reorganizar.",
+            resumen: [],
+            bloquesCreados: 0,
+            horasProgramadas: 0,
+          };
+        }
+
+        if (alcance === "curso" && !cursoObjetivo) {
+          return {
+            ok: false,
+            mensaje: "No encontre el curso que quieres reorganizar.",
+            resumen: [],
+            bloquesCreados: 0,
+            horasProgramadas: 0,
+          };
+        }
+
+        const bloquesBase = limpiarBloquesEstudioSegunAlcance(estado.bloquesPlanificador, alcance, {
+          tarea: tareaObjetivo,
+          curso: cursoObjetivo,
+        });
+
+        let objetivos: ObjetivoPlanificacionAutomatica[] = [];
+
+        if (alcance === "todo") {
+          objetivos = construirObjetivosPlanificacionGlobal(estado.cursos, estado.tareas, estado.examenes);
+        }
+
+        if (alcance === "tarea" && tareaObjetivo) {
+          const curso = estado.cursos.find((item) => item.id === tareaObjetivo.cursoId);
+          objetivos = [
+            {
+              clave: `task-${tareaObjetivo.id}`,
+              titulo: `Tarea: ${tareaObjetivo.titulo}`,
+              cursoId: tareaObjetivo.cursoId,
+              color: curso?.color ?? "purple",
+              fechaObjetivo: tareaObjetivo.fechaEntrega,
+              horasSolicitadas: calcularHorasRestantesTarea(tareaObjetivo),
+              tipo: "tarea",
+              resumen: `${tareaObjetivo.titulo} (${curso?.nombre ?? "Curso"})`,
+            },
+          ];
+        }
+
+        if (alcance === "curso" && cursoObjetivo) {
+          const examenCurso = estado.examenes
+            .filter((examen) => examen.cursoId === cursoObjetivo.id)
+            .sort((a, b) => a.fecha.localeCompare(b.fecha))[0];
+
+          objetivos = [
+            {
+              clave: `review-${cursoObjetivo.id}`,
+              titulo: `Repaso: ${cursoObjetivo.nombre}`,
+              cursoId: cursoObjetivo.id,
+              color: cursoObjetivo.color,
+              fechaObjetivo: obtenerFechaObjetivoCurso(cursoObjetivo.id, estado.tareas, estado.examenes),
+              horasSolicitadas: examenCurso ? calcularHorasRepasoExamen(examenCurso) : 2,
+              tipo: "repaso",
+              resumen: `Repaso de ${cursoObjetivo.nombre}`,
+            },
+          ];
+        }
+
+        if (!objetivos.length) {
+          return {
+            ok: false,
+            mensaje: "No encontre tareas o repasos para reorganizar con esa opcion.",
+            resumen: [],
+            bloquesCreados: 0,
+            horasProgramadas: 0,
+          };
+        }
+
+        const horasDiariasMaximas = Math.max(1, estado.usuarioActual?.horasEstudioDiarias ?? 2);
+        const totalHorasSolicitadas = objetivos.reduce(
+          (acumulado, objetivo) => acumulado + objetivo.horasSolicitadas,
+          0,
+        );
+        const resultado = programarObjetivosConRestricciones({
+          objetivos,
+          bloquesBase,
+          horasDiariasMaximas,
+          diasBloqueados: diasRestringidos,
+          jornada,
+        });
+
+        if (resultado.horasProgramadas === 0) {
+          return {
+            ok: false,
+            mensaje:
+              "No encontre huecos libres con esas restricciones. Prueba liberando un dia o usando una franja mas flexible.",
+            resumen: resultado.resumen,
+            bloquesCreados: 0,
+            horasProgramadas: 0,
+          };
+        }
+
+        const bloquesActualizados = ordenarBloquesPlanificador([
+          ...bloquesBase,
+          ...resultado.bloques,
+        ]);
+        const resumenPlanificacion =
+          alcance === "todo"
+            ? `Replanifique ${resultado.bloques.length} bloques de tareas y repasos.`
+            : alcance === "tarea"
+              ? `Reorganicé la tarea ${tareaObjetivo?.titulo ?? ""}.`
+              : `Reorganicé el repaso de ${cursoObjetivo?.nombre ?? ""}.`;
+        const notificacionLocal: NotificacionItem = {
+          id: crearId("notif"),
+          tipo: resultado.horasProgramadas < totalHorasSolicitadas ? "warning" : "success",
+          titulo:
+            resultado.horasProgramadas < totalHorasSolicitadas
+              ? "Planificacion aplicada parcialmente"
+              : "Horario reorganizado con IA",
+          mensaje: resumenPlanificacion,
+          creadaEn: new Date().toISOString(),
+          noLeida: true,
+        };
+
+        setEstado((actual) => ({
+          ...actual,
+          fuenteAsistente: "sistema",
+          bloquesPlanificador: bloquesActualizados,
+          notificaciones: [notificacionLocal, ...actual.notificaciones],
+        }));
+
+        if (usuarioId) {
+          api.guardarPlanificador(usuarioId, bloquesActualizados).catch(() => {});
+          persistirNotificacion(usuarioId, notificacionLocal);
+        }
+
+        return {
+          ok: true,
+          mensaje:
+            resultado.horasProgramadas < totalHorasSolicitadas
+              ? `Aplique la planificacion, pero solo encontre ${resultado.horasProgramadas}h libres de ${totalHorasSolicitadas}h posibles.`
+              : `Listo. Reorganicé tu horario y reserve ${resultado.horasProgramadas}h en espacios libres.`,
+          resumen: resultado.resumen,
+          bloquesCreados: resultado.bloques.length,
+          horasProgramadas: resultado.horasProgramadas,
+        };
       },
       generarHorarioInteligente: () => {
         return;
