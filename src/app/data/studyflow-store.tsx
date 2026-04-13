@@ -847,10 +847,11 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   }, [estado]);
 
   useEffect(() => {
-    if (!estado.usuarioActual?.id) return;
+    const usuarioId = estado.usuarioActual?.id;
+    if (!usuarioId) return;
 
     api
-      .obtenerContexto(estado.usuarioActual.id)
+      .obtenerContexto(usuarioId)
       .then((contexto) => {
         setEstado((actual) => integrarContexto(actual, contexto));
       })
@@ -860,6 +861,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   }, [estado.usuarioActual?.id]);
 
   const valor = useMemo<ValorContextoStudyFlow>(() => {
+    const usuarioId = estado.usuarioActual?.id;
     const obtenerCursoPorId = (cursoId?: string) =>
       estado.cursos.find((curso) => curso.id === cursoId);
     const requiereCompletarPerfilAcademico = usuarioRequiereCompletarPerfilAcademico(
@@ -891,8 +893,8 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       requiereCompletarPerfilAcademico,
       obtenerCursoPorId,
       sincronizarConBackend: async () => {
-        if (!estado.usuarioActual?.id) return;
-        const contexto = await api.obtenerContexto(estado.usuarioActual.id);
+        if (!usuarioId) return;
+        const contexto = await api.obtenerContexto(usuarioId);
         setEstado((actual) => integrarContexto(actual, contexto));
       },
       iniciarSesion: async (correo, contrasena) => {
@@ -1020,9 +1022,9 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           usuarioActual: actual.usuarioActual ? { ...actual.usuarioActual, ...cambios } : null,
         }));
 
-        if (estado.usuarioActual?.id) {
+        if (usuarioId) {
           api
-            .actualizarPerfil(estado.usuarioActual.id, cambios)
+            .actualizarPerfil(usuarioId, cambios)
             .then((resultado) => {
               setEstado((actual) => ({
                 ...actual,
@@ -1037,12 +1039,12 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         }
       },
       completarPerfilAcademico: async (datos) => {
-        if (!estado.usuarioActual?.id) {
+        if (!usuarioId) {
           return false;
         }
 
         try {
-          const resultado = await api.actualizarPerfil(estado.usuarioActual.id, {
+          const resultado = await api.actualizarPerfil(usuarioId, {
             universidad: datos.universidad.trim(),
             carrera: datos.carrera.trim(),
             semestre: datos.semestre.trim(),
@@ -1085,10 +1087,10 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           notificaciones: [notificacionLocal, ...actual.notificaciones],
         }));
 
-        if (estado.usuarioActual?.id) {
+        if (usuarioId) {
           api
             .crearTarea({
-              estudianteId: estado.usuarioActual.id,
+              estudianteId: usuarioId,
               cursoId: tarea.cursoId,
               titulo: tarea.titulo,
               descripcion: tarea.descripcion,
@@ -1106,7 +1108,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
             })
             .catch(() => {});
 
-          persistirNotificacion(estado.usuarioActual.id, notificacionLocal);
+          persistirNotificacion(usuarioId, notificacionLocal);
         }
       },
       actualizarTarea: (tareaId, cambios) => {
@@ -1122,7 +1124,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       alternarTareaCompletada: (tareaId) => {
         const tareaActual = estado.tareas.find((item) => item.id === tareaId);
         const notificacionLocal =
-          tareaActual && estado.usuarioActual?.id
+          tareaActual && usuarioId
             ? {
                 id: crearId("notif"),
                 tipo: "success" as const,
@@ -1159,8 +1161,8 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
             })
             .catch(() => {});
 
-          if (estado.usuarioActual?.id && notificacionLocal) {
-            persistirNotificacion(estado.usuarioActual.id, notificacionLocal);
+          if (usuarioId && notificacionLocal) {
+            persistirNotificacion(usuarioId, notificacionLocal);
           }
         }
       },
@@ -1224,9 +1226,9 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           notificaciones: [notificacionLocal, ...actual.notificaciones],
         }));
 
-        if (estado.usuarioActual?.id) {
-          api.guardarPlanificador(estado.usuarioActual.id, bloquesActualizados).catch(() => {});
-          persistirNotificacion(estado.usuarioActual.id, notificacionLocal);
+        if (usuarioId) {
+          api.guardarPlanificador(usuarioId, bloquesActualizados).catch(() => {});
+          persistirNotificacion(usuarioId, notificacionLocal);
         }
 
         return {
@@ -1298,9 +1300,9 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           notificaciones: [notificacionLocal, ...actual.notificaciones],
         }));
 
-        if (estado.usuarioActual?.id) {
-          api.guardarPlanificador(estado.usuarioActual.id, bloquesActualizados).catch(() => {});
-          persistirNotificacion(estado.usuarioActual.id, notificacionLocal);
+        if (usuarioId) {
+          api.guardarPlanificador(usuarioId, bloquesActualizados).catch(() => {});
+          persistirNotificacion(usuarioId, notificacionLocal);
         }
 
         return {
@@ -1328,10 +1330,10 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           ),
         }));
 
-        if (estado.usuarioActual?.id) {
+        if (usuarioId) {
           api
             .crearCurso({
-              estudianteId: estado.usuarioActual.id,
+              estudianteId: usuarioId,
               nombre: curso.nombre,
               docente: curso.docente,
               horario: curso.horario,
@@ -1360,7 +1362,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
                 };
               });
 
-              api.guardarPlanificador(estado.usuarioActual.id, bloquesActualizados).catch(() => {});
+              api.guardarPlanificador(usuarioId, bloquesActualizados).catch(() => {});
             })
             .catch(() => {});
         }
@@ -1385,8 +1387,8 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         });
 
         api.actualizarCurso(cursoId, cambios).catch(() => {});
-        if (estado.usuarioActual?.id) {
-          api.guardarPlanificador(estado.usuarioActual.id, bloquesActualizados).catch(() => {});
+        if (usuarioId) {
+          api.guardarPlanificador(usuarioId, bloquesActualizados).catch(() => {});
         }
       },
       eliminarCurso: (cursoId) => {
@@ -1409,8 +1411,8 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         });
 
         api.eliminarCurso(cursoId).catch(() => {});
-        if (estado.usuarioActual?.id) {
-          api.guardarPlanificador(estado.usuarioActual.id, bloquesActualizados).catch(() => {});
+        if (usuarioId) {
+          api.guardarPlanificador(usuarioId, bloquesActualizados).catch(() => {});
         }
       },
       agregarExamen: (examen) => {
@@ -1420,10 +1422,10 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           examenes: [...actual.examenes, examenLocal].sort((a, b) => a.fecha.localeCompare(b.fecha)),
         }));
 
-        if (estado.usuarioActual?.id) {
+        if (usuarioId) {
           api
             .crearExamen({
-              estudianteId: estado.usuarioActual.id,
+              estudianteId: usuarioId,
               cursoId: examen.cursoId,
               titulo: examen.titulo,
               fecha: examen.fecha,
@@ -1479,8 +1481,8 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           })),
         }));
 
-        if (estado.usuarioActual?.id) {
-          api.marcarTodasLasNotificacionesLeidas(estado.usuarioActual.id).catch(() => {});
+        if (usuarioId) {
+          api.marcarTodasLasNotificacionesLeidas(usuarioId).catch(() => {});
         }
       },
       limpiarNotificacionesLeidas: () => {
@@ -1489,8 +1491,8 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           notificaciones: actual.notificaciones.filter((notificacion) => notificacion.noLeida),
         }));
 
-        if (estado.usuarioActual?.id) {
-          api.limpiarNotificacionesLeidas(estado.usuarioActual.id).catch(() => {});
+        if (usuarioId) {
+          api.limpiarNotificacionesLeidas(usuarioId).catch(() => {});
         }
       },
       enviarMensajeAsistente: (mensaje) => {
@@ -1513,9 +1515,9 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           mensajesChat: [...actual.mensajesChat, mensajeUsuario, mensajeTemporal],
         }));
 
-        if (estado.usuarioActual?.id) {
+        if (usuarioId) {
           api
-            .enviarMensajeAsistente(estado.usuarioActual.id, mensaje)
+            .enviarMensajeAsistente(usuarioId, mensaje)
             .then((resultado) => {
               setEstado((actual) => ({
                 ...actual,
@@ -1571,8 +1573,8 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           mensajesChat: [],
         }));
 
-        if (estado.usuarioActual?.id) {
-          api.limpiarMensajesAsistente(estado.usuarioActual.id).catch(() => {});
+        if (usuarioId) {
+          api.limpiarMensajesAsistente(usuarioId).catch(() => {});
         }
       },
       generarHorarioInteligente: () => {
@@ -1595,8 +1597,8 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           ),
         }));
 
-        if (estado.usuarioActual?.id) {
-          api.guardarPlanificador(estado.usuarioActual.id, bloquesActualizados).then((resultado) => {
+        if (usuarioId) {
+          api.guardarPlanificador(usuarioId, bloquesActualizados).then((resultado) => {
             setEstado((actual) => ({
               ...actual,
               bloquesPlanificador: resultado.bloques,
@@ -1621,9 +1623,9 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           ),
         }));
 
-        if (estado.usuarioActual?.id) {
+        if (usuarioId) {
           api
-            .guardarPlanificador(estado.usuarioActual.id, bloquesActualizados)
+            .guardarPlanificador(usuarioId, bloquesActualizados)
             .then((resultado) => {
               setEstado((actual) => ({
                 ...actual,
@@ -1646,9 +1648,9 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           bloquesPlanificador: actual.bloquesPlanificador.filter((bloque) => bloque.id !== bloqueId),
         }));
 
-        if (estado.usuarioActual?.id) {
+        if (usuarioId) {
           api
-            .guardarPlanificador(estado.usuarioActual.id, bloquesActualizados)
+            .guardarPlanificador(usuarioId, bloquesActualizados)
             .then((resultado) => {
               setEstado((actual) => ({
                 ...actual,
