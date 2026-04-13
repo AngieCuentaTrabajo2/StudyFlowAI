@@ -253,7 +253,15 @@ function usuarioRequiereCompletarPerfilAcademico(
 }
 
 function crearId(prefijo: string) {
-  return `${prefijo}-${Math.random().toString(36).slice(2, 10)}`;
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (caracter) => {
+    const random = Math.floor(Math.random() * 16);
+    const valor = caracter === "x" ? random : (random & 0x3) | 0x8;
+    return valor.toString(16);
+  });
 }
 
 function ordenarBloquesPlanificador(bloques: BloquePlanificador[]) {

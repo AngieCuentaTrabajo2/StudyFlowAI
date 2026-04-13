@@ -48,6 +48,38 @@ const mapaDias: Record<string, number> = {
   domingo: 6,
 };
 
+function crearUuidDeterministico(texto: string) {
+  const semillas = [0x811c9dc5, 0x9e3779b1, 0x85ebca6b, 0xc2b2ae35];
+  const bytes = semillas.flatMap((semillaInicial) => {
+    let hash = semillaInicial;
+
+    for (let indice = 0; indice < texto.length; indice += 1) {
+      hash ^= texto.charCodeAt(indice);
+      hash = Math.imul(hash, 16777619);
+    }
+
+    return [
+      (hash >>> 24) & 0xff,
+      (hash >>> 16) & 0xff,
+      (hash >>> 8) & 0xff,
+      hash & 0xff,
+    ];
+  });
+
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+  const hex = bytes.map((byte) => byte.toString(16).padStart(2, "0")).join("");
+
+  return [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    hex.slice(12, 16),
+    hex.slice(16, 20),
+    hex.slice(20, 32),
+  ].join("-");
+}
+
 function crearIdHorario() {
   return `schedule-${Math.random().toString(36).slice(2, 10)}`;
 }
@@ -181,7 +213,9 @@ export function validarHorarioCurso(filas: FilaHorarioCurso[]) {
 
 export function construirBloquesClaseDesdeCurso(curso: CursoConHorario): BloqueClaseDerivado[] {
   return parsearHorarioCurso(curso.horario).map((fila) => ({
-    id: `class-${curso.id}-${fila.dia}-${fila.horaInicio.replace(":", "")}-${fila.horaFin.replace(":", "")}`,
+    id: crearUuidDeterministico(
+      `${curso.id}-${fila.dia}-${fila.horaInicio}-${fila.horaFin}-class`,
+    ),
     dia: fila.dia,
     horaInicio: horaTextoANumero(fila.horaInicio),
     duracion: horaTextoANumero(fila.horaFin) - horaTextoANumero(fila.horaInicio),

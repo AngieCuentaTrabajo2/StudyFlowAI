@@ -3,10 +3,28 @@ const URL_API =
   "http://localhost:4000";
 const TIEMPO_ESPERA_API = 35000;
 const TIEMPO_ESPERA_API_LENTO = 70000;
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type OpcionesRequest = RequestInit & {
   timeoutMs?: number;
 };
+
+function esUuidValido(valor: string | undefined) {
+  return typeof valor === "string" && UUID_REGEX.test(valor);
+}
+
+function crearUuidCliente() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (caracter) => {
+    const random = Math.floor(Math.random() * 16);
+    const valor = caracter === "x" ? random : (random & 0x3) | 0x8;
+    return valor.toString(16);
+  });
+}
 
 async function request<T>(ruta: string, init?: OpcionesRequest): Promise<T> {
   const controller = new AbortController();
@@ -299,9 +317,15 @@ export const api = {
     });
   },
   guardarPlanificador(estudianteId: string, bloques: BloquePlanificadorApi[]) {
+    const bloquesPersistibles = bloques.map((bloque) => ({
+      ...bloque,
+      id: esUuidValido(bloque.id) ? bloque.id : crearUuidCliente(),
+      cursoId: esUuidValido(bloque.cursoId) ? bloque.cursoId : undefined,
+    }));
+
     return request<{ bloques: BloquePlanificadorApi[] }>(`/api/planificador/${estudianteId}`, {
       method: "POST",
-      body: JSON.stringify({ bloques }),
+      body: JSON.stringify({ bloques: bloquesPersistibles }),
       timeoutMs: TIEMPO_ESPERA_API_LENTO,
     });
   },
