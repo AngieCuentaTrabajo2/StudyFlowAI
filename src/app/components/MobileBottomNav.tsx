@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Link, useLocation } from "react-router";
 import {
   Bell,
@@ -7,7 +8,7 @@ import {
   Settings,
   Sparkles,
 } from "lucide-react";
-import { useStudyFlow } from "../data/studyflow-store";
+import { obtenerAlertasInteligentes, useStudyFlow } from "../data/studyflow-store";
 
 const items = [
   { path: "/app", label: "Inicio", icon: LayoutDashboard },
@@ -19,8 +20,13 @@ const items = [
 
 export default function MobileBottomNav() {
   const location = useLocation();
-  const { notificaciones } = useStudyFlow();
+  const { notificaciones, cursos, tareas, examenes, bloquesPlanificador } = useStudyFlow();
   const cantidadNoLeidas = notificaciones.filter((item) => item.noLeida).length;
+  const alertasInteligentes = useMemo(
+    () => obtenerAlertasInteligentes(cursos, tareas, examenes, bloquesPlanificador),
+    [bloquesPlanificador, cursos, examenes, tareas],
+  );
+  const totalNotificacionesVisibles = Math.max(cantidadNoLeidas, alertasInteligentes.length);
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 pb-[max(env(safe-area-inset-bottom),0px)] backdrop-blur lg:hidden">
@@ -41,9 +47,9 @@ export default function MobileBottomNav() {
             >
               <div className="relative">
                 <Icon className={`h-5 w-5 ${isActive ? "text-blue-600" : "text-gray-500"}`} />
-                {item.path === "/app/settings" && cantidadNoLeidas > 0 ? (
+                {item.path === "/app/settings" && totalNotificacionesVisibles > 0 ? (
                   <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] text-white">
-                    {cantidadNoLeidas}
+                    {totalNotificacionesVisibles}
                   </span>
                 ) : null}
               </div>
@@ -53,14 +59,15 @@ export default function MobileBottomNav() {
         })}
       </div>
 
-      {cantidadNoLeidas > 0 ? (
+      {totalNotificacionesVisibles > 0 ? (
         <Link
           to="/app/notifications"
           className="flex items-center justify-center gap-2 border-t border-gray-100 bg-blue-50 px-4 py-2 text-xs font-medium text-blue-700"
         >
           <Bell className="h-4 w-4" />
-          {cantidadNoLeidas} notificacion{cantidadNoLeidas === 1 ? "" : "es"} pendiente
-          {cantidadNoLeidas === 1 ? "" : "s"}
+          {totalNotificacionesVisibles} notificacion
+          {totalNotificacionesVisibles === 1 ? "" : "es"} importante
+          {totalNotificacionesVisibles === 1 ? "" : "s"}
         </Link>
       ) : null}
     </nav>

@@ -102,6 +102,15 @@ export type NotificacionItem = {
   noLeida: boolean;
 };
 
+export type AlertaInteligente = {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  nivel: "critica" | "alta" | "media";
+  tipo: "tarea" | "examen";
+  destino: string;
+};
+
 export type MensajeChat = {
   id: string;
   tipo: "user" | "ai";
@@ -1365,4 +1374,136 @@ export function obtenerPorcentajeCumplimiento(tareas: Tarea[]) {
 
 export function obtenerColorValor(color: string) {
   return obtenerColorCurso(color);
+}
+
+export function obtenerAlertasInteligentes(
+  cursos: Curso[],
+  tareas: Tarea[],
+  examenes: Examen[],
+  bloquesPlanificador: BloquePlanificador[],
+) {
+  const alertas: Array<AlertaInteligente & { prioridad: number; diasRestantes: number }> = [];
+
+  tareas.forEach((tarea) => {
+    const estadoVisual = obtenerEstadoVisualTarea(tarea);
+    if (estadoVisual === "completed") {
+      return;
+    }
+
+    const curso = cursos.find((item) => item.id === tarea.cursoId);
+    const diasRestantes = obtenerDiasRestantes(tarea.fechaEntrega);
+
+    if (estadoVisual === "overdue") {
+      alertas.push({
+        id: `smart-task-overdue-${tarea.id}`,
+        titulo: `${tarea.titulo} esta atrasada`,
+        descripcion: `${curso?.nombre ?? "Tu curso"} ya supero la fecha limite. Conviene retomarla hoy mismo.`,
+        nivel: "critica",
+        tipo: "tarea",
+        destino: `/app/tasks?focus=${tarea.id}`,
+        prioridad: 0,
+        diasRestantes,
+      });
+      return;
+    }
+
+    if (diasRestantes === 0) {
+      alertas.push({
+        id: `smart-task-today-${tarea.id}`,
+        titulo: `${tarea.titulo} vence hoy`,
+        descripcion: `${curso?.nombre ?? "Tu curso"} necesita atencion inmediata para que no se te pase.`,
+        nivel: tarea.prioridad === "high" ? "critica" : "alta",
+        tipo: "tarea",
+        destino: `/app/tasks?focus=${tarea.id}`,
+        prioridad: tarea.prioridad === "high" ? 1 : 2,
+        diasRestantes,
+      });
+      return;
+    }
+
+    if (diasRestantes === 1 && tarea.progreso < 80) {
+      alertas.push({
+        id: `smart-task-soon-${tarea.id}`,
+        titulo: `${tarea.titulo} vence manana`,
+        descripcion: `${curso?.nombre ?? "Tu curso"} aun va en ${tarea.progreso}%. Te conviene cerrarla hoy.`,
+        nivel: "alta",
+        tipo: "tarea",
+        destino: `/app/tasks?focus=${tarea.id}`,
+        prioridad: 3,
+        diasRestantes,
+      });
+      return;
+    }
+
+    if (diasRestantes <= 3 && tarea.prioridad === "high" && tarea.progreso < 60) {
+      alertas.push({
+        id: `smart-task-priority-${tarea.id}`,
+        titulo: `${tarea.titulo} ya deberia avanzar`,
+        descripcion: `${curso?.nombre ?? "Tu curso"} es prioridad alta y vence pronto. Mejor no dejarla para el ultimo dia.`,
+        nivel: "media",
+        tipo: "tarea",
+        destino: `/app/tasks?focus=${tarea.id}`,
+        prioridad: 5,
+        diasRestantes,
+      });
+    }
+  });
+
+  examenes.forEach((examen) => {
+    const diasRestantes = obtenerDiasRestantes(examen.fecha);
+    if (diasRestantes < 0) {
+      return;
+    }
+
+    const curso = cursos.find((item) => item.id === examen.cursoId);
+    const bloquesCurso = bloquesPlanificador.filter(
+      (bloque) => bloque.tipo === "study" && bloque.cursoId === examen.cursoId,
+    );
+
+    if (diasRestantes <= 1 && examen.preparacion < 70) {
+      alertas.push({
+        id: `smart-exam-critical-${examen.id}`,
+        titulo: `${examen.titulo} esta demasiado cerca`,
+        descripcion: `${curso?.nombre ?? "Tu curso"} llega en ${diasRestantes === 0 ? "horas" : "1 dia"} y tu preparacion va en ${examen.preparacion}%.`,
+        nivel: "critica",
+        tipo: "examen",
+        destino: `/app/exams?focus=${examen.id}`,
+        prioridad: diasRestantes === 0 ? 0 : 1,
+        diasRestantes,
+      });
+      return;
+    }
+
+    if (diasRestantes <= 3 && examen.preparacion < 60) {
+      alertas.push({
+        id: `smart-exam-soon-${examen.id}`,
+        titulo: `${examen.titulo} necesita repaso`,
+        descripcion: `${curso?.nombre ?? "Tu curso"} esta cerca y tu preparacion aun no llega a una zona segura.`,
+        nivel: "alta",
+        tipo: "examen",
+        destino: `/app/exams?focus=${examen.id}`,
+        prioridad: 2,
+        diasRestantes,
+      });
+      return;
+    }
+
+    if (diasRestantes <= 5 && bloquesCurso.length === 0) {
+      alertas.push({
+        id: `smart-exam-plan-${examen.id}`,
+        titulo: `Aun no tienes bloques para ${examen.titulo}`,
+        descripcion: `${curso?.nombre ?? "Tu curso"} se acerca y todavia no aparece en tu planificador.`,
+        nivel: "media",
+        tipo: "examen",
+        destino: `/app/planner`,
+        prioridad: 4,
+        diasRestantes,
+      });
+    }
+  });
+
+  return alertas
+    .sort((a, b) => a.prioridad - b.prioridad || a.diasRestantes - b.diasRestantes)
+    .slice(0, 5)
+    .map(({ prioridad, diasRestantes, ...alerta }) => alerta);
 }

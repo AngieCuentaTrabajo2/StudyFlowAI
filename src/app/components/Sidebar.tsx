@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Link, useLocation } from "react-router";
 import {
   Bell,
@@ -12,7 +13,7 @@ import {
   Sparkles,
   TrendingUp,
 } from "lucide-react";
-import { useStudyFlow } from "../data/studyflow-store";
+import { obtenerAlertasInteligentes, useStudyFlow } from "../data/studyflow-store";
 import { Button } from "./ui/button";
 
 const menuItems = [
@@ -29,8 +30,14 @@ const menuItems = [
 
 export default function Sidebar({ mobile = false }: { mobile?: boolean }) {
   const location = useLocation();
-  const { usuarioActual, notificaciones, cerrarSesion } = useStudyFlow();
+  const { usuarioActual, notificaciones, cerrarSesion, cursos, tareas, examenes, bloquesPlanificador } =
+    useStudyFlow();
   const cantidadNoLeidas = notificaciones.filter((item) => item.noLeida).length;
+  const alertasInteligentes = useMemo(
+    () => obtenerAlertasInteligentes(cursos, tareas, examenes, bloquesPlanificador),
+    [bloquesPlanificador, cursos, examenes, tareas],
+  );
+  const totalNotificacionesVisibles = Math.max(cantidadNoLeidas, alertasInteligentes.length);
 
   return (
     <aside
@@ -66,9 +73,9 @@ export default function Sidebar({ mobile = false }: { mobile?: boolean }) {
             >
               <Icon className="h-5 w-5" />
               <span className="font-medium">{item.label}</span>
-              {item.path === "/app/notifications" && cantidadNoLeidas > 0 && (
+              {item.path === "/app/notifications" && totalNotificacionesVisibles > 0 && (
                 <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs text-white">
-                  {cantidadNoLeidas}
+                  {totalNotificacionesVisibles}
                 </span>
               )}
             </Link>

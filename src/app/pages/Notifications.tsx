@@ -1,16 +1,42 @@
-import { AlertCircle, Bell, CheckCircle, Clock, Sparkles, Trash2 } from "lucide-react";
-import { obtenerTiempoRelativoNotificacion, useStudyFlow } from "../data/studyflow-store";
+import { useMemo } from "react";
+import { useNavigate } from "react-router";
+import {
+  AlertCircle,
+  Bell,
+  CalendarClock,
+  CheckCircle,
+  ClipboardList,
+  Clock,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
+import {
+  obtenerAlertasInteligentes,
+  obtenerTiempoRelativoNotificacion,
+  useStudyFlow,
+  type AlertaInteligente,
+} from "../data/studyflow-store";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import { ScrollArea } from "../components/ui/scroll-area";
 
 export default function Notifications() {
+  const navigate = useNavigate();
   const {
     notificaciones,
     marcarNotificacionLeida,
     marcarTodasNotificacionesLeidas,
     limpiarNotificacionesLeidas,
+    cursos,
+    tareas,
+    examenes,
+    bloquesPlanificador,
   } = useStudyFlow();
+  const alertasInteligentes = useMemo(
+    () => obtenerAlertasInteligentes(cursos, tareas, examenes, bloquesPlanificador),
+    [bloquesPlanificador, cursos, examenes, tareas],
+  );
 
   return (
     <div className="space-y-8">
@@ -30,6 +56,55 @@ export default function Notifications() {
           </Button>
         </div>
       </div>
+
+      <Card className="border-none shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-blue-600" />
+            Alertas inteligentes de hoy
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {alertasInteligentes.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-8 text-center text-sm text-gray-500">
+              No vemos urgencias fuertes por ahora. Cuando algo empiece a apretar, aparecera aqui.
+            </div>
+          ) : (
+            <ScrollArea className="max-h-[360px] pr-4">
+              <div className="space-y-3">
+                {alertasInteligentes.map((alerta) => {
+                  const estilo = obtenerEstiloAlerta(alerta.nivel);
+                  const Icon = alerta.tipo === "tarea" ? ClipboardList : CalendarClock;
+
+                  return (
+                    <button
+                      key={alerta.id}
+                      type="button"
+                      onClick={() => navigate(alerta.destino)}
+                      className="flex w-full items-start gap-4 rounded-2xl border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md"
+                      style={{ borderColor: estilo.borde, background: estilo.fondo }}
+                    >
+                      <div
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+                        style={{ background: estilo.fondoIcono, color: estilo.color }}
+                      >
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-slate-900">{alerta.titulo}</span>
+                          <Badge className={estilo.badge}>{estilo.etiqueta}</Badge>
+                        </div>
+                        <p className="mt-1 text-sm leading-6 text-slate-600">{alerta.descripcion}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="border-none shadow-lg">
         <CardHeader>
@@ -90,12 +165,45 @@ export default function Notifications() {
         <HighlightCard
           icon={Sparkles}
           title="Sugerencias IA"
-          text="Los recordatorios inteligentes ya estan listos para integrarse con OpenAI."
+          text="El sistema ya combina tareas, examenes y planificador para mostrar alertas mas utiles."
           tone="blue"
         />
       </div>
     </div>
   );
+}
+
+function obtenerEstiloAlerta(nivel: AlertaInteligente["nivel"]) {
+  if (nivel === "critica") {
+    return {
+      fondo: "rgba(254, 242, 242, 0.9)",
+      fondoIcono: "rgba(239, 68, 68, 0.12)",
+      borde: "rgba(239, 68, 68, 0.18)",
+      color: "#dc2626",
+      badge: "bg-red-100 text-red-700",
+      etiqueta: "Critica",
+    };
+  }
+
+  if (nivel === "alta") {
+    return {
+      fondo: "rgba(255, 247, 237, 0.95)",
+      fondoIcono: "rgba(249, 115, 22, 0.12)",
+      borde: "rgba(249, 115, 22, 0.18)",
+      color: "#ea580c",
+      badge: "bg-orange-100 text-orange-700",
+      etiqueta: "Alta",
+    };
+  }
+
+  return {
+    fondo: "rgba(239, 246, 255, 0.95)",
+    fondoIcono: "rgba(37, 99, 235, 0.12)",
+    borde: "rgba(37, 99, 235, 0.18)",
+    color: "#2563eb",
+    badge: "bg-blue-100 text-blue-700",
+    etiqueta: "Media",
+  };
 }
 
 function HighlightCard({
