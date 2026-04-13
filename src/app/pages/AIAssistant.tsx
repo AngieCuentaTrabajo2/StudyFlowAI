@@ -21,6 +21,7 @@ import {
   type AlcancePlanificacion,
   type Curso,
   type JornadaPlanificacion,
+  type ModoPlanificacionTodo,
   type Tarea,
 } from "../data/studyflow-store";
 import { Badge } from "../components/ui/badge";
@@ -48,11 +49,19 @@ const aliasDiasPlanificacion: Array<{ indice: number; terminos: string[] }> = [
 
 type FlujoPlanificacionChat = {
   activo: boolean;
-  paso: "modo" | "objetivo-tarea" | "objetivo-curso" | "dias" | "jornada" | "confirmacion";
+  paso:
+    | "modo"
+    | "modo-todo"
+    | "objetivo-tarea"
+    | "objetivo-curso"
+    | "dias"
+    | "jornada"
+    | "confirmacion";
   alcance: AlcancePlanificacion | null;
   objetivoId?: string;
   diasBloqueados: number[];
   jornada: JornadaPlanificacion;
+  modoTodo: ModoPlanificacionTodo;
 };
 
 const flujoPlanificacionInicial: FlujoPlanificacionChat = {
@@ -62,6 +71,7 @@ const flujoPlanificacionInicial: FlujoPlanificacionChat = {
   objetivoId: undefined,
   diasBloqueados: [],
   jornada: "flexible",
+  modoTodo: "solo-calendarizado",
 };
 
 function normalizarTextoPlanificacion(valor: string) {
@@ -126,6 +136,63 @@ function esConfirmacionNegativa(mensaje: string) {
   return ["no", "cancelar", "cancela", "salir", "deten"].some((termino) =>
     texto === termino || texto.includes(termino),
   );
+}
+
+function detectarModoPlanificacionTodo(mensaje: string): ModoPlanificacionTodo | null {
+  const texto = normalizarTextoPlanificacion(mensaje);
+
+  if (
+    texto === "1" ||
+    texto.includes("solo calendario") ||
+    texto.includes("solo lo que ya") ||
+    texto.includes("solo lo calendarizado") ||
+    texto.includes("solo reordena") ||
+    texto.includes("solo reorganiza")
+  ) {
+    return "solo-calendarizado";
+  }
+
+  if (
+    texto === "2" ||
+    (texto.includes("tareas") && !texto.includes("repasos")) ||
+    texto.includes("agrega tareas")
+  ) {
+    return "agregar-tareas";
+  }
+
+  if (
+    texto === "3" ||
+    (texto.includes("repasos") && !texto.includes("tareas")) ||
+    texto.includes("agrega repasos")
+  ) {
+    return "agregar-repasos";
+  }
+
+  if (
+    texto === "4" ||
+    texto.includes("ambos") ||
+    texto.includes("todo") ||
+    (texto.includes("tareas") && texto.includes("repasos"))
+  ) {
+    return "agregar-todo";
+  }
+
+  return null;
+}
+
+function obtenerResumenModoTodo(modoTodo: ModoPlanificacionTodo) {
+  switch (modoTodo) {
+    case "solo-calendarizado":
+      return "solo lo que ya está en tu calendario";
+    case "agregar-tareas":
+      return "lo ya calendarizado y además tareas pendientes";
+    case "agregar-repasos":
+      return "lo ya calendarizado y además repasos de cursos";
+    case "agregar-todo":
+      return "lo ya calendarizado y además tareas y repasos nuevos";
+    default:
+      return "solo lo que ya está en tu calendario";
+  }
 }
 
 function obtenerResumenDiasBloqueados(diasBloqueados: number[]) {
@@ -310,13 +377,18 @@ export default function AIAssistant() {
           {
             tipo: "ai",
             mensaje:
-              "Perfecto. Voy a reorganizar tareas y repasos generales.\n\nAhora dime que dias quieres dejar libres. Puedes responder, por ejemplo: `martes y domingo` o `ninguno`.",
+              "Perfecto. Antes de mover todo, dime con que base quieres trabajar:\n\n" +
+              "1. Solo lo que ya esta en tu calendario\n" +
+              "2. Lo que ya esta y ademas agregar tareas pendientes\n" +
+              "3. Lo que ya esta y ademas agregar repasos de cursos\n" +
+              "4. Agregar tareas y repasos nuevos tambien\n\n" +
+              "Puedes responder con el numero o con algo como `solo calendario`, `tareas`, `repasos` o `todo`.",
           },
         ]);
         setFlujoPlanificacion((actual) => ({
           ...actual,
           alcance: "todo",
-          paso: "dias",
+          paso: "modo-todo",
         }));
         return;
       }
@@ -388,6 +460,38 @@ export default function AIAssistant() {
           mensaje: "Todavia necesito una de estas tres opciones: `todo`, `una tarea` o `un curso`.",
         },
       ]);
+      return;
+    }
+
+    if (flujoPlanificacion.paso === "modo-todo") {
+      const modoTodo = detectarModoPlanificacionTodo(texto);
+
+      if (!modoTodo) {
+        anexarMensajesAsistenteLocales([
+          { tipo: "user", mensaje: texto },
+          {
+            tipo: "ai",
+            mensaje:
+              "Todavia necesito una de estas opciones: `1`, `2`, `3` o `4`. Si prefieres, tambien puedes responder `solo calendario`, `tareas`, `repasos` o `todo`.",
+          },
+        ]);
+        return;
+      }
+
+      anexarMensajesAsistenteLocales([
+        { tipo: "user", mensaje: texto },
+        {
+          tipo: "ai",
+          mensaje:
+            `Perfecto. Voy a trabajar con ${obtenerResumenModoTodo(modoTodo)}.\n\n` +
+            "Ahora dime que dias quieres dejar libres. Puedes responder `martes y domingo` o `ninguno`.",
+        },
+      ]);
+      setFlujoPlanificacion((actual) => ({
+        ...actual,
+        modoTodo,
+        paso: "dias",
+      }));
       return;
     }
 
@@ -515,6 +619,10 @@ export default function AIAssistant() {
           : flujoPlanificacion.alcance === "tarea"
             ? `la tarea ${tareaObjetivo?.titulo ?? "seleccionada"}`
             : `el repaso de ${cursoObjetivo?.nombre ?? "ese curso"}`;
+      const detalleModoTodo =
+        flujoPlanificacion.alcance === "todo"
+          ? `- Base de planificacion: ${obtenerResumenModoTodo(flujoPlanificacion.modoTodo)}\n`
+          : "";
 
       anexarMensajesAsistenteLocales([
         { tipo: "user", mensaje: texto },
@@ -522,6 +630,7 @@ export default function AIAssistant() {
           tipo: "ai",
           mensaje:
             `Listo. Voy a reorganizar ${resumenObjetivo} con estas reglas:\n\n` +
+            detalleModoTodo +
             `- Dias libres: ${obtenerResumenDiasBloqueados(flujoPlanificacion.diasBloqueados)}\n` +
             `- Franja preferida: ${jornada}\n` +
             `- Limite diario actual: ${usuarioActual?.horasEstudioDiarias ?? 2}h\n\n` +
@@ -553,6 +662,7 @@ export default function AIAssistant() {
         objetivoId: flujoPlanificacion.objetivoId,
         diasBloqueados: flujoPlanificacion.diasBloqueados,
         jornada: flujoPlanificacion.jornada,
+        modoTodo: flujoPlanificacion.modoTodo,
       });
 
       anexarMensajesAsistenteLocales([

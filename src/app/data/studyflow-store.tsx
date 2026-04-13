@@ -22,6 +22,11 @@ export type EstadoTarea = "pending" | "in-progress" | "completed" | "overdue";
 export type TipoNotificacion = "urgent" | "warning" | "info" | "success";
 export type JornadaPlanificacion = "manana" | "tarde" | "noche" | "flexible";
 export type AlcancePlanificacion = "todo" | "tarea" | "curso";
+export type ModoPlanificacionTodo =
+  | "solo-calendarizado"
+  | "agregar-tareas"
+  | "agregar-repasos"
+  | "agregar-todo";
 
 export type PerfilUsuario = {
   id: string;
@@ -198,6 +203,7 @@ type ValorContextoStudyFlow = EstadoStudyFlow & {
     objetivoId?: string;
     diasBloqueados: number[];
     jornada: JornadaPlanificacion;
+    modoTodo?: ModoPlanificacionTodo;
   }) => ResultadoPlanificacionInteligente;
   moverBloquePlanificador: (bloqueId: string, dia: number, horaInicio: number) => void;
   actualizarBloquePlanificador: (bloqueId: string, cambios: Partial<BloquePlanificador>) => void;
@@ -225,11 +231,11 @@ const CUENTA_DEMO = {
 type ObjetivoPlanificacionAutomatica = {
   clave: string;
   titulo: string;
-  cursoId: string;
+  cursoId?: string;
   color: string;
   fechaObjetivo: string;
   horasSolicitadas: number;
-  tipo: "tarea" | "repaso";
+  tipo: "tarea" | "repaso" | "bloque";
   resumen: string;
 };
 
@@ -262,6 +268,14 @@ function crearId(prefijo: string) {
     const valor = caracter === "x" ? random : (random & 0x3) | 0x8;
     return valor.toString(16);
   });
+}
+
+function normalizarTextoPlanificacion(valor: string) {
+  return valor
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function ordenarBloquesPlanificador(bloques: BloquePlanificador[]) {
@@ -383,13 +397,162 @@ function limpiarBloquesEstudioSegunAlcance(
   return bloques;
 }
 
-function construirObjetivosPlanificacionGlobal(
+function obtenerObjetivoDesdeBloqueExistente(
+  bloque: BloquePlanificador,
   cursos: Curso[],
   tareas: Tarea[],
   examenes: Examen[],
 ) {
-  const objetivosTareas: ObjetivoPlanificacionAutomatica[] = tareas
+  const curso = cursos.find((item) => item.id === bloque.cursoId);
+  const tituloNormalizado = normalizarTextoPlanificacion(bloque.titulo);
+  const tituloSinTarea = bloque.titulo.replace(/^tarea:\s*/i, "").trim();
+  const tituloSinRepaso = bloque.titulo.replace(/^repaso:\s*/i, "").trim();
+  const fechaFallback = bloque.cursoId
+    ? obtenerFechaObjetivoCurso(bloque.cursoId, tareas, examenes)
+    : format(addDays(startOfToday(), 7), "yyyy-MM-dd");
+
+  if (tituloNormalizado.startsWith("tarea:")) {
+    const tarea = tareas.find(
+      (item) =>
+        (!bloque.cursoId || item.cursoId === bloque.cursoId) &&
+        normalizarTextoPlanificacion(item.titulo) === normalizarTextoPlanificacion(tituloSinTarea),
+    );
+
+    return {
+      clave: tarea
+        ? `task-${tarea.id}`
+        : `scheduled-task-${bloque.cursoId ?? "sin-curso"}-${normalizarTextoPlanificacion(tituloSinTarea)}`,
+      titulo: `Tarea: ${tarea?.titulo ?? tituloSinTarea}`,
+      cursoId: tarea?.cursoId ?? bloque.cursoId,
+      color: curso?.color ?? bloque.color ?? "purple",
+      fechaObjetivo: tarea?.fechaEntrega ?? fechaFallback,
+      horasSolicitadas: bloque.duracion,
+      tipo: "tarea" as const,
+      resumen: `${tarea?.titulo ?? tituloSinTarea}${curso ? ` (${curso.nombre})` : ""}`,
+    };
+  }
+
+  if (tituloNormalizado.startsWith("repaso:")) {
+    const cursoRepaso =
+      cursos.find((item) => item.id === bloque.cursoId) ??
+      cursos.find(
+        (item) =>
+          normalizarTextoPlanificacion(item.nombre) ===
+          normalizarTextoPlanificacion(tituloSinRepaso),
+      );
+
+    return {
+      clave: cursoRepaso
+        ? `review-${cursoRepaso.id}`
+        : `scheduled-review-${bloque.cursoId ?? "sin-curso"}-${normalizarTextoPlanificacion(tituloSinRepaso)}`,
+      titulo: `Repaso: ${cursoRepaso?.nombre ?? tituloSinRepaso}`,
+      cursoId: cursoRepaso?.id ?? bloque.cursoId,
+      color: cursoRepaso?.color ?? bloque.color ?? "blue",
+      fechaObjetivo: cursoRepaso
+        ? obtenerFechaObjetivoCurso(cursoRepaso.id, tareas, examenes)
+        : fechaFallback,
+      horasSolicitadas: bloque.duracion,
+      tipo: "repaso" as const,
+      resumen: `Repaso de ${cursoRepaso?.nombre ?? tituloSinRepaso}`,
+    };
+  }
+
+  return {
+    clave: `scheduled-block-${bloque.cursoId ?? "sin-curso"}-${normalizarTextoPlanificacion(
+      bloque.titulo,
+    )}`,
+    titulo: bloque.titulo,
+    cursoId: bloque.cursoId,
+    color: curso?.color ?? bloque.color ?? "blue",
+    fechaObjetivo: fechaFallback,
+    horasSolicitadas: bloque.duracion,
+    tipo: "bloque" as const,
+    resumen: `${bloque.titulo}${curso ? ` (${curso.nombre})` : ""}`,
+  };
+}
+
+function ordenarObjetivosPlanificacion(objetivos: ObjetivoPlanificacionAutomatica[]) {
+  const ordenTipo = { tarea: 0, bloque: 1, repaso: 2 };
+  return [...objetivos].sort((a, b) => {
+    const diferenciaFecha = a.fechaObjetivo.localeCompare(b.fechaObjetivo);
+    if (diferenciaFecha !== 0) return diferenciaFecha;
+    return ordenTipo[a.tipo] - ordenTipo[b.tipo];
+  });
+}
+
+function construirObjetivosDesdeBloquesExistentes(
+  cursos: Curso[],
+  tareas: Tarea[],
+  examenes: Examen[],
+  bloquesPlanificador: BloquePlanificador[],
+) {
+  const objetivosAgrupados = new Map<string, ObjetivoPlanificacionAutomatica>();
+  const tareasYaCalendarizadas = new Set<string>();
+  const repasosYaCalendarizados = new Set<string>();
+
+  bloquesPlanificador
+    .filter((bloque) => bloque.tipo === "study")
+    .forEach((bloque) => {
+      const objetivoBase = obtenerObjetivoDesdeBloqueExistente(
+        bloque,
+        cursos,
+        tareas,
+        examenes,
+      );
+
+      if (objetivoBase.clave.startsWith("task-")) {
+        tareasYaCalendarizadas.add(objetivoBase.clave.replace("task-", ""));
+      }
+
+      if (objetivoBase.clave.startsWith("review-")) {
+        repasosYaCalendarizados.add(objetivoBase.clave.replace("review-", ""));
+      }
+
+      const previo = objetivosAgrupados.get(objetivoBase.clave);
+      if (previo) {
+        objetivosAgrupados.set(objetivoBase.clave, {
+          ...previo,
+          horasSolicitadas: previo.horasSolicitadas + bloque.duracion,
+        });
+        return;
+      }
+
+      objetivosAgrupados.set(objetivoBase.clave, objetivoBase);
+    });
+
+  return {
+    objetivos: ordenarObjetivosPlanificacion([...objetivosAgrupados.values()]),
+    tareasYaCalendarizadas,
+    repasosYaCalendarizados,
+  };
+}
+
+function construirObjetivosPlanificacionTodo(
+  cursos: Curso[],
+  tareas: Tarea[],
+  examenes: Examen[],
+  bloquesPlanificador: BloquePlanificador[],
+  modoTodo: ModoPlanificacionTodo,
+) {
+  const {
+    objetivos: objetivosExistentes,
+    tareasYaCalendarizadas,
+    repasosYaCalendarizados,
+  } = construirObjetivosDesdeBloquesExistentes(cursos, tareas, examenes, bloquesPlanificador);
+
+  if (modoTodo === "solo-calendarizado") {
+    return objetivosExistentes;
+  }
+
+  const incluirTareas =
+    modoTodo === "agregar-tareas" || modoTodo === "agregar-todo";
+  const incluirRepasos =
+    modoTodo === "agregar-repasos" || modoTodo === "agregar-todo";
+
+  const objetivosTareas: ObjetivoPlanificacionAutomatica[] = incluirTareas
+    ? tareas
     .filter((tarea) => esTareaActiva(tarea))
+    .filter((tarea) => !tareasYaCalendarizadas.has(tarea.id))
     .sort((a, b) => {
       const diferenciaFecha = a.fechaEntrega.localeCompare(b.fechaEntrega);
       if (diferenciaFecha !== 0) return diferenciaFecha;
@@ -408,7 +571,8 @@ function construirObjetivosPlanificacionGlobal(
         tipo: "tarea",
         resumen: `${tarea.titulo} (${curso?.nombre ?? "Curso"})`,
       };
-    });
+    })
+    : [];
 
   const examenesPorCurso = new Map<string, Examen>();
   examenes
@@ -420,26 +584,29 @@ function construirObjetivosPlanificacionGlobal(
       }
     });
 
-  const objetivosRepaso: ObjetivoPlanificacionAutomatica[] = [...examenesPorCurso.values()].map((examen) => {
-    const curso = cursos.find((item) => item.id === examen.cursoId);
-    return {
-      clave: `review-${examen.cursoId}`,
-      titulo: `Repaso: ${curso?.nombre ?? "Curso"}`,
-      cursoId: examen.cursoId,
-      color: curso?.color ?? "blue",
-      fechaObjetivo: examen.fecha,
-      horasSolicitadas: calcularHorasRepasoExamen(examen),
-      tipo: "repaso",
-      resumen: `Repaso de ${curso?.nombre ?? "curso"} por ${examen.titulo}`,
-    };
-  });
+  const objetivosRepaso: ObjetivoPlanificacionAutomatica[] = incluirRepasos
+    ? [...examenesPorCurso.values()]
+        .filter((examen) => !repasosYaCalendarizados.has(examen.cursoId))
+        .map((examen) => {
+          const curso = cursos.find((item) => item.id === examen.cursoId);
+          return {
+            clave: `review-${examen.cursoId}`,
+            titulo: `Repaso: ${curso?.nombre ?? "Curso"}`,
+            cursoId: examen.cursoId,
+            color: curso?.color ?? "blue",
+            fechaObjetivo: examen.fecha,
+            horasSolicitadas: calcularHorasRepasoExamen(examen),
+            tipo: "repaso",
+            resumen: `Repaso de ${curso?.nombre ?? "curso"} por ${examen.titulo}`,
+          };
+        })
+    : [];
 
-  return [...objetivosTareas, ...objetivosRepaso].sort((a, b) => {
-    const diferenciaFecha = a.fechaObjetivo.localeCompare(b.fechaObjetivo);
-    if (diferenciaFecha !== 0) return diferenciaFecha;
-    if (a.tipo === b.tipo) return 0;
-    return a.tipo === "tarea" ? -1 : 1;
-  });
+  return ordenarObjetivosPlanificacion([
+    ...objetivosExistentes,
+    ...objetivosTareas,
+    ...objetivosRepaso,
+  ]);
 }
 
 function programarObjetivosConRestricciones({
@@ -1850,7 +2017,13 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           api.limpiarMensajesAsistente(usuarioId).catch(() => {});
         }
       },
-      replanificarHorarioInteligente: ({ alcance, objetivoId, diasBloqueados, jornada }) => {
+      replanificarHorarioInteligente: ({
+        alcance,
+        objetivoId,
+        diasBloqueados,
+        jornada,
+        modoTodo = "solo-calendarizado",
+      }) => {
         const diasRestringidos = [...new Set(diasBloqueados)].filter((dia) => dia >= 0 && dia <= 6);
         if (diasRestringidos.length >= 7) {
           return {
@@ -1893,7 +2066,13 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         let objetivos: ObjetivoPlanificacionAutomatica[] = [];
 
         if (alcance === "todo") {
-          objetivos = construirObjetivosPlanificacionGlobal(estado.cursos, estado.tareas, estado.examenes);
+          objetivos = construirObjetivosPlanificacionTodo(
+            estado.cursos,
+            estado.tareas,
+            estado.examenes,
+            estado.bloquesPlanificador,
+            modoTodo,
+          );
         }
 
         if (alcance === "tarea" && tareaObjetivo) {
@@ -1934,7 +2113,10 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         if (!objetivos.length) {
           return {
             ok: false,
-            mensaje: "No encontre tareas o repasos para reorganizar con esa opcion.",
+            mensaje:
+              alcance === "todo" && modoTodo === "solo-calendarizado"
+                ? "No encontre bloques de estudio ya calendarizados. Primero agrega una tarea o repaso al calendario, o elige incluir nuevos pendientes."
+                : "No encontre tareas o repasos para reorganizar con esa opcion.",
             resumen: [],
             bloquesCreados: 0,
             horasProgramadas: 0,
