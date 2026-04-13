@@ -302,6 +302,7 @@ export const api = {
     return request<{ bloques: BloquePlanificadorApi[] }>(`/api/planificador/${estudianteId}`, {
       method: "POST",
       body: JSON.stringify({ bloques }),
+      timeoutMs: TIEMPO_ESPERA_API_LENTO,
     });
   },
   crearNotificacion(payload: {
