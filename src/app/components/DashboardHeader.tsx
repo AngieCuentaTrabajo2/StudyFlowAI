@@ -165,9 +165,9 @@ export default function DashboardHeader() {
   return (
     <>
       <Dialog open={dialogoNotificacionesAbierto} onOpenChange={setDialogoNotificacionesAbierto}>
-        <DialogContent className="w-[min(100%-1.5rem,54rem)] overflow-hidden rounded-[32px] border-none p-0 shadow-2xl">
-          <div className="grid max-h-[84vh] overflow-hidden bg-white md:grid-cols-[1.02fr_0.98fr]">
-            <div className="border-b border-white/10 bg-gradient-to-br from-slate-950 via-blue-950 to-purple-900 p-6 text-white md:border-b-0 md:border-r md:border-r-white/10 md:p-7">
+        <DialogContent className="w-[min(100%-1.5rem,80rem)] overflow-hidden rounded-[32px] border-none p-0 shadow-2xl md:w-[min(100%-3rem,74rem)] xl:w-[min(100%-6rem,80rem)]">
+          <div className="grid max-h-[84vh] overflow-hidden bg-white lg:grid-cols-[1fr_1.16fr] xl:grid-cols-[0.98fr_1.22fr]">
+            <div className="border-b border-white/10 bg-gradient-to-br from-slate-950 via-blue-950 to-purple-900 p-6 text-white md:p-7 lg:border-b-0 lg:border-r lg:border-r-white/10 lg:p-8">
               <DialogHeader className="space-y-3 text-left">
                 <div className="flex items-start gap-4">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/12">
@@ -182,7 +182,7 @@ export default function DashboardHeader() {
                 </div>
               </DialogHeader>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-3 md:grid-cols-1 xl:grid-cols-3">
+              <div className="mt-6 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
                 <ResumenDialogo
                   etiqueta="Alertas clave"
                   valor={`${alertasInteligentes.length}`}
@@ -200,7 +200,7 @@ export default function DashboardHeader() {
                 />
               </div>
 
-              <div className="mt-6 rounded-[28px] border border-white/10 bg-white/10 p-5 backdrop-blur">
+              <div className="mt-6 rounded-[28px] border border-white/10 bg-white/10 p-5 backdrop-blur lg:p-6">
                 <div className="flex items-center gap-2 text-sm font-semibold text-white">
                   <Sparkles className="h-4 w-4 text-cyan-200" />
                   Entra con foco
@@ -245,7 +245,7 @@ export default function DashboardHeader() {
             </div>
 
             <div className="flex min-h-0 flex-col bg-slate-50">
-              <div className="border-b border-slate-200 px-6 py-5 md:px-7">
+              <div className="border-b border-slate-200 px-6 py-5 md:px-7 lg:px-8">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div className="text-sm font-semibold text-slate-900">Acciones recomendadas</div>
@@ -259,8 +259,8 @@ export default function DashboardHeader() {
                 </div>
               </div>
 
-              <div className="min-h-0 flex-1 p-6 pt-5 md:px-7">
-                <ScrollArea className="h-[min(54vh,32rem)] pr-4">
+              <div className="min-h-0 flex-1 p-6 pt-5 md:px-7 lg:px-8">
+                <ScrollArea className="h-[min(56vh,34rem)] pr-2 lg:pr-4">
                   {alertasInteligentes.length > 0 ? (
                     <section>
                       <div className="mb-3 flex items-center justify-between gap-3">

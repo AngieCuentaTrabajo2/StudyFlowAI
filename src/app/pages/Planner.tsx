@@ -194,42 +194,42 @@ const leyendaBloques: Array<{
   etiqueta: string;
   descripcion: string;
   Icono: LucideIcon;
-  clase: string;
+  clasePildora: string;
 }> = [
   {
     clave: "class",
     etiqueta: "Clase",
     descripcion: "Horario fijo del curso",
     Icono: Calendar,
-    clase: "border-blue-100 bg-blue-50 text-blue-700",
+    clasePildora: "bg-blue-50 text-blue-700 ring-1 ring-blue-100",
   },
   {
     clave: "task",
     etiqueta: "Tarea",
     descripcion: "Trabajo concreto agendado",
     Icono: Pencil,
-    clase: "border-violet-100 bg-violet-50 text-violet-700",
+    clasePildora: "bg-violet-50 text-violet-700 ring-1 ring-violet-100",
   },
   {
     clave: "review",
     etiqueta: "Repaso",
     descripcion: "Estudio general del curso",
     Icono: BookOpen,
-    clase: "border-emerald-100 bg-emerald-50 text-emerald-700",
+    clasePildora: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100",
   },
   {
     clave: "exam",
     etiqueta: "Examen",
     descripcion: "Evaluacion o prueba",
     Icono: Clock,
-    clase: "border-rose-100 bg-rose-50 text-rose-700",
+    clasePildora: "bg-rose-50 text-rose-700 ring-1 ring-rose-100",
   },
   {
     clave: "break",
     etiqueta: "Descanso",
     descripcion: "Pausa o respiro",
     Icono: Coffee,
-    clase: "border-slate-200 bg-slate-100 text-slate-700",
+    clasePildora: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
   },
 ];
 
@@ -373,18 +373,51 @@ export default function Planner() {
           <CardContent className="min-w-0 space-y-4">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-sm font-semibold text-slate-900">
-                El color principal identifica el curso y la pastilla te dice el tipo de bloque.
+                El color del bloque siempre representa al curso. La pastilla y el icono te dicen si es clase, tarea, repaso, examen o descanso.
               </p>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
-                {leyendaBloques.map(({ clave, etiqueta, descripcion, Icono, clase }) => (
-                  <div key={clave} className={`rounded-2xl border px-3 py-2 ${clase}`}>
-                    <div className="flex items-center gap-2 text-sm font-semibold">
-                      <Icono className="h-4 w-4" />
-                      {etiqueta}
-                    </div>
-                    <p className="mt-1 text-xs opacity-80">{descripcion}</p>
+              <div className="mt-3 grid gap-3 xl:grid-cols-[1.05fr_1.95fr]">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-sm font-semibold text-slate-900">Color del curso</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Una tarea o un repaso mantienen el color del curso al que pertenecen.
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {cursosConMayorCarga.length > 0 ? (
+                      cursosConMayorCarga.map((curso) => {
+                        const color = obtenerColorValor(curso.color);
+                        return (
+                          <div
+                            key={curso.id}
+                            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700"
+                          >
+                            <span
+                              className="h-2.5 w-2.5 rounded-full"
+                              style={{ backgroundColor: color }}
+                            />
+                            {curso.nombre}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-xs text-slate-500">Los colores aparecen segun los cursos que registres.</div>
+                    )}
                   </div>
-                ))}
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-sm font-semibold text-slate-900">Tipo de bloque</p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+                    {leyendaBloques.map(({ clave, etiqueta, descripcion, Icono, clasePildora }) => (
+                      <div key={clave} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
+                        <div className={`inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-semibold ${clasePildora}`}>
+                          <Icono className="h-3.5 w-3.5" />
+                          {etiqueta}
+                        </div>
+                        <p className="mt-2 text-xs text-slate-600">{descripcion}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
