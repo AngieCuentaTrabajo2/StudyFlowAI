@@ -5,10 +5,14 @@ import MobileBottomNav from "./MobileBottomNav";
 import Sidebar from "./Sidebar";
 
 export default function DashboardLayout() {
-  const { usuarioActual } = useStudyFlow();
+  const { usuarioActual, requiereCompletarPerfilAcademico } = useStudyFlow();
 
   if (!usuarioActual) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (requiereCompletarPerfilAcademico) {
+    return <Navigate to="/complete-profile" replace />;
   }
 
   return (

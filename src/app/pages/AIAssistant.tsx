@@ -342,29 +342,29 @@ function MensajeAsistente({
   onToggle: () => void;
 }) {
   const esLargo = contenido.length > 520 || contenido.split("\n").length > 9;
+  const clasesScrollMensaje = esLargo
+    ? `${
+        expandido ? "max-h-[420px]" : "max-h-[260px]"
+      } overflow-y-auto overscroll-contain pr-2 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400`
+    : "";
 
   return (
     <div className="space-y-3">
-      <div className="relative">
-        <div className={expandido || !esLargo ? "" : "max-h-[280px] overflow-hidden"}>
-          <ScrollArea className={`${expandido ? "max-h-[460px]" : "max-h-[280px]"} overflow-hidden pr-3`}>
-            <MensajeFormateado contenido={contenido} tipo="ai" />
-          </ScrollArea>
-        </div>
-
-        {esLargo && !expandido ? (
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white via-white/90 to-transparent" />
-        ) : null}
+      <div className={clasesScrollMensaje}>
+        <MensajeFormateado contenido={contenido} tipo="ai" />
       </div>
 
       {esLargo ? (
-        <button
-          type="button"
-          onClick={onToggle}
-          className="text-sm font-medium text-blue-600 transition hover:text-blue-700"
-        >
-          {expandido ? "Ver menos" : "Ver mas"}
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={onToggle}
+            className="text-sm font-medium text-blue-600 transition hover:text-blue-700"
+          >
+            {expandido ? "Caja mas compacta" : "Hacer caja mas grande"}
+          </button>
+          <span className="text-xs text-gray-400">Puedes desplazarte dentro del mensaje para leer todo.</span>
+        </div>
       ) : null}
     </div>
   );

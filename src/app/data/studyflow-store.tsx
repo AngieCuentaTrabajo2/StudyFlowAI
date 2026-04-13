@@ -130,12 +130,20 @@ type DatosRegistro = {
   plan: "gratis" | "estudiante" | "premium";
 };
 
+type ResultadoInicioSesionGoogle = "ok" | "completar-perfil" | "error";
+
 type ValorContextoStudyFlow = EstadoStudyFlow & {
+  requiereCompletarPerfilAcademico: boolean;
   iniciarSesion: (correo: string, contrasena: string) => Promise<boolean>;
-  iniciarSesionConGoogle: (credential: string) => Promise<boolean>;
+  iniciarSesionConGoogle: (credential: string) => Promise<ResultadoInicioSesionGoogle>;
   registrarUsuario: (datos: DatosRegistro) => Promise<boolean>;
   cerrarSesion: () => void;
   actualizarPerfil: (cambios: Partial<PerfilUsuario>) => void;
+  completarPerfilAcademico: (datos: {
+    universidad: string;
+    carrera: string;
+    semestre: string;
+  }) => Promise<boolean>;
   agregarTarea: (
     tarea: Omit<Tarea, "id" | "estado" | "progreso"> & { estado?: EstadoTarea; progreso?: number },
   ) => void;
@@ -166,6 +174,25 @@ const CUENTA_DEMO = {
   correo: "jhan.perez@universidad.edu",
   contrasena: "123456",
 };
+
+function tieneTextoPerfilAcademicoValido(valor: string | null | undefined) {
+  return typeof valor === "string" && valor.trim().length > 0 && valor.trim().toLowerCase() !== "por definir";
+}
+
+function usuarioRequiereCompletarPerfilAcademico(
+  usuario:
+    | Pick<PerfilUsuario, "universidad" | "carrera" | "semestre">
+    | Pick<UsuarioApi, "universidad" | "carrera" | "semestre">
+    | null,
+) {
+  if (!usuario) return false;
+
+  return !(
+    tieneTextoPerfilAcademicoValido(usuario.universidad) &&
+    tieneTextoPerfilAcademicoValido(usuario.carrera) &&
+    tieneTextoPerfilAcademicoValido(usuario.semestre)
+  );
+}
 
 function crearId(prefijo: string) {
   return `${prefijo}-${Math.random().toString(36).slice(2, 10)}`;
@@ -674,6 +701,9 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
   const valor = useMemo<ValorContextoStudyFlow>(() => {
     const obtenerCursoPorId = (cursoId?: string) =>
       estado.cursos.find((curso) => curso.id === cursoId);
+    const requiereCompletarPerfilAcademico = usuarioRequiereCompletarPerfilAcademico(
+      estado.usuarioActual,
+    );
 
     const persistirNotificacion = (estudianteId: string, temporal: NotificacionItem) => {
       api
@@ -697,6 +727,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
 
     return {
       ...estado,
+      requiereCompletarPerfilAcademico,
       obtenerCursoPorId,
       sincronizarConBackend: async () => {
         if (!estado.usuarioActual?.id) return;
@@ -736,7 +767,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           const resultado = await api.iniciarSesionConGoogle({ credential });
           const usuario = resultado.usuario;
           if (!usuario) {
-            return false;
+            return "error";
           }
 
           setEstado((actual) => ({
@@ -746,9 +777,14 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
             }),
           }));
 
-          return true;
+          return (
+            resultado.requiereCompletarPerfilAcademico ??
+            usuarioRequiereCompletarPerfilAcademico(usuario)
+          )
+            ? "completar-perfil"
+            : "ok";
         } catch (_error) {
-          return false;
+          return "error";
         }
       },
       registrarUsuario: async (datos) => {
@@ -837,6 +873,32 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
               }));
             })
             .catch(() => {});
+        }
+      },
+      completarPerfilAcademico: async (datos) => {
+        if (!estado.usuarioActual?.id) {
+          return false;
+        }
+
+        try {
+          const resultado = await api.actualizarPerfil(estado.usuarioActual.id, {
+            universidad: datos.universidad.trim(),
+            carrera: datos.carrera.trim(),
+            semestre: datos.semestre.trim(),
+          });
+
+          setEstado((actual) => ({
+            ...actual,
+            usuarioActual: actual.usuarioActual
+              ? normalizarUsuarioApi(resultado.usuario, {
+                  base: actual.usuarioActual,
+                })
+              : actual.usuarioActual,
+          }));
+
+          return true;
+        } catch (_error) {
+          return false;
         }
       },
       agregarTarea: (tarea) => {

@@ -76,6 +76,18 @@ function crearHashTemporalGoogle() {
   return crearHashContrasena(randomBytes(24).toString("hex"));
 }
 
+function tieneTextoPerfilValido(valor) {
+  return typeof valor === "string" && valor.trim() && valor.trim().toLowerCase() !== "por definir";
+}
+
+function requiereCompletarPerfilAcademico(usuario) {
+  return !(
+    tieneTextoPerfilValido(usuario?.universidad) &&
+    tieneTextoPerfilValido(usuario?.carrera) &&
+    tieneTextoPerfilValido(usuario?.semestre)
+  );
+}
+
 function responderSinBase(response) {
   response.status(500).json({ mensaje: "DATABASE_URL no configurada." });
 }
@@ -1493,7 +1505,10 @@ app.post("/api/auth/login", async (request, response) => {
       await pool.query("update estudiantes set hash_contrasena = $1 where id = $2", [nuevoHash, usuario.id]);
     }
 
-    response.json({ usuario: mapearUsuario(usuario) });
+    response.json({
+      usuario: mapearUsuario(usuario),
+      requiereCompletarPerfilAcademico: requiereCompletarPerfilAcademico(usuario),
+    });
   } catch (error) {
     response.status(500).json({ mensaje: "No se pudo iniciar sesion.", error: error.message });
   }
@@ -1581,7 +1596,10 @@ app.post("/api/auth/google", async (request, response) => {
         usuarioExistente.googleSub = googleSub;
       }
 
-      response.json({ usuario: mapearUsuario(usuarioExistente) });
+      response.json({
+        usuario: mapearUsuario(usuarioExistente),
+        requiereCompletarPerfilAcademico: requiereCompletarPerfilAcademico(usuarioExistente),
+      });
       return;
     }
 
@@ -1612,7 +1630,7 @@ app.post("/api/auth/google", async (request, response) => {
         app_google_calendar,
         app_sugerencias_automaticas
       )
-      values ($1, $2, $3, $4, $5, 'Por definir', 'Por definir', '1', 'gratis', '4-6', 'pomodoro', 'responsable', '', 4, 8, true, true, true, true, false, false, false, true)
+      values ($1, $2, $3, $4, $5, '', '', '', 'gratis', '4-6', 'pomodoro', 'responsable', '', 4, 8, true, true, true, true, false, false, false, true)
       returning
         id,
         nombres,
@@ -1640,7 +1658,10 @@ app.post("/api/auth/google", async (request, response) => {
       [nombres, apellidos, correo, googleSub, crearHashTemporalGoogle()],
     );
 
-    response.status(201).json({ usuario: mapearUsuario(resultado.rows[0]) });
+    response.status(201).json({
+      usuario: mapearUsuario(resultado.rows[0]),
+      requiereCompletarPerfilAcademico: true,
+    });
   } catch (error) {
     response.status(500).json({ mensaje: "No se pudo iniciar sesion con Google.", error: error.message });
   }

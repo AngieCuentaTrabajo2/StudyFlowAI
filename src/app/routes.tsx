@@ -59,6 +59,11 @@ export const router = createBrowserRouter([
     errorElement: <RouteErrorPage />,
   },
   {
+    path: "/complete-profile",
+    lazy: () => cargarRutaDiferida(() => import("./pages/CompleteProfilePage")),
+    errorElement: <RouteErrorPage />,
+  },
+  {
     path: "/app",
     lazy: () => cargarRutaDiferida(() => import("./components/DashboardLayout")),
     errorElement: <RouteErrorPage />,

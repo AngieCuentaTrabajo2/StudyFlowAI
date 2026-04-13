@@ -42,8 +42,8 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { iniciarSesion, iniciarSesionConGoogle } = useStudyFlow();
-  const [email, setEmail] = useState("jhan.perez@universidad.edu");
-  const [password, setPassword] = useState("123456");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
   const [cargandoGoogle, setCargandoGoogle] = useState(false);
@@ -92,20 +92,20 @@ export default function LoginPage() {
 
           setError("");
           setCargandoGoogle(true);
-          let success = false;
+          let resultado: Awaited<ReturnType<typeof iniciarSesionConGoogle>> = "error";
 
           try {
-            success = await iniciarSesionConGoogle(credential);
+            resultado = await iniciarSesionConGoogle(credential);
           } finally {
             setCargandoGoogle(false);
           }
 
-          if (!success) {
-            setError("No pudimos iniciar sesion con Google. Revisa tu GOOGLE_CLIENT_ID o intenta otra vez.");
+          if (resultado === "error") {
+            setError("No pudimos iniciar sesion con Google. Intenta otra vez en un momento.");
             return;
           }
 
-          navigate("/app");
+          navigate(resultado === "completar-perfil" ? "/complete-profile" : "/app");
         },
         auto_select: false,
         cancel_on_tap_outside: true,
@@ -205,10 +205,6 @@ export default function LoginPage() {
                 {error}
               </div>
             )}
-
-            <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-700">
-              Cuenta demo lista: <strong>jhan.perez@universidad.edu</strong> / <strong>123456</strong>
-            </div>
 
             <Button
               type="submit"

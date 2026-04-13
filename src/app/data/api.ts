@@ -139,15 +139,20 @@ export type ContextoApi = {
   mensajesChat: MensajeChatApi[];
 };
 
+export type RespuestaInicioSesionApi = {
+  usuario: UsuarioApi | null;
+  requiereCompletarPerfilAcademico?: boolean;
+};
+
 export const api = {
   iniciarSesion(payload: { correo: string; contrasena: string }) {
-    return request<{ usuario: UsuarioApi | null }>("/api/auth/login", {
+    return request<RespuestaInicioSesionApi>("/api/auth/login", {
       method: "POST",
       body: JSON.stringify(payload),
     });
   },
   iniciarSesionConGoogle(payload: { credential: string }) {
-    return request<{ usuario: UsuarioApi | null }>("/api/auth/google", {
+    return request<RespuestaInicioSesionApi>("/api/auth/google", {
       method: "POST",
       body: JSON.stringify(payload),
     });
