@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { addDays, differenceInCalendarDays, format, parseISO, startOfToday } from "date-fns";
 import {
@@ -688,6 +688,7 @@ export default function AIAssistant() {
   const [mensajesExpandidos, setMensajesExpandidos] = useState<Record<string, boolean>>({});
   const [flujoPlanificacion, setFlujoPlanificacion] = useState<FlujoPlanificacionChat>(flujoPlanificacionInicial);
   const [diasSeleccionadosPlanificacion, setDiasSeleccionadosPlanificacion] = useState<number[]>([]);
+  const finConversacionRef = useRef<HTMLDivElement | null>(null);
 
   const examenesProximos = [...examenes].sort((a, b) => a.fecha.localeCompare(b.fecha)).slice(0, 3);
   const tareasPlanificables = useMemo(
@@ -1024,6 +1025,17 @@ export default function AIAssistant() {
     flujoPlanificacion.paso,
     metadatosDiasPlanificacion?.diasPermitidos,
   ]);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      finConversacionRef.current?.scrollIntoView({
+        block: "end",
+        behavior: mensajesChat.length > 1 ? "smooth" : "auto",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [finConversacionRef, flujoPlanificacion.paso, mensajesChat.length, panelOpcionesPlanificacion]);
 
   useEffect(() => {
     if (searchParams.get("accion") !== "planificar") {
@@ -1595,8 +1607,8 @@ export default function AIAssistant() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-4">
-        <Card className="flex min-h-[70vh] flex-col border-none shadow-lg xl:col-span-3 xl:h-[760px]">
-          <CardHeader className="border-b">
+        <Card className="flex min-h-[70vh] min-h-0 flex-col overflow-hidden border-none shadow-lg xl:col-span-3 xl:h-[760px]">
+          <CardHeader className="shrink-0 border-b">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex min-w-0 items-center gap-3">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 sm:h-12 sm:w-12">
@@ -1633,7 +1645,7 @@ export default function AIAssistant() {
             </div>
           </CardHeader>
 
-          <div className="border-b bg-gray-50/80 px-4 py-4 sm:px-6">
+          <div className="shrink-0 border-b bg-gray-50/80 px-4 py-4 sm:px-6">
             <div className="flex flex-wrap gap-2">
               {accionesRapidas.map((accion) => (
                 <Button
@@ -1651,7 +1663,7 @@ export default function AIAssistant() {
             </div>
           </div>
 
-          <ScrollArea className="flex-1">
+          <ScrollArea className="min-h-0 flex-1">
             <div className="mx-auto flex min-h-full max-w-5xl flex-col gap-5 px-4 py-4 pb-14 sm:px-6 sm:py-6 sm:pb-20">
               {mensajesChat.length === 0 ? (
                 <EstadoVacio onAction={ejecutarAccionRapida} />
@@ -1710,10 +1722,11 @@ export default function AIAssistant() {
                   onSelect={responderOpcionPlanificacion}
                 />
               ) : null}
+              <div ref={finConversacionRef} className="h-px w-full shrink-0" />
             </div>
           </ScrollArea>
 
-          <div className="border-t p-4">
+          <div className="shrink-0 border-t p-4">
             <form onSubmit={manejarEnvio} className="flex gap-2">
               <Input
                 value={mensaje}
