@@ -1607,7 +1607,7 @@ export default function AIAssistant() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-4">
-        <Card className="flex min-h-[70vh] min-h-0 flex-col overflow-hidden border-none shadow-lg xl:col-span-3 xl:h-[760px]">
+        <Card className="flex min-h-[70vh] min-h-0 flex-col overflow-hidden border-none shadow-lg xl:col-span-3 xl:h-[840px] 2xl:h-[900px]">
           <CardHeader className="shrink-0 border-b">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex min-w-0 items-center gap-3">
