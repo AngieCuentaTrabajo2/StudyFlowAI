@@ -1,15 +1,20 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import {
+  ArrowRight,
   BookOpen,
   BrainCircuit,
   CalendarClock,
   CheckCircle2,
   ClipboardList,
   MessageCircle,
+  Moon,
   Send,
+  Sun,
+  Sunset,
   Sparkles,
   Trash2,
+  type LucideIcon,
 } from "lucide-react";
 import {
   esTareaActiva,
@@ -66,6 +71,25 @@ type FlujoPlanificacionChat = {
 
 type TonoPlanificadorLocal = "amigable" | "responsable" | "frio";
 
+type OpcionVisualPlanificacion = {
+  id: string;
+  valor: string;
+  titulo: string;
+  descripcion: string;
+  detalle?: string;
+  badge?: string;
+  Icono: LucideIcon;
+  tono: "blue" | "violet" | "emerald" | "amber" | "rose" | "slate";
+};
+
+type PanelVisualPlanificacion = {
+  titulo: string;
+  descripcion: string;
+  pasoEtiqueta: string;
+  layout: "triple" | "doble" | "cuadruple" | "lista";
+  opciones: OpcionVisualPlanificacion[];
+};
+
 const flujoPlanificacionInicial: FlujoPlanificacionChat = {
   activo: false,
   paso: "modo",
@@ -121,6 +145,7 @@ function adaptarMensajePlanificadorAlTono(
       .replace(/^Perfecto\.\s*/g, "")
       .replace(/^Listo\.\s*/g, "")
       .replace("Si te parece bien, responde `si` para aplicar o `no` para cancelar.", "Responde `si` para aplicar o `no` para cancelar.")
+      .replace("Si te parece bien, responde `si` para aplicar o `no` para cancelar. Tambien puedes usar los botones de abajo.", "Responde `si` para aplicar o `no` para cancelar. Puedes usar los botones de abajo.")
       .replace("Puedes responder con el numero o con el nombre.", "Responde con numero o nombre.")
       .replace("Puedes responder con el numero o con algo como `solo calendario`, `tareas`, `repasos` o `todo`.", "Responde con `1`, `2`, `3`, `4` o una opcion equivalente.");
   }
@@ -167,6 +192,10 @@ function adaptarMensajePlanificadorAlTono(
     .replace(
       "Si te parece bien, responde `si` para aplicar o `no` para cancelar.",
       "Si te cuadra, responde `si` y la aplico. Si no, dime `no` y la dejamos ahi.",
+    )
+    .replace(
+      "Si te parece bien, responde `si` para aplicar o `no` para cancelar. Tambien puedes usar los botones de abajo.",
+      "Si te cuadra, responde `si` y la aplico. Si no, dime `no` y la dejamos ahi. Tambien puedes usar los botones de abajo.",
     )
     .replace(
       "Para seguir necesito que me respondas `si` para aplicar o `no` para cancelar.",
@@ -354,6 +383,55 @@ function obtenerResumenDiasBloqueados(diasBloqueados: number[]) {
   return diasBloqueados.map((dia) => obtenerEtiquetaDiaPlanificador(dia)).join(", ");
 }
 
+function obtenerClasesOpcionPlanificacion(
+  tono: OpcionVisualPlanificacion["tono"],
+) {
+  switch (tono) {
+    case "blue":
+      return {
+        tarjeta: "border-blue-200 bg-blue-50/80 hover:border-blue-300 hover:bg-blue-100/70",
+        icono: "bg-blue-600/10 text-blue-700",
+        badge: "bg-blue-100 text-blue-700",
+        flecha: "text-blue-700",
+      };
+    case "violet":
+      return {
+        tarjeta: "border-violet-200 bg-violet-50/80 hover:border-violet-300 hover:bg-violet-100/70",
+        icono: "bg-violet-600/10 text-violet-700",
+        badge: "bg-violet-100 text-violet-700",
+        flecha: "text-violet-700",
+      };
+    case "emerald":
+      return {
+        tarjeta: "border-emerald-200 bg-emerald-50/80 hover:border-emerald-300 hover:bg-emerald-100/70",
+        icono: "bg-emerald-600/10 text-emerald-700",
+        badge: "bg-emerald-100 text-emerald-700",
+        flecha: "text-emerald-700",
+      };
+    case "amber":
+      return {
+        tarjeta: "border-amber-200 bg-amber-50/80 hover:border-amber-300 hover:bg-amber-100/70",
+        icono: "bg-amber-600/10 text-amber-700",
+        badge: "bg-amber-100 text-amber-700",
+        flecha: "text-amber-700",
+      };
+    case "rose":
+      return {
+        tarjeta: "border-rose-200 bg-rose-50/80 hover:border-rose-300 hover:bg-rose-100/70",
+        icono: "bg-rose-600/10 text-rose-700",
+        badge: "bg-rose-100 text-rose-700",
+        flecha: "text-rose-700",
+      };
+    default:
+      return {
+        tarjeta: "border-slate-200 bg-slate-50/90 hover:border-slate-300 hover:bg-slate-100",
+        icono: "bg-slate-600/10 text-slate-700",
+        badge: "bg-slate-200 text-slate-700",
+        flecha: "text-slate-700",
+      };
+  }
+}
+
 function seleccionarTareaDesdeTexto(mensaje: string, tareas: Tarea[]) {
   const texto = normalizarTextoPlanificacion(mensaje);
   const numero = Number.parseInt(texto, 10);
@@ -461,6 +539,249 @@ export default function AIAssistant() {
     [examenesProximos.length, tareasActivas.length],
   );
 
+  const panelOpcionesPlanificacion = useMemo<PanelVisualPlanificacion | null>(() => {
+    if (!flujoPlanificacion.activo) {
+      return null;
+    }
+
+    if (flujoPlanificacion.paso === "modo") {
+      return {
+        titulo:
+          tonoPlanificador === "amigable"
+            ? "Elige como quieres que organicemos esto"
+            : "Selecciona el tipo de planificacion",
+        descripcion:
+          tonoPlanificador === "frio"
+            ? "Puedes tocar una opcion para continuar."
+            : "No hace falta escribir si no quieres. Toca una opcion y seguimos.",
+        pasoEtiqueta: "Paso 1",
+        layout: "triple",
+        opciones: [
+          {
+            id: "modo-todo",
+            valor: "todo",
+            titulo: "Todo mi horario",
+            descripcion: "Reorganizo tareas y repasos de forma global segun tus reglas.",
+            badge: "Semana completa",
+            Icono: CalendarClock,
+            tono: "blue",
+          },
+          {
+            id: "modo-tarea",
+            valor: "una tarea",
+            titulo: "Solo una tarea",
+            descripcion: "Trabajamos una entrega puntual sin tocar lo demas.",
+            badge: "Puntual",
+            Icono: ClipboardList,
+            tono: "violet",
+          },
+          {
+            id: "modo-curso",
+            valor: "un curso",
+            titulo: "Repaso de un curso",
+            descripcion: "Organizo bloques de repaso general para un curso especifico.",
+            badge: "Curso",
+            Icono: BookOpen,
+            tono: "emerald",
+          },
+        ],
+      };
+    }
+
+    if (flujoPlanificacion.paso === "modo-todo") {
+      return {
+        titulo:
+          tonoPlanificador === "amigable"
+            ? "Dime con que base quieres que trabaje"
+            : "Selecciona la base de planificacion",
+        descripcion: "Asi respetamos lo que ya calendarizaste y solo agregamos lo que tu decidas.",
+        pasoEtiqueta: "Paso 2",
+        layout: "doble",
+        opciones: [
+          {
+            id: "todo-solo",
+            valor: "solo calendario",
+            titulo: "Solo lo ya calendarizado",
+            descripcion: "Reacomodo unicamente los bloques que ya tienes en el planner.",
+            badge: "Recomendado",
+            Icono: CalendarClock,
+            tono: "blue",
+          },
+          {
+            id: "todo-tareas",
+            valor: "tareas",
+            titulo: "Agregar tareas pendientes",
+            descripcion: "Mantengo lo que ya esta y sumo tareas activas todavia no agendadas.",
+            badge: `${tareasPendientesVigentes.length} tareas`,
+            Icono: ClipboardList,
+            tono: "violet",
+          },
+          {
+            id: "todo-repasos",
+            valor: "repasos",
+            titulo: "Agregar repasos de cursos",
+            descripcion: "Mantengo tu calendario y sumo repasos generales de cursos.",
+            badge: `${cursosPlanificables.length} cursos`,
+            Icono: BookOpen,
+            tono: "emerald",
+          },
+          {
+            id: "todo-completo",
+            valor: "todo",
+            titulo: "Agregar todo lo nuevo",
+            descripcion: "Incluyo tareas pendientes y repasos ademas de lo ya calendarizado.",
+            badge: "Mas completo",
+            Icono: Sparkles,
+            tono: "amber",
+          },
+        ],
+      };
+    }
+
+    if (flujoPlanificacion.paso === "objetivo-tarea") {
+      return {
+        titulo:
+          tonoPlanificador === "amigable"
+            ? "Escoge la tarea que quieres acomodar primero"
+            : "Selecciona una tarea",
+        descripcion: "Te muestro las mas urgentes y activas para avanzar rapido.",
+        pasoEtiqueta: "Paso 2",
+        layout: "lista",
+        opciones: tareasPlanificables.map((tarea) => {
+          const curso = cursos.find((item) => item.id === tarea.cursoId);
+          return {
+            id: tarea.id,
+            valor: tarea.titulo,
+            titulo: tarea.titulo,
+            descripcion: `${curso?.nombre ?? "Sin curso"} · Entrega ${formatearFechaCorta(tarea.fechaEntrega)}`,
+            detalle: `${tarea.horasEstimadas}h estimadas · ${tarea.progreso}% de avance`,
+            badge: tarea.prioridad === "high" ? "Alta" : tarea.prioridad === "medium" ? "Media" : "Baja",
+            Icono: ClipboardList,
+            tono:
+              tarea.prioridad === "high"
+                ? "rose"
+                : tarea.prioridad === "medium"
+                  ? "amber"
+                  : "blue",
+          };
+        }),
+      };
+    }
+
+    if (flujoPlanificacion.paso === "objetivo-curso") {
+      return {
+        titulo:
+          tonoPlanificador === "amigable"
+            ? "Escoge el curso que quieres reforzar"
+            : "Selecciona un curso",
+        descripcion: "Voy a usarlo como base para mover o crear bloques de repaso.",
+        pasoEtiqueta: "Paso 2",
+        layout: "lista",
+        opciones: cursosPlanificables.map((curso) => ({
+          id: curso.id,
+          valor: curso.nombre,
+          titulo: curso.nombre,
+          descripcion: curso.docente || "Curso registrado",
+          detalle: curso.horario || "Sin horario detallado",
+          badge: "Repaso",
+          Icono: BookOpen,
+          tono: "emerald",
+        })),
+      };
+    }
+
+    if (flujoPlanificacion.paso === "jornada") {
+      return {
+        titulo:
+          tonoPlanificador === "amigable"
+            ? "Ahora elige la franja que mejor te acomoda"
+            : "Selecciona tu franja preferida",
+        descripcion: "Solo la usare como preferencia. Si no encuentro espacio suficiente, luego podemos ajustarla.",
+        pasoEtiqueta: "Paso 4",
+        layout: "cuadruple",
+        opciones: [
+          {
+            id: "jornada-manana",
+            valor: "manana",
+            titulo: "Manana",
+            descripcion: "Prioriza primeras horas libres del dia.",
+            badge: "AM",
+            Icono: Sun,
+            tono: "amber",
+          },
+          {
+            id: "jornada-tarde",
+            valor: "tarde",
+            titulo: "Tarde",
+            descripcion: "Busca espacios despues del mediodia.",
+            badge: "PM",
+            Icono: Sunset,
+            tono: "violet",
+          },
+          {
+            id: "jornada-noche",
+            valor: "noche",
+            titulo: "Noche",
+            descripcion: "Reserva horas al final del dia cuando esten libres.",
+            badge: "Tarde-noche",
+            Icono: Moon,
+            tono: "blue",
+          },
+          {
+            id: "jornada-flexible",
+            valor: "flexible",
+            titulo: "Flexible",
+            descripcion: "Aprovecha los mejores huecos sin casarse con una sola franja.",
+            badge: "Mas huecos",
+            Icono: Sparkles,
+            tono: "emerald",
+          },
+        ],
+      };
+    }
+
+    if (flujoPlanificacion.paso === "confirmacion") {
+      return {
+        titulo:
+          tonoPlanificador === "amigable"
+            ? "Si te gusta el plan, lo aplicamos"
+            : "Confirma el cambio",
+        descripcion: "Puedes aplicarlo ya o dejarlo en pausa y volver a ajustarlo despues.",
+        pasoEtiqueta: "Confirmacion",
+        layout: "doble",
+        opciones: [
+          {
+            id: "confirmar-si",
+            valor: "si",
+            titulo: "Aplicar ahora",
+            descripcion: "Guardo la replanificacion en tu calendario.",
+            badge: "Guardar",
+            Icono: CheckCircle2,
+            tono: "emerald",
+          },
+          {
+            id: "confirmar-no",
+            valor: "no",
+            titulo: "Cancelar por ahora",
+            descripcion: "No hago cambios y dejamos el flujo en pausa.",
+            badge: "Sin cambios",
+            Icono: Trash2,
+            tono: "slate",
+          },
+        ],
+      };
+    }
+
+    return null;
+  }, [
+    cursos,
+    cursosPlanificables,
+    flujoPlanificacion,
+    tareasPendientesVigentes.length,
+    tareasPlanificables,
+    tonoPlanificador,
+  ]);
+
   useEffect(() => {
     if (searchParams.get("accion") !== "planificar") {
       return;
@@ -475,13 +796,13 @@ export default function AIAssistant() {
             mensajeSegunTonoPlanificador(tonoPlanificador, {
               amigable:
                 `Buenisimo. Vamos a ordenar tu horario contigo. Tu limite actual es de ${limite}h de estudio por dia.\n\n` +
-                "Puedo reorganizar `todo`, `una tarea` o `un curso`. Dime cual te acomoda mas y seguimos.",
+                "Puedo reorganizar `todo`, `una tarea` o `un curso`. Si quieres, te dejo opciones visuales abajo para elegir mas rapido.",
               responsable:
                 `Vamos a planificar tu horario con IA. Tu limite actual es de ${limite}h de estudio por dia.\n\n` +
-                "Puedo reorganizar `todo`, `una tarea` o `un curso`. Escribe una de esas opciones para empezar.",
+                "Puedo reorganizar `todo`, `una tarea` o `un curso`. Puedes escribirlo o elegir una opcion visual abajo.",
               frio:
                 `Planificacion activa. Limite actual: ${limite}h de estudio por dia.\n\n` +
-                "Elige `todo`, `una tarea` o `un curso`.",
+                "Elige `todo`, `una tarea` o `un curso`, o usa una opcion visual abajo.",
             }),
         },
       ]);
@@ -518,13 +839,13 @@ export default function AIAssistant() {
           mensajeSegunTonoPlanificador(tonoPlanificador, {
             amigable:
               `Claro, te ayudo encantado. Voy a respetar tu limite actual de ${limite}h por dia para que el horario te quede manejable.\n\n` +
-              "Dime si quieres reorganizar `todo`, `una tarea` o `un curso` y lo armamos juntos.",
+              "Dime si quieres reorganizar `todo`, `una tarea` o `un curso`. Si prefieres, puedes tocar una de las tarjetas de abajo.",
             responsable:
               `Claro. Puedo ayudarte a planificar tu horario y voy a respetar tu limite actual de ${limite}h por dia.\n\n` +
-              "Dime si quieres reorganizar `todo`, `una tarea` o `un curso`.",
+              "Dime si quieres reorganizar `todo`, `una tarea` o `un curso`, o elige una opcion visual abajo.",
             frio:
               `Puedo reorganizar tu horario con un limite de ${limite}h por dia.\n\n` +
-              "Indica `todo`, `una tarea` o `un curso`.",
+              "Indica `todo`, `una tarea` o `un curso`, o toca una opcion abajo.",
           }),
       },
     ]);
@@ -568,7 +889,7 @@ export default function AIAssistant() {
               "2. Lo que ya esta y ademas agregar tareas pendientes\n" +
               "3. Lo que ya esta y ademas agregar repasos de cursos\n" +
               "4. Agregar tareas y repasos nuevos tambien\n\n" +
-              "Puedes responder con el numero o con algo como `solo calendario`, `tareas`, `repasos` o `todo`.",
+              "Puedes responder con el numero o con algo como `solo calendario`, `tareas`, `repasos` o `todo`. Si quieres, toca una tarjeta abajo.",
           },
         ]);
         setFlujoPlanificacion((actual) => ({
@@ -598,7 +919,7 @@ export default function AIAssistant() {
             mensaje:
               `Perfecto. Elige la tarea que quieres reorganizar:\n\n${tareasPlanificables
                 .map((tarea, indice) => `${indice + 1}. ${tarea.titulo} (${formatearFechaCorta(tarea.fechaEntrega)})`)
-                .join("\n")}\n\nPuedes responder con el numero o con el nombre.`,
+                .join("\n")}\n\nPuedes responder con el numero o con el nombre. Tambien te deje opciones abajo.`,
           },
         ]);
         setFlujoPlanificacion((actual) => ({
@@ -628,7 +949,7 @@ export default function AIAssistant() {
             mensaje:
               `Perfecto. Dime que curso quieres reforzar:\n\n${cursosPlanificables
                 .map((curso, indice) => `${indice + 1}. ${curso.nombre}`)
-                .join("\n")}\n\nPuedes responder con el numero o con el nombre.`,
+                .join("\n")}\n\nPuedes responder con el numero o con el nombre. Tambien te deje opciones abajo.`,
           },
         ]);
         setFlujoPlanificacion((actual) => ({
@@ -768,7 +1089,7 @@ export default function AIAssistant() {
         {
           tipo: "ai",
           mensaje:
-            "Perfecto. Ahora dime en que franja prefieres estudiar: `mañana`, `tarde`, `noche` o `flexible`.",
+            "Perfecto. Ahora dime en que franja prefieres estudiar: `mañana`, `tarde`, `noche` o `flexible`. Si quieres, elige una opcion abajo.",
         },
       ]);
       setFlujoPlanificacion((actual) => ({
@@ -825,7 +1146,7 @@ export default function AIAssistant() {
             `- Dias libres: ${obtenerResumenDiasBloqueados(flujoPlanificacion.diasBloqueados)}\n` +
             `- Franja preferida: ${jornada}\n` +
             `- Limite diario actual: ${usuarioActual?.horasEstudioDiarias ?? 2}h\n\n` +
-            "Si te parece bien, responde `si` para aplicar o `no` para cancelar.",
+            "Si te parece bien, responde `si` para aplicar o `no` para cancelar. Tambien puedes usar los botones de abajo.",
         },
       ]);
       setFlujoPlanificacion((actual) => ({
@@ -889,6 +1210,12 @@ export default function AIAssistant() {
       return;
     }
     enviarMensajeAsistente(texto);
+    setMensaje("");
+  };
+
+  const responderOpcionPlanificacion = (valor: string) => {
+    if (asistentePensando) return;
+    procesarMensajePlanificacion(valor);
     setMensaje("");
   };
 
@@ -1030,6 +1357,14 @@ export default function AIAssistant() {
                   )
                 ))
               )}
+
+              {panelOpcionesPlanificacion ? (
+                <SelectorPlanificacionRapida
+                  panel={panelOpcionesPlanificacion}
+                  disabled={asistentePensando}
+                  onSelect={responderOpcionPlanificacion}
+                />
+              ) : null}
             </div>
           </ScrollArea>
 
@@ -1175,6 +1510,90 @@ function MensajeAsistente({
           <span className="text-xs text-gray-400">Puedes desplazarte dentro del mensaje para leer todo.</span>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function SelectorPlanificacionRapida({
+  panel,
+  onSelect,
+  disabled,
+}: {
+  panel: PanelVisualPlanificacion;
+  onSelect: (valor: string) => void;
+  disabled: boolean;
+}) {
+  const clasesGrid =
+    panel.layout === "triple"
+      ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"
+      : panel.layout === "cuadruple"
+        ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
+        : panel.layout === "lista"
+          ? "grid-cols-1 lg:grid-cols-2"
+          : "grid-cols-1 sm:grid-cols-2";
+
+  return (
+    <div className="flex w-full justify-start pr-4 sm:pr-10">
+      <div className="flex min-w-0 max-w-[min(96%,48rem)] items-start gap-2 sm:max-w-[min(88%,52rem)] sm:gap-3">
+        <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-md sm:h-10 sm:w-10">
+          <Sparkles className="h-5 w-5 text-white" />
+        </div>
+
+        <div className="min-w-0 flex-1 overflow-hidden rounded-[24px] border border-blue-100 bg-gradient-to-br from-white via-blue-50/80 to-purple-50/70 p-4 text-slate-900 shadow-md shadow-slate-200/60 sm:rounded-[28px] sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className="rounded-full bg-blue-50 text-blue-700">Opciones guiadas</Badge>
+                <Badge className="rounded-full bg-purple-50 text-purple-700">{panel.pasoEtiqueta}</Badge>
+              </div>
+              <div className="mt-3 text-base font-semibold text-slate-900">{panel.titulo}</div>
+              <p className="mt-1 text-sm leading-6 text-slate-600">{panel.descripcion}</p>
+            </div>
+          </div>
+
+          <div className={`mt-4 grid gap-3 ${clasesGrid}`}>
+            {panel.opciones.map((opcion) => {
+              const clases = obtenerClasesOpcionPlanificacion(opcion.tono);
+
+              return (
+                <button
+                  key={opcion.id}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => onSelect(opcion.valor)}
+                  className={`group rounded-2xl border p-4 text-left transition ${clases.tarjeta} ${
+                    disabled ? "cursor-not-allowed opacity-60" : "hover:-translate-y-0.5 hover:shadow-sm"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${clases.icono}`}>
+                      <opcion.Icono className="h-5 w-5" />
+                    </div>
+                    {opcion.badge ? <Badge className={clases.badge}>{opcion.badge}</Badge> : null}
+                  </div>
+
+                  <div className="mt-4">
+                    <div className="font-semibold text-slate-900">{opcion.titulo}</div>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">{opcion.descripcion}</p>
+                    {opcion.detalle ? (
+                      <p className="mt-2 text-xs text-slate-500">{opcion.detalle}</p>
+                    ) : null}
+                  </div>
+
+                  <div className={`mt-3 inline-flex items-center gap-1 text-xs font-semibold ${clases.flecha}`}>
+                    Elegir
+                    <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <p className="mt-4 text-xs text-slate-500">
+            Puedes tocar una opcion para seguir mas rapido o escribir tu respuesta si prefieres.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
