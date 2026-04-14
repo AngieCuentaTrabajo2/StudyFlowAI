@@ -259,7 +259,7 @@ export default function Tasks() {
           return (
             <Card
               key={tarea.id}
-              className={`border-none shadow-lg transition-all ${
+              className={`border-none shadow-lg transition-all duration-300 ease-out will-change-transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-slate-200/80 ${
                 estadoVisual === "completed" ? "opacity-70" : ""
               } ${estaDestacada ? "ring-2 ring-blue-500 ring-offset-2" : ""}`}
             >
@@ -526,7 +526,7 @@ export default function Tasks() {
                 return (
                   <Card
                     key={tarea.id}
-                    className={`border-none shadow-lg transition-all opacity-70 ${
+                    className={`border-none shadow-lg transition-all duration-300 ease-out will-change-transform opacity-70 hover:-translate-y-0.5 hover:opacity-85 hover:shadow-xl hover:shadow-slate-200/60 ${
                       estaDestacada ? "ring-2 ring-blue-500 ring-offset-2" : ""
                     }`}
                   >
