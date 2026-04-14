@@ -38,6 +38,7 @@ import {
 import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./ui/sheet";
+import SmartAlertActions from "./SmartAlertActions";
 
 type ResultadoBusqueda = {
   id: string;
@@ -274,7 +275,12 @@ export default function DashboardHeader() {
                       </div>
                       <div className="space-y-3">
                         {alertasInteligentes.map((alerta) => (
-                          <TarjetaAlertaDialogo key={alerta.id} alerta={alerta} onOpen={irAAlerta} />
+                          <TarjetaAlertaDialogo
+                            key={alerta.id}
+                            alerta={alerta}
+                            onOpen={irAAlerta}
+                            onNavigateAway={() => setDialogoNotificacionesAbierto(false)}
+                          />
                         ))}
                       </div>
                     </section>
@@ -433,41 +439,53 @@ export default function DashboardHeader() {
 function TarjetaAlertaDialogo({
   alerta,
   onOpen,
+  onNavigateAway,
 }: {
   alerta: AlertaInteligente;
   onOpen: (alerta: AlertaInteligente) => void;
+  onNavigateAway: () => void;
 }) {
   const estilo = obtenerEstiloAlertaInteligente(alerta.nivel);
   const Icon = alerta.tipo === "tarea" ? ClipboardList : CalendarClock;
 
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(alerta)}
-      className="group flex w-full items-start gap-4 rounded-[28px] border p-4 text-left transition hover:-translate-y-0.5 hover:shadow-md"
+    <div
+      className="rounded-[28px] border p-4 transition hover:-translate-y-0.5 hover:shadow-md"
       style={{ borderColor: estilo.borde, background: estilo.fondo }}
     >
-      <div
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
-        style={{ background: estilo.fondoIcono, color: estilo.color }}
+      <button
+        type="button"
+        onClick={() => onOpen(alerta)}
+        className="group flex w-full items-start gap-4 text-left"
       >
-        <Icon className="h-5 w-5" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-semibold text-slate-900">{alerta.titulo}</span>
-          <Badge className={estilo.badge}>{estilo.etiqueta}</Badge>
-          <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-400">
-            {alerta.tipo}
-          </span>
+        <div
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+          style={{ background: estilo.fondoIcono, color: estilo.color }}
+        >
+          <Icon className="h-5 w-5" />
         </div>
-        <p className="mt-2 text-sm leading-6 text-slate-600">{alerta.descripcion}</p>
-        <div className="mt-3 inline-flex items-center gap-2 text-sm font-medium" style={{ color: estilo.color }}>
-          Abrir detalle
-          <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-semibold text-slate-900">{alerta.titulo}</span>
+            <Badge className={estilo.badge}>{estilo.etiqueta}</Badge>
+            <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-400">
+              {alerta.tipo}
+            </span>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-slate-600">{alerta.descripcion}</p>
+          <div className="mt-3 inline-flex items-center gap-2 text-sm font-medium" style={{ color: estilo.color }}>
+            Abrir detalle
+            <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+          </div>
         </div>
-      </div>
-    </button>
+      </button>
+
+      <SmartAlertActions
+        alerta={alerta}
+        compact
+        onAfterNavigate={onNavigateAway}
+      />
+    </div>
   );
 }
 

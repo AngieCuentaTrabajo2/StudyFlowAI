@@ -117,6 +117,9 @@ export type AlertaInteligente = {
   nivel: "critica" | "alta" | "media";
   tipo: "tarea" | "examen";
   destino: string;
+  tareaId?: string;
+  examenId?: string;
+  cursoId?: string;
 };
 
 export type MensajeChat = {
@@ -132,6 +135,10 @@ export type ResultadoPlanificacionInteligente = {
   resumen: string[];
   bloquesCreados: number;
   horasProgramadas: number;
+  totalHorasSolicitadas?: number;
+  bloquesPrevistos?: BloquePlanificador[];
+  bloquesFinales?: BloquePlanificador[];
+  descripcionAplicacion?: string;
 };
 
 type EstadoStudyFlow = {
@@ -174,6 +181,7 @@ type ValorContextoStudyFlow = EstadoStudyFlow & {
   ) => void;
   actualizarTarea: (tareaId: string, cambios: Partial<Tarea>) => void;
   alternarTareaCompletada: (tareaId: string) => void;
+  posponerTarea: (tareaId: string, dias?: number) => { ok: boolean; mensaje: string; nuevaFecha?: string };
   agendarTareaEnCalendario: (
     tareaId: string,
     horas: number,
@@ -198,6 +206,13 @@ type ValorContextoStudyFlow = EstadoStudyFlow & {
   ) => void;
   limpiarMensajesAsistente: () => void;
   generarHorarioInteligente: () => void;
+  previsualizarReplanificacionHorario: (configuracion: {
+    alcance: AlcancePlanificacion;
+    objetivoId?: string;
+    diasBloqueados: number[];
+    jornada: JornadaPlanificacion;
+    modoTodo?: ModoPlanificacionTodo;
+  }) => ResultadoPlanificacionInteligente;
   replanificarHorarioInteligente: (configuracion: {
     alcance: AlcancePlanificacion;
     objetivoId?: string;
@@ -755,6 +770,186 @@ function programarBloquesAutomaticos(
   return {
     bloques: bloquesProgramados,
     horasProgramadas: Math.max(0, Math.round(horasSolicitadas) - horasRestantes),
+  };
+}
+
+function resolverPlanificacionInteligenteBase({
+  estado,
+  alcance,
+  objetivoId,
+  diasBloqueados,
+  jornada,
+  modoTodo = "solo-calendarizado",
+}: {
+  estado: EstadoStudyFlow;
+  alcance: AlcancePlanificacion;
+  objetivoId?: string;
+  diasBloqueados: number[];
+  jornada: JornadaPlanificacion;
+  modoTodo?: ModoPlanificacionTodo;
+}): ResultadoPlanificacionInteligente {
+  const diasRestringidos = [...new Set(diasBloqueados)].filter((dia) => dia >= 0 && dia <= 6);
+  if (diasRestringidos.length >= 7) {
+    return {
+      ok: false,
+      mensaje: "No puedo planificar si todos los dias estan bloqueados. Deja al menos un dia disponible.",
+      resumen: [],
+      bloquesCreados: 0,
+      horasProgramadas: 0,
+      totalHorasSolicitadas: 0,
+      bloquesPrevistos: [],
+      bloquesFinales: [],
+    };
+  }
+
+  const tareaObjetivo = alcance === "tarea" ? estado.tareas.find((item) => item.id === objetivoId) ?? null : null;
+  const cursoObjetivo = alcance === "curso" ? estado.cursos.find((item) => item.id === objetivoId) ?? null : null;
+
+  if (alcance === "tarea" && !tareaObjetivo) {
+    return {
+      ok: false,
+      mensaje: "No encontre la tarea que quieres reorganizar.",
+      resumen: [],
+      bloquesCreados: 0,
+      horasProgramadas: 0,
+      totalHorasSolicitadas: 0,
+      bloquesPrevistos: [],
+      bloquesFinales: [],
+    };
+  }
+
+  if (alcance === "curso" && !cursoObjetivo) {
+    return {
+      ok: false,
+      mensaje: "No encontre el curso que quieres reorganizar.",
+      resumen: [],
+      bloquesCreados: 0,
+      horasProgramadas: 0,
+      totalHorasSolicitadas: 0,
+      bloquesPrevistos: [],
+      bloquesFinales: [],
+    };
+  }
+
+  const bloquesBase = limpiarBloquesEstudioSegunAlcance(estado.bloquesPlanificador, alcance, {
+    tarea: tareaObjetivo,
+    curso: cursoObjetivo,
+  });
+
+  let objetivos: ObjetivoPlanificacionAutomatica[] = [];
+
+  if (alcance === "todo") {
+    objetivos = construirObjetivosPlanificacionTodo(
+      estado.cursos,
+      estado.tareas,
+      estado.examenes,
+      estado.bloquesPlanificador,
+      modoTodo,
+    );
+  }
+
+  if (alcance === "tarea" && tareaObjetivo) {
+    const curso = estado.cursos.find((item) => item.id === tareaObjetivo.cursoId);
+    objetivos = [
+      {
+        clave: `task-${tareaObjetivo.id}`,
+        titulo: `Tarea: ${tareaObjetivo.titulo}`,
+        cursoId: tareaObjetivo.cursoId,
+        color: curso?.color ?? "purple",
+        fechaObjetivo: tareaObjetivo.fechaEntrega,
+        horasSolicitadas: calcularHorasRestantesTarea(tareaObjetivo),
+        tipo: "tarea",
+        resumen: `${tareaObjetivo.titulo} (${curso?.nombre ?? "Curso"})`,
+      },
+    ];
+  }
+
+  if (alcance === "curso" && cursoObjetivo) {
+    const examenCurso = estado.examenes
+      .filter((examen) => examen.cursoId === cursoObjetivo.id)
+      .sort((a, b) => a.fecha.localeCompare(b.fecha))[0];
+
+    objetivos = [
+      {
+        clave: `review-${cursoObjetivo.id}`,
+        titulo: `Repaso: ${cursoObjetivo.nombre}`,
+        cursoId: cursoObjetivo.id,
+        color: cursoObjetivo.color,
+        fechaObjetivo: obtenerFechaObjetivoCurso(cursoObjetivo.id, estado.tareas, estado.examenes),
+        horasSolicitadas: examenCurso ? calcularHorasRepasoExamen(examenCurso) : 2,
+        tipo: "repaso",
+        resumen: `Repaso de ${cursoObjetivo.nombre}`,
+      },
+    ];
+  }
+
+  if (!objetivos.length) {
+    return {
+      ok: false,
+      mensaje:
+        alcance === "todo" && modoTodo === "solo-calendarizado"
+          ? "No encontre bloques de estudio ya calendarizados. Primero agrega una tarea o repaso al calendario, o elige incluir nuevos pendientes."
+          : "No encontre tareas o repasos para reorganizar con esa opcion.",
+      resumen: [],
+      bloquesCreados: 0,
+      horasProgramadas: 0,
+      totalHorasSolicitadas: 0,
+      bloquesPrevistos: [],
+      bloquesFinales: [],
+    };
+  }
+
+  const horasDiariasMaximas = Math.max(1, estado.usuarioActual?.horasEstudioDiarias ?? 2);
+  const totalHorasSolicitadas = objetivos.reduce(
+    (acumulado, objetivo) => acumulado + objetivo.horasSolicitadas,
+    0,
+  );
+  const resultado = programarObjetivosConRestricciones({
+    objetivos,
+    bloquesBase,
+    horasDiariasMaximas,
+    diasBloqueados: diasRestringidos,
+    jornada,
+  });
+  const bloquesFinales = ordenarBloquesPlanificador([
+    ...bloquesBase,
+    ...resultado.bloques,
+  ]);
+  const descripcionAplicacion =
+    alcance === "todo"
+      ? `Replanifique ${resultado.bloques.length} bloques de tareas y repasos.`
+      : alcance === "tarea"
+        ? `Reorganicé la tarea ${tareaObjetivo?.titulo ?? ""}.`
+        : `Reorganicé el repaso de ${cursoObjetivo?.nombre ?? ""}.`;
+
+  if (resultado.horasProgramadas === 0) {
+    return {
+      ok: false,
+      mensaje:
+        "No encontre huecos libres con esas restricciones. Prueba liberando un dia o usando una franja mas flexible.",
+      resumen: resultado.resumen,
+      bloquesCreados: 0,
+      horasProgramadas: 0,
+      totalHorasSolicitadas,
+      bloquesPrevistos: [],
+      bloquesFinales,
+      descripcionAplicacion,
+    };
+  }
+
+  return {
+    ok: true,
+    mensaje:
+      resultado.horasProgramadas < totalHorasSolicitadas
+        ? `Aplique la planificacion, pero solo encontre ${resultado.horasProgramadas}h libres de ${totalHorasSolicitadas}h posibles.`
+        : `Listo. Reorganicé tu horario y reservé ${resultado.horasProgramadas}h en espacios libres.`,
+    resumen: resultado.resumen,
+    bloquesCreados: resultado.bloques.length,
+    horasProgramadas: resultado.horasProgramadas,
+    totalHorasSolicitadas,
+    bloquesPrevistos: ordenarBloquesPlanificador(resultado.bloques),
+    bloquesFinales,
+    descripcionAplicacion,
   };
 }
 
@@ -1587,6 +1782,48 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           }
         }
       },
+      posponerTarea: (tareaId, dias = 1) => {
+        const tareaActual = estado.tareas.find((item) => item.id === tareaId);
+        if (!tareaActual) {
+          return {
+            ok: false,
+            mensaje: "No pude encontrar esa tarea para moverla.",
+          };
+        }
+
+        const diasValidos = Math.max(1, Math.round(Number(dias) || 1));
+        const nuevaFecha = format(addDays(parseISO(tareaActual.fechaEntrega), diasValidos), "yyyy-MM-dd");
+        const notificacionLocal: NotificacionItem = {
+          id: crearId("notif"),
+          tipo: "info",
+          titulo: "Entrega reprogramada",
+          mensaje: `"${tareaActual.titulo}" ahora vence el ${formatearFechaCorta(nuevaFecha)}.`,
+          creadaEn: new Date().toISOString(),
+          noLeida: true,
+        };
+
+        setEstado((actual) => ({
+          ...actual,
+          tareas: normalizarTareas(
+            actual.tareas.map((item) =>
+              item.id === tareaId ? { ...item, fechaEntrega: nuevaFecha } : item,
+            ),
+          ),
+          notificaciones: [notificacionLocal, ...actual.notificaciones],
+        }));
+
+        api.actualizarTarea(tareaId, { fechaEntrega: nuevaFecha }).catch(() => {});
+
+        if (usuarioId) {
+          persistirNotificacion(usuarioId, notificacionLocal);
+        }
+
+        return {
+          ok: true,
+          mensaje: `Listo. La movi para ${formatearFechaCorta(nuevaFecha)}.`,
+          nuevaFecha,
+        };
+      },
       agendarTareaEnCalendario: (tareaId, horas) => {
         const tareaObjetivo = estado.tareas.find((item) => item.id === tareaId);
         if (!tareaObjetivo) {
@@ -2017,6 +2254,21 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           api.limpiarMensajesAsistente(usuarioId).catch(() => {});
         }
       },
+      previsualizarReplanificacionHorario: ({
+        alcance,
+        objetivoId,
+        diasBloqueados,
+        jornada,
+        modoTodo = "solo-calendarizado",
+      }) =>
+        resolverPlanificacionInteligenteBase({
+          estado,
+          alcance,
+          objetivoId,
+          diasBloqueados,
+          jornada,
+          modoTodo,
+        }),
       replanificarHorarioInteligente: ({
         alcance,
         objetivoId,
@@ -2379,6 +2631,8 @@ export function obtenerAlertasInteligentes(
         nivel: "critica",
         tipo: "tarea",
         destino: `/app/tasks?focus=${tarea.id}`,
+        tareaId: tarea.id,
+        cursoId: tarea.cursoId,
         prioridad: 0,
         diasRestantes,
       });
@@ -2393,6 +2647,8 @@ export function obtenerAlertasInteligentes(
         nivel: tarea.prioridad === "high" ? "critica" : "alta",
         tipo: "tarea",
         destino: `/app/tasks?focus=${tarea.id}`,
+        tareaId: tarea.id,
+        cursoId: tarea.cursoId,
         prioridad: tarea.prioridad === "high" ? 1 : 2,
         diasRestantes,
       });
@@ -2407,6 +2663,8 @@ export function obtenerAlertasInteligentes(
         nivel: "alta",
         tipo: "tarea",
         destino: `/app/tasks?focus=${tarea.id}`,
+        tareaId: tarea.id,
+        cursoId: tarea.cursoId,
         prioridad: 3,
         diasRestantes,
       });
@@ -2421,6 +2679,8 @@ export function obtenerAlertasInteligentes(
         nivel: "media",
         tipo: "tarea",
         destino: `/app/tasks?focus=${tarea.id}`,
+        tareaId: tarea.id,
+        cursoId: tarea.cursoId,
         prioridad: 5,
         diasRestantes,
       });
@@ -2446,6 +2706,8 @@ export function obtenerAlertasInteligentes(
         nivel: "critica",
         tipo: "examen",
         destino: `/app/exams?focus=${examen.id}`,
+        examenId: examen.id,
+        cursoId: examen.cursoId,
         prioridad: diasRestantes === 0 ? 0 : 1,
         diasRestantes,
       });
@@ -2460,6 +2722,8 @@ export function obtenerAlertasInteligentes(
         nivel: "alta",
         tipo: "examen",
         destino: `/app/exams?focus=${examen.id}`,
+        examenId: examen.id,
+        cursoId: examen.cursoId,
         prioridad: 2,
         diasRestantes,
       });
@@ -2474,6 +2738,8 @@ export function obtenerAlertasInteligentes(
         nivel: "media",
         tipo: "examen",
         destino: `/app/planner`,
+        examenId: examen.id,
+        cursoId: examen.cursoId,
         prioridad: 4,
         diasRestantes,
       });

@@ -21,6 +21,7 @@ import {
   esTareaActiva,
   esTareaAtrasada,
   esTareaPendienteVigente,
+  type BloquePlanificador,
   formatearFechaCorta,
   obtenerEtiquetaDiaPlanificador,
   useStudyFlow,
@@ -29,6 +30,7 @@ import {
   type Examen,
   type JornadaPlanificacion,
   type ModoPlanificacionTodo,
+  type ResultadoPlanificacionInteligente,
   type Tarea,
 } from "../data/studyflow-store";
 import { Badge } from "../components/ui/badge";
@@ -453,6 +455,25 @@ function describirListaDiasPlanificables(diasDisponibles: DiaPlanificableVisual[
   return `${etiquetas.slice(0, -1).join(", ")} y ${etiquetas[etiquetas.length - 1]}`;
 }
 
+function limpiarTituloBloquePrevisualizado(titulo: string) {
+  return titulo.replace(/^(tarea|repaso):\s*/i, "").trim();
+}
+
+function formatearRangoHorarioPlanificado(horaInicio: number, duracion: number) {
+  const horaFin = horaInicio + duracion;
+  return `${horaInicio}:00 - ${horaFin}:00`;
+}
+
+function construirLineasVistaPreviaPlanificacion(
+  resultado: ResultadoPlanificacionInteligente,
+) {
+  const bloques = resultado.bloquesPrevistos ?? [];
+  return bloques.slice(0, 4).map((bloque) => {
+    const dia = obtenerEtiquetaDiaPlanificador(bloque.dia);
+    return `- ${dia}, ${formatearRangoHorarioPlanificado(bloque.horaInicio, bloque.duracion)}: ${limpiarTituloBloquePrevisualizado(bloque.titulo)}`;
+  });
+}
+
 function obtenerDiasCandidatosConFechas(fechaObjetivo: string) {
   const hoy = startOfToday();
   const fechaLimite = parseISO(fechaObjetivo);
@@ -676,6 +697,7 @@ export default function AIAssistant() {
     enviarMensajeAsistente,
     anexarMensajesAsistenteLocales,
     limpiarMensajesAsistente,
+    previsualizarReplanificacionHorario,
     replanificarHorarioInteligente,
     tareas,
     cursos,
@@ -688,6 +710,7 @@ export default function AIAssistant() {
   const [mensajesExpandidos, setMensajesExpandidos] = useState<Record<string, boolean>>({});
   const [flujoPlanificacion, setFlujoPlanificacion] = useState<FlujoPlanificacionChat>(flujoPlanificacionInicial);
   const [diasSeleccionadosPlanificacion, setDiasSeleccionadosPlanificacion] = useState<number[]>([]);
+  const [previsualizacionPlanificacion, setPrevisualizacionPlanificacion] = useState<ResultadoPlanificacionInteligente | null>(null);
   const finConversacionRef = useRef<HTMLDivElement | null>(null);
 
   const examenesProximos = [...examenes].sort((a, b) => a.fecha.localeCompare(b.fecha)).slice(0, 3);
@@ -955,7 +978,7 @@ export default function AIAssistant() {
           tonoPlanificador === "amigable"
             ? "Si te gusta el plan, lo aplicamos"
             : "Confirma el cambio",
-        descripcion: "Puedes aplicarlo ya o dejarlo en pausa y volver a ajustarlo despues.",
+        descripcion: "Revisa la vista previa visual de abajo y decide si quieres guardarla ahora o dejarla en pausa.",
         pasoEtiqueta: "Confirmacion",
         layout: "doble",
         opciones: [
@@ -1027,6 +1050,12 @@ export default function AIAssistant() {
   ]);
 
   useEffect(() => {
+    if (flujoPlanificacion.paso !== "confirmacion") {
+      setPrevisualizacionPlanificacion(null);
+    }
+  }, [flujoPlanificacion.paso]);
+
+  useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
       finConversacionRef.current?.scrollIntoView({
         block: "end",
@@ -1081,11 +1110,13 @@ export default function AIAssistant() {
 
   const limpiarConversacion = () => {
     setFlujoPlanificacion(flujoPlanificacionInicial);
+    setPrevisualizacionPlanificacion(null);
     limpiarMensajesAsistente();
   };
 
   const iniciarFlujoPlanificacion = (mensajeUsuario?: string) => {
     const limite = usuarioActual?.horasEstudioDiarias ?? 2;
+    setPrevisualizacionPlanificacion(null);
     anexarMensajesPlanificacion([
       ...(mensajeUsuario ? [{ tipo: "user" as const, mensaje: mensajeUsuario }] : []),
       {
@@ -1123,6 +1154,7 @@ export default function AIAssistant() {
           mensaje: "Listo, cancelé esta planificacion. Si quieres, luego volvemos a empezar con otra configuracion.",
         },
       ]);
+      setPrevisualizacionPlanificacion(null);
       setFlujoPlanificacion(flujoPlanificacionInicial);
       return;
     }
@@ -1457,19 +1489,45 @@ export default function AIAssistant() {
       const detalleDuda = expresaDuda
         ? `- Nota: te lei inclinandote por ${jornada}. Si no te convence, todavia la cambiamos antes de aplicarla.\n`
         : "";
+      const preview = previsualizarReplanificacionHorario({
+        alcance: flujoPlanificacion.alcance ?? "todo",
+        objetivoId: flujoPlanificacion.objetivoId,
+        diasBloqueados: flujoPlanificacion.diasBloqueados,
+        jornada,
+        modoTodo: flujoPlanificacion.modoTodo,
+      });
 
+      if (!preview.ok) {
+        setPrevisualizacionPlanificacion(null);
+        anexarMensajesAsistenteLocales([
+          { tipo: "user", mensaje: texto },
+          {
+            tipo: "ai",
+            mensaje:
+              `${preview.mensaje}\n\n` +
+              `${preview.resumen.length ? preview.resumen.join("\n") : "Si quieres, prueba liberando algun dia o usando una franja mas flexible para volver a intentarlo."}`,
+          },
+        ]);
+        return;
+      }
+
+      const lineasPreview = construirLineasVistaPreviaPlanificacion(preview);
+
+      setPrevisualizacionPlanificacion(preview);
       anexarMensajesAsistenteLocales([
         { tipo: "user", mensaje: texto },
         {
           tipo: "ai",
           mensaje:
-            `Listo. Voy a reorganizar ${resumenObjetivo} con estas reglas:\n\n` +
+            `Listo. Esta seria la vista previa para reorganizar ${resumenObjetivo} con estas reglas:\n\n` +
             detalleModoTodo +
             detalleDuda +
             `- Dias libres: ${obtenerResumenDiasBloqueados(flujoPlanificacion.diasBloqueados)}\n` +
             `- Franja preferida: ${jornada}\n` +
-            `- Limite diario actual: ${usuarioActual?.horasEstudioDiarias ?? 2}h\n\n` +
-            "Si te parece bien, responde `si` para aplicar o `no` para cancelar. Tambien puedes usar los botones de abajo.",
+            `- Limite diario actual: ${usuarioActual?.horasEstudioDiarias ?? 2}h\n` +
+            `- Horas ubicadas en la vista previa: ${preview.horasProgramadas}h de ${preview.totalHorasSolicitadas ?? preview.horasProgramadas}h\n\n` +
+            `${lineasPreview.length ? `${lineasPreview.join("\n")}\n\n` : ""}` +
+            "Abajo te dejo la vista previa visual. Si te convence, responde `si` para aplicarla; si no, dime `no` y la dejamos en pausa.",
         },
       ]);
       setFlujoPlanificacion((actual) => ({
@@ -1508,6 +1566,7 @@ export default function AIAssistant() {
             `${resultado.mensaje}\n\n${resultado.resumen.length ? resultado.resumen.join("\n") : "No hubo cambios adicionales para mostrar."}`,
         },
       ]);
+      setPrevisualizacionPlanificacion(null);
       setFlujoPlanificacion(flujoPlanificacionInicial);
     }
   };
@@ -1715,13 +1774,34 @@ export default function AIAssistant() {
                   onPreset={usarPresetDiasPlanificacion}
                   onConfirm={confirmarDiasPlanificacion}
                 />
-              ) : panelOpcionesPlanificacion ? (
-                <SelectorPlanificacionRapida
-                  panel={panelOpcionesPlanificacion}
-                  disabled={asistentePensando}
-                  onSelect={responderOpcionPlanificacion}
-                />
-              ) : null}
+              ) : (
+                <>
+                  {flujoPlanificacion.activo &&
+                  flujoPlanificacion.paso === "confirmacion" &&
+                  previsualizacionPlanificacion ? (
+                    <VistaPreviaPlanificacionCard
+                      resultado={previsualizacionPlanificacion}
+                      objetivoTexto={
+                        flujoPlanificacion.alcance === "todo"
+                          ? "todo tu horario"
+                          : flujoPlanificacion.alcance === "tarea"
+                            ? tareas.find((tarea) => tarea.id === flujoPlanificacion.objetivoId)?.titulo ??
+                              "la tarea seleccionada"
+                            : cursos.find((curso) => curso.id === flujoPlanificacion.objetivoId)?.nombre ??
+                              "el curso seleccionado"
+                      }
+                    />
+                  ) : null}
+
+                  {panelOpcionesPlanificacion ? (
+                    <SelectorPlanificacionRapida
+                      panel={panelOpcionesPlanificacion}
+                      disabled={asistentePensando}
+                      onSelect={responderOpcionPlanificacion}
+                    />
+                  ) : null}
+                </>
+              )}
               <div ref={finConversacionRef} className="h-px w-full shrink-0" />
             </div>
           </ScrollArea>
@@ -2115,6 +2195,129 @@ function SelectorDiasPlanificacion({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function VistaPreviaPlanificacionCard({
+  resultado,
+  objetivoTexto,
+}: {
+  resultado: ResultadoPlanificacionInteligente;
+  objetivoTexto: string;
+}) {
+  const bloques = resultado.bloquesPrevistos ?? [];
+  const bloquesVisibles = bloques.slice(0, 6);
+  const horasSolicitadas = resultado.totalHorasSolicitadas ?? resultado.horasProgramadas;
+  const esParcial = resultado.horasProgramadas < horasSolicitadas;
+
+  return (
+    <div className="flex w-full justify-start pr-4 sm:pr-10">
+      <div className="flex min-w-0 max-w-[min(96%,48rem)] items-start gap-2 sm:max-w-[min(88%,52rem)] sm:gap-3">
+        <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-md sm:h-10 sm:w-10">
+          <CheckCircle2 className="h-5 w-5 text-white" />
+        </div>
+
+        <div className="min-w-0 flex-1 overflow-hidden rounded-[26px] border border-emerald-200 bg-white text-slate-900 shadow-lg shadow-emerald-100/80 sm:rounded-[30px]">
+          <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 px-4 py-4 text-white sm:px-5 sm:py-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="rounded-full border border-white/15 bg-white/10 text-white">Vista previa</Badge>
+              <Badge className="rounded-full border border-emerald-100/20 bg-emerald-100/15 text-emerald-50">
+                {bloques.length} bloque{bloques.length === 1 ? "" : "s"}
+              </Badge>
+            </div>
+            <div className="mt-3 text-base font-semibold sm:text-lg">Asi quedaria {objetivoTexto}</div>
+            <p className="mt-1 text-sm leading-6 text-white/80">
+              Todavia no guardo nada. Esto es solo una vista previa para que decidas con calma.
+            </p>
+          </div>
+
+          <div className="bg-emerald-50/60 p-4 sm:p-5">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <ResumenVistaPrevia
+                etiqueta="Horas ubicadas"
+                valor={`${resultado.horasProgramadas}h`}
+                detalle={esParcial ? `de ${horasSolicitadas}h posibles` : "cubiertas en la propuesta"}
+              />
+              <ResumenVistaPrevia
+                etiqueta="Bloques"
+                valor={`${bloques.length}`}
+                detalle="tramos de estudio en el planner"
+              />
+              <ResumenVistaPrevia
+                etiqueta="Estado"
+                valor={esParcial ? "Parcial" : "Completo"}
+                detalle={esParcial ? "faltaria liberar mas huecos" : "todo entra con estas reglas"}
+              />
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-white/80 bg-white/80 p-4">
+              <div className="text-sm font-semibold text-slate-900">Bloques que se crearian</div>
+              {bloquesVisibles.length > 0 ? (
+                <div className="mt-3 space-y-2">
+                  {bloquesVisibles.map((bloque) => (
+                    <FilaBloquePrevisualizado key={bloque.id} bloque={bloque} />
+                  ))}
+                  {bloques.length > bloquesVisibles.length ? (
+                    <p className="pt-1 text-xs text-slate-500">
+                      Y {bloques.length - bloquesVisibles.length} bloque{bloques.length - bloquesVisibles.length === 1 ? "" : "s"} mas en la misma propuesta.
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-slate-500">
+                  No hay bloques visibles en esta propuesta todavia.
+                </p>
+              )}
+            </div>
+
+            {resultado.resumen.length > 0 ? (
+              <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                <div className="font-semibold text-emerald-900">Lectura rapida</div>
+                <div className="mt-2 space-y-1">
+                  {resultado.resumen.slice(0, 3).map((linea) => (
+                    <div key={linea}>{linea}</div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ResumenVistaPrevia({
+  etiqueta,
+  valor,
+  detalle,
+}: {
+  etiqueta: string;
+  valor: string;
+  detalle: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/80 bg-white/80 px-4 py-3">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{etiqueta}</div>
+      <div className="mt-2 text-2xl font-semibold text-slate-900">{valor}</div>
+      <div className="mt-1 text-xs leading-5 text-slate-500">{detalle}</div>
+    </div>
+  );
+}
+
+function FilaBloquePrevisualizado({ bloque }: { bloque: BloquePlanificador }) {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+      <div className="min-w-0">
+        <div className="text-sm font-semibold text-slate-900">
+          {limpiarTituloBloquePrevisualizado(bloque.titulo)}
+        </div>
+        <div className="mt-1 text-xs text-slate-500">
+          {obtenerEtiquetaDiaPlanificador(bloque.dia)} · {formatearRangoHorarioPlanificado(bloque.horaInicio, bloque.duracion)}
+        </div>
+      </div>
+      <Badge className="bg-white text-slate-700">{bloque.duracion}h</Badge>
     </div>
   );
 }

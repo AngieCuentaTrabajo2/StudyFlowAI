@@ -30,6 +30,7 @@ import {
   CardHeader,
   CardTitle,
 } from "../components/ui/card";
+import SmartAlertActions from "../components/SmartAlertActions";
 import { ScrollArea } from "../components/ui/scroll-area";
 
 export default function Notifications() {
@@ -275,33 +276,35 @@ function TarjetaAlertaPrincipal({
   const Icon = alerta.tipo === "tarea" ? ClipboardList : CalendarClock;
 
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group flex w-full items-start gap-4 rounded-[28px] border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-md"
+    <div
+      className="rounded-[28px] border p-5 transition hover:-translate-y-0.5 hover:shadow-md"
       style={{ borderColor: estilo.borde, background: estilo.fondo }}
     >
-      <div
-        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
-        style={{ background: estilo.fondoIcono, color: estilo.color }}
-      >
-        <Icon className="h-5 w-5" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-semibold text-slate-900">{alerta.titulo}</span>
-          <Badge className={estilo.badge}>{estilo.etiqueta}</Badge>
-          <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-400">
-            {alerta.tipo}
-          </span>
+      <button type="button" onClick={onOpen} className="group flex w-full items-start gap-4 text-left">
+        <div
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
+          style={{ background: estilo.fondoIcono, color: estilo.color }}
+        >
+          <Icon className="h-5 w-5" />
         </div>
-        <p className="mt-2 text-sm leading-6 text-slate-600">{alerta.descripcion}</p>
-        <div className="mt-4 inline-flex items-center gap-2 text-sm font-medium" style={{ color: estilo.color }}>
-          Ir al detalle
-          <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-semibold text-slate-900">{alerta.titulo}</span>
+            <Badge className={estilo.badge}>{estilo.etiqueta}</Badge>
+            <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-400">
+              {alerta.tipo}
+            </span>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-slate-600">{alerta.descripcion}</p>
+          <div className="mt-4 inline-flex items-center gap-2 text-sm font-medium" style={{ color: estilo.color }}>
+            Ir al detalle
+            <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+          </div>
         </div>
-      </div>
-    </button>
+      </button>
+
+      <SmartAlertActions alerta={alerta} />
+    </div>
   );
 }
 

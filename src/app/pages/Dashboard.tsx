@@ -14,6 +14,7 @@ import {
   CheckSquare,
   ClipboardList,
   Clock,
+  ShieldAlert,
   Sparkles,
   TrendingUp,
 } from "lucide-react";
@@ -70,6 +71,15 @@ export default function Dashboard() {
     .sort((a, b) => a.dia - b.dia || a.horaInicio - b.horaInicio)[0];
   const cursoSiguienteBloque = cursos.find((curso) => curso.id === siguienteBloque?.cursoId);
   const estiloCursoPrincipal = obtenerEstiloCurso(cursoExamenPrincipal?.color ?? "blue");
+  const radarRiesgoCursos = cursos
+    .map((curso) => construirRadarRiesgoCurso(curso, tareas, examenes, bloquesPlanificador))
+    .sort((a, b) => b.puntaje - a.puntaje || a.curso.nombre.localeCompare(b.curso.nombre));
+  const cursosEnRiesgo = radarRiesgoCursos.filter((curso) => curso.puntaje >= 45);
+  const cursoMasComprometido = radarRiesgoCursos[0];
+  const resumenRiesgo =
+    cursosEnRiesgo.length > 0
+      ? `${cursosEnRiesgo.length} curso${cursosEnRiesgo.length === 1 ? "" : "s"} necesitan atencion prioritaria.`
+      : "Tu carga academica se ve estable por ahora.";
 
   return (
     <div className="space-y-8">
@@ -87,6 +97,110 @@ export default function Dashboard() {
         <StatCard icon={ClipboardList} value={`${examenesProximos.length}`} label="Examenes proximos" tone="orange" />
         <StatCard icon={Clock} value={`${horasSugeridas}h`} label="Horas de estudio sugeridas" tone="purple" />
         <StatCard icon={TrendingUp} value={`${progresoSemanal}%`} label="Avance semanal" tone="green" />
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
+        <Card className="border-none shadow-lg">
+          <CardHeader className="pb-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <ShieldAlert className="h-5 w-5 text-red-500" />
+                  Radar de riesgo academico
+                </CardTitle>
+                <p className="mt-2 text-sm text-gray-600">
+                  El semaforo combina tareas vencidas, examenes cercanos, preparacion y bloques reales del planner.
+                </p>
+              </div>
+              <Badge className={cursosEnRiesgo.length > 0 ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}>
+                {resumenRiesgo}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {radarRiesgoCursos.map((item) => {
+              const estiloCurso = obtenerEstiloCurso(item.curso.color);
+              return (
+                <div
+                  key={item.curso.id}
+                  className="rounded-3xl border p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                  style={{ borderColor: estiloCurso.borde, background: estiloCurso.fondoClaro }}
+                >
+                  <div className="mb-4 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-[0.22em]" style={{ color: estiloCurso.color }}>
+                        {item.nivelLabel}
+                      </p>
+                      <h3 className="mt-2 text-lg font-semibold text-slate-900">{item.curso.nombre}</h3>
+                      <p className="mt-1 text-sm text-slate-600">{item.resumen}</p>
+                    </div>
+                    <div
+                      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-lg font-bold text-white shadow-lg"
+                      style={{ background: item.indicador }}
+                    >
+                      {item.puntaje}
+                    </div>
+                  </div>
+
+                  <div className="mb-4 h-2 overflow-hidden rounded-full bg-white/80">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${item.puntaje}%`, background: item.indicador }}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    {item.claves.map((clave) => (
+                      <div key={clave} className="rounded-2xl bg-white/80 px-3 py-2 text-sm text-slate-700">
+                        {clave}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 rounded-2xl border border-white/70 bg-white/70 px-4 py-3 text-sm text-slate-700">
+                    <span className="font-semibold text-slate-900">Siguiente paso:</span> {item.accion}
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-orange-500" />
+              Foco recomendado
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-5 text-white shadow-lg">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">Curso mas comprometido</p>
+              <h3 className="mt-3 text-2xl font-semibold">{cursoMasComprometido?.curso.nombre ?? "Todo bajo control"}</h3>
+              <p className="mt-2 text-sm text-white/75">
+                {cursoMasComprometido?.resumen ?? "No hay alertas fuertes ahora mismo. Buen momento para sostener el ritmo."}
+              </p>
+              <div className="mt-4 inline-flex rounded-full bg-white/10 px-3 py-1 text-sm font-medium">
+                {cursoMasComprometido ? `${cursoMasComprometido.puntaje}/100 de riesgo` : "Sin riesgo alto"}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {radarRiesgoCursos.slice(0, 3).map((item, indice) => (
+                <div key={item.curso.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Prioridad {indice + 1}</p>
+                      <h4 className="font-semibold text-slate-900">{item.curso.nombre}</h4>
+                    </div>
+                    <Badge className={item.badgeClass}>{item.nivelLabel}</Badge>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-600">{item.accion}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">
@@ -291,6 +405,116 @@ function RecommendationCard({
       <p className="text-sm text-gray-700">{text}</p>
     </div>
   );
+}
+
+function construirRadarRiesgoCurso(
+  curso: { id: string; nombre: string; color: string },
+  tareas: ReturnType<typeof useStudyFlow>["tareas"],
+  examenes: ReturnType<typeof useStudyFlow>["examenes"],
+  bloquesPlanificador: ReturnType<typeof useStudyFlow>["bloquesPlanificador"],
+) {
+  const tareasCurso = tareas.filter((tarea) => tarea.cursoId === curso.id);
+  const tareasActivasCurso = tareasCurso.filter(esTareaActiva);
+  const tareasAtrasadasCurso = tareasCurso.filter(esTareaAtrasada);
+  const tareasVigentesCurso = tareasCurso.filter(esTareaPendienteVigente);
+  const examenesCurso = examenes.filter((examen) => examen.cursoId === curso.id);
+  const examenMasCercano = [...examenesCurso].sort((a, b) => a.fecha.localeCompare(b.fecha))[0];
+  const diasExamen = examenMasCercano ? obtenerDiasRestantes(examenMasCercano.fecha) : null;
+  const bloquesEstudioCurso = bloquesPlanificador.filter(
+    (bloque) => bloque.tipo === "study" && bloque.cursoId === curso.id,
+  );
+  const horasEstudioCurso = bloquesEstudioCurso.reduce((acumulado, bloque) => acumulado + bloque.duracion, 0);
+  const tareasUrgentesCurso = tareasActivasCurso.filter((tarea) => tarea.prioridad === "high").length;
+  const promedioPreparacion = examenesCurso.length
+    ? Math.round(examenesCurso.reduce((acumulado, examen) => acumulado + examen.preparacion, 0) / examenesCurso.length)
+    : 100;
+
+  let puntaje = 0;
+  const claves: string[] = [];
+
+  if (tareasAtrasadasCurso.length > 0) {
+    puntaje += 40;
+    claves.push(`${tareasAtrasadasCurso.length} tarea${tareasAtrasadasCurso.length === 1 ? "" : "s"} atrasada${tareasAtrasadasCurso.length === 1 ? "" : "s"}`);
+  }
+
+  if (tareasUrgentesCurso > 0) {
+    puntaje += 18;
+    claves.push(`${tareasUrgentesCurso} tarea${tareasUrgentesCurso === 1 ? "" : "s"} urgente${tareasUrgentesCurso === 1 ? "" : "s"}`);
+  }
+
+  if (diasExamen !== null && diasExamen <= 3 && promedioPreparacion < 65) {
+    puntaje += 34;
+    claves.push(`Examen cerca con ${promedioPreparacion}% de preparacion`);
+  } else if (diasExamen !== null && diasExamen <= 7 && promedioPreparacion < 75) {
+    puntaje += 18;
+    claves.push(`Preparacion todavia baja para el proximo examen`);
+  }
+
+  if (tareasVigentesCurso.length > 0 && horasEstudioCurso === 0) {
+    puntaje += 14;
+    claves.push("Sin bloques de estudio reservados");
+  }
+
+  if (horasEstudioCurso > 0 && horasEstudioCurso < 2 && tareasActivasCurso.length >= 2) {
+    puntaje += 10;
+    claves.push("Pocas horas de estudio para la carga actual");
+  }
+
+  if (claves.length === 0) {
+    claves.push("Carga estable y bien distribuida");
+  }
+
+  puntaje = Math.min(100, puntaje);
+
+  const nivel = puntaje >= 70 ? "critico" : puntaje >= 45 ? "alto" : puntaje >= 20 ? "medio" : "bajo";
+  const nivelLabel =
+    nivel === "critico" ? "Critico" : nivel === "alto" ? "Alerta alta" : nivel === "medio" ? "En seguimiento" : "Estable";
+  const badgeClass =
+    nivel === "critico"
+      ? "bg-red-50 text-red-600"
+      : nivel === "alto"
+        ? "bg-orange-50 text-orange-700"
+        : nivel === "medio"
+          ? "bg-amber-50 text-amber-700"
+          : "bg-emerald-50 text-emerald-700";
+  const indicador =
+    nivel === "critico"
+      ? "linear-gradient(135deg, #dc2626 0%, #fb7185 100%)"
+      : nivel === "alto"
+        ? "linear-gradient(135deg, #ea580c 0%, #fb923c 100%)"
+        : nivel === "medio"
+          ? "linear-gradient(135deg, #d97706 0%, #facc15 100%)"
+          : "linear-gradient(135deg, #16a34a 0%, #4ade80 100%)";
+
+  const resumen =
+    nivel === "critico"
+      ? "Necesita intervencion inmediata para bajar carga y evitar atrasos."
+      : nivel === "alto"
+        ? "Conviene actuar esta semana antes de que suba la presion."
+        : nivel === "medio"
+          ? "Va bien, pero pide seguimiento para no enfriarse."
+          : "Se ve estable y con margen para sostener el ritmo.";
+
+  const accion =
+    tareasAtrasadasCurso.length > 0
+      ? "Cierra primero la tarea mas atrasada y luego reserva un bloque corto de repaso."
+      : diasExamen !== null && diasExamen <= 7 && promedioPreparacion < 75
+        ? "Prioriza repaso para el examen mas cercano y sube la preparacion esta semana."
+        : horasEstudioCurso === 0
+          ? "Agrega al menos un bloque de estudio en el planner para no dejar este curso sin espacio."
+          : "Manten un bloque de continuidad para que el avance no se enfrie.";
+
+  return {
+    curso,
+    puntaje,
+    nivel,
+    nivelLabel,
+    badgeClass,
+    indicador,
+    resumen,
+    accion,
+    claves: claves.slice(0, 2),
+  };
 }
 
 function obtenerEstiloCurso(color: string) {
