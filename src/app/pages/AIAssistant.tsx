@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
+import { addDays, differenceInCalendarDays, format, parseISO, startOfToday } from "date-fns";
 import {
   ArrowRight,
   BookOpen,
@@ -25,6 +26,7 @@ import {
   useStudyFlow,
   type AlcancePlanificacion,
   type Curso,
+  type Examen,
   type JornadaPlanificacion,
   type ModoPlanificacionTodo,
   type Tarea,
@@ -88,6 +90,21 @@ type PanelVisualPlanificacion = {
   pasoEtiqueta: string;
   layout: "triple" | "doble" | "cuadruple" | "lista";
   opciones: OpcionVisualPlanificacion[];
+};
+
+type DiaPlanificableVisual = {
+  dia: number;
+  fecha: Date;
+  etiquetaDia: string;
+  etiquetaFecha: string;
+  destacado?: string;
+};
+
+type MetadatosDiasPlanificacion = {
+  diasPermitidos: number[];
+  detalle: string;
+  ayuda: string;
+  diasDisponibles: DiaPlanificableVisual[];
 };
 
 const flujoPlanificacionInicial: FlujoPlanificacionChat = {
@@ -383,6 +400,196 @@ function obtenerResumenDiasBloqueados(diasBloqueados: number[]) {
   return diasBloqueados.map((dia) => obtenerEtiquetaDiaPlanificador(dia)).join(", ");
 }
 
+function obtenerTextoDiasBloqueadosParaMensaje(diasBloqueados: number[]) {
+  if (!diasBloqueados.length) {
+    return "ninguno";
+  }
+
+  return [...diasBloqueados]
+    .sort((a, b) => a - b)
+    .map((dia) => obtenerEtiquetaDiaPlanificador(dia).toLowerCase())
+    .join(" y ");
+}
+
+function obtenerDiaPlanificadorDesdeFechaLocal(fecha: Date) {
+  return (fecha.getDay() + 6) % 7;
+}
+
+function formatearFechaExactaPlanificacion(fecha: Date | string) {
+  const fechaValor = typeof fecha === "string" ? parseISO(fecha) : fecha;
+  const texto = new Intl.DateTimeFormat("es-PE", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(fechaValor);
+
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+function formatearFechaCortaPlanificacion(fecha: Date | string) {
+  const fechaValor = typeof fecha === "string" ? parseISO(fecha) : fecha;
+  return new Intl.DateTimeFormat("es-PE", {
+    day: "numeric",
+    month: "short",
+  }).format(fechaValor);
+}
+
+function describirListaDiasPlanificables(diasDisponibles: DiaPlanificableVisual[]) {
+  const etiquetas = diasDisponibles.map((dia) => dia.etiquetaDia);
+
+  if (etiquetas.length === 0) {
+    return "ningun dia";
+  }
+
+  if (etiquetas.length === 1) {
+    return etiquetas[0];
+  }
+
+  if (etiquetas.length === 2) {
+    return `${etiquetas[0]} y ${etiquetas[1]}`;
+  }
+
+  return `${etiquetas.slice(0, -1).join(", ")} y ${etiquetas[etiquetas.length - 1]}`;
+}
+
+function obtenerDiasCandidatosConFechas(fechaObjetivo: string) {
+  const hoy = startOfToday();
+  const fechaLimite = parseISO(fechaObjetivo);
+  const diferencia = differenceInCalendarDays(fechaLimite, hoy);
+  const cantidadDias = diferencia < 0 ? 7 : Math.min(diferencia + 1, 7);
+
+  return Array.from({ length: cantidadDias }, (_, indice) => {
+    const fecha = addDays(hoy, indice);
+    const diferenciaRelativa = differenceInCalendarDays(fecha, hoy);
+
+    return {
+      dia: obtenerDiaPlanificadorDesdeFechaLocal(fecha),
+      fecha,
+      etiquetaDia: obtenerEtiquetaDiaPlanificador(obtenerDiaPlanificadorDesdeFechaLocal(fecha)),
+      etiquetaFecha: formatearFechaCortaPlanificacion(fecha),
+      destacado:
+        diferenciaRelativa === 0 ? "Hoy" : diferenciaRelativa === 1 ? "Manana" : undefined,
+    };
+  });
+}
+
+function obtenerFechaObjetivoCursoLocal(cursoId: string, tareas: Tarea[], examenes: Examen[]) {
+  const hoy = startOfToday();
+  const candidatos = [
+    ...tareas
+      .filter((tarea) => tarea.cursoId === cursoId && esTareaActiva(tarea))
+      .map((tarea) => tarea.fechaEntrega),
+    ...examenes
+      .filter(
+        (examen) =>
+          examen.cursoId === cursoId &&
+          differenceInCalendarDays(parseISO(examen.fecha), hoy) >= 0,
+      )
+      .map((examen) => examen.fecha),
+  ].sort();
+
+  return candidatos[0] ?? format(addDays(hoy, 7), "yyyy-MM-dd");
+}
+
+function construirMetadatosDiasPlanificacion({
+  alcance,
+  objetivoId,
+  tareas,
+  cursos,
+  examenes,
+}: {
+  alcance: AlcancePlanificacion | null;
+  objetivoId?: string;
+  tareas: Tarea[];
+  cursos: Curso[];
+  examenes: Examen[];
+}): MetadatosDiasPlanificacion | null {
+  const hoy = startOfToday();
+
+  if (!alcance) {
+    return null;
+  }
+
+  if (alcance === "todo") {
+    const diasDisponibles = Array.from({ length: 7 }, (_, indice) => {
+      const fecha = addDays(hoy, indice);
+      const diferenciaRelativa = differenceInCalendarDays(fecha, hoy);
+      const dia = obtenerDiaPlanificadorDesdeFechaLocal(fecha);
+
+      return {
+        dia,
+        fecha,
+        etiquetaDia: obtenerEtiquetaDiaPlanificador(dia),
+        etiquetaFecha: formatearFechaCortaPlanificacion(fecha),
+        destacado:
+          diferenciaRelativa === 0 ? "Hoy" : diferenciaRelativa === 1 ? "Manana" : undefined,
+      };
+    });
+
+    return {
+      diasPermitidos: diasDisponibles.map((dia) => dia.dia),
+      diasDisponibles,
+      detalle:
+        `Para reorganizar todo voy a mirar los proximos 7 dias, desde ${formatearFechaExactaPlanificacion(hoy)} ` +
+        `hasta ${formatearFechaExactaPlanificacion(addDays(hoy, 6))}.`,
+      ayuda:
+        "Marca solo los dias que quieres reservar para ti. El resto quedara disponible para estudio.",
+    };
+  }
+
+  if (alcance === "tarea") {
+    const tareaObjetivo = tareas.find((tarea) => tarea.id === objetivoId);
+    if (!tareaObjetivo) {
+      return null;
+    }
+
+    const diasDisponibles = obtenerDiasCandidatosConFechas(tareaObjetivo.fechaEntrega);
+    const diferencia = differenceInCalendarDays(parseISO(tareaObjetivo.fechaEntrega), hoy);
+    const diasTexto = describirListaDiasPlanificables(diasDisponibles);
+
+    return {
+      diasPermitidos: diasDisponibles.map((dia) => dia.dia),
+      diasDisponibles,
+      detalle:
+        diferencia === 0
+          ? `Esta tarea vence hoy, ${formatearFechaExactaPlanificacion(tareaObjetivo.fechaEntrega)}, asi que solo puedo usar ${diasTexto}.`
+          : diferencia > 0
+            ? `Esta tarea vence el ${formatearFechaExactaPlanificacion(tareaObjetivo.fechaEntrega)}, asi que puedo moverla entre ${diasTexto}.`
+            : `Esta tarea ya esta atrasada desde ${formatearFechaExactaPlanificacion(tareaObjetivo.fechaEntrega)}. La voy a reacomodar usando los proximos 7 dias desde hoy.`,
+      ayuda:
+        diasDisponibles.length === 1
+          ? `Si reservas ${diasTexto}, me quedo sin margen para programarla antes de la entrega.`
+          : "Marca solo los dias que quieres reservar para ti dentro de este rango.",
+    };
+  }
+
+  const cursoObjetivo = cursos.find((curso) => curso.id === objetivoId);
+  if (!cursoObjetivo) {
+    return null;
+  }
+
+  const fechaObjetivo = obtenerFechaObjetivoCursoLocal(cursoObjetivo.id, tareas, examenes);
+  const diasDisponibles = obtenerDiasCandidatosConFechas(fechaObjetivo);
+  const diferencia = differenceInCalendarDays(parseISO(fechaObjetivo), hoy);
+  const diasTexto = describirListaDiasPlanificables(diasDisponibles);
+
+  return {
+    diasPermitidos: diasDisponibles.map((dia) => dia.dia),
+    diasDisponibles,
+    detalle:
+      diferencia === 0
+        ? `Tu siguiente hito de ${cursoObjetivo.nombre} cae hoy, ${formatearFechaExactaPlanificacion(fechaObjetivo)}, asi que solo puedo usar ${diasTexto}.`
+        : diferencia > 0
+          ? `Voy a tomar como referencia ${formatearFechaExactaPlanificacion(fechaObjetivo)} para ${cursoObjetivo.nombre}. Con eso puedo usar ${diasTexto}.`
+          : `No veo un hito futuro para ${cursoObjetivo.nombre}, asi que usare los proximos 7 dias desde hoy para ordenar el repaso.`,
+    ayuda:
+      diasDisponibles.length === 1
+        ? `Si reservas ${diasTexto}, me quedo sin huecos utiles para ese repaso.`
+        : "Marca solo los dias que quieres reservar para ti dentro de este rango.",
+  };
+}
+
 function obtenerClasesOpcionPlanificacion(
   tono: OpcionVisualPlanificacion["tono"],
 ) {
@@ -480,6 +687,7 @@ export default function AIAssistant() {
   const [mensaje, setMensaje] = useState("");
   const [mensajesExpandidos, setMensajesExpandidos] = useState<Record<string, boolean>>({});
   const [flujoPlanificacion, setFlujoPlanificacion] = useState<FlujoPlanificacionChat>(flujoPlanificacionInicial);
+  const [diasSeleccionadosPlanificacion, setDiasSeleccionadosPlanificacion] = useState<number[]>([]);
 
   const examenesProximos = [...examenes].sort((a, b) => a.fecha.localeCompare(b.fecha)).slice(0, 3);
   const tareasPlanificables = useMemo(
@@ -653,8 +861,8 @@ export default function AIAssistant() {
             id: tarea.id,
             valor: tarea.titulo,
             titulo: tarea.titulo,
-            descripcion: `${curso?.nombre ?? "Sin curso"} · Entrega ${formatearFechaCorta(tarea.fechaEntrega)}`,
-            detalle: `${tarea.horasEstimadas}h estimadas · ${tarea.progreso}% de avance`,
+            descripcion: `${curso?.nombre ?? "Sin curso"}, entrega ${formatearFechaCorta(tarea.fechaEntrega)}`,
+            detalle: `${tarea.horasEstimadas}h estimadas, ${tarea.progreso}% de avance`,
             badge: tarea.prioridad === "high" ? "Alta" : tarea.prioridad === "medium" ? "Media" : "Baja",
             Icono: ClipboardList,
             tono:
@@ -780,6 +988,41 @@ export default function AIAssistant() {
     tareasPendientesVigentes.length,
     tareasPlanificables,
     tonoPlanificador,
+  ]);
+
+  const metadatosDiasPlanificacion = useMemo(
+    () =>
+      construirMetadatosDiasPlanificacion({
+        alcance: flujoPlanificacion.alcance,
+        objetivoId: flujoPlanificacion.objetivoId,
+        tareas,
+        cursos,
+        examenes,
+      }),
+    [
+      cursos,
+      examenes,
+      flujoPlanificacion.alcance,
+      flujoPlanificacion.objetivoId,
+      tareas,
+    ],
+  );
+
+  useEffect(() => {
+    if (flujoPlanificacion.paso === "dias") {
+      setDiasSeleccionadosPlanificacion(
+        flujoPlanificacion.diasBloqueados.filter((dia) =>
+          metadatosDiasPlanificacion?.diasPermitidos.includes(dia) ?? true,
+        ),
+      );
+      return;
+    }
+
+    setDiasSeleccionadosPlanificacion([]);
+  }, [
+    flujoPlanificacion.diasBloqueados,
+    flujoPlanificacion.paso,
+    metadatosDiasPlanificacion?.diasPermitidos,
   ]);
 
   useEffect(() => {
@@ -985,13 +1228,22 @@ export default function AIAssistant() {
         return;
       }
 
+      const metadatosDias = construirMetadatosDiasPlanificacion({
+        alcance: "todo",
+        tareas,
+        cursos,
+        examenes,
+      });
+
       anexarMensajesAsistenteLocales([
         { tipo: "user", mensaje: texto },
         {
           tipo: "ai",
           mensaje:
             `Perfecto. Voy a trabajar con ${obtenerResumenModoTodo(modoTodo)}.\n\n` +
-            "Ahora dime que dias quieres dejar libres. Puedes responder `martes y domingo` o `ninguno`.",
+            `${metadatosDias?.detalle ?? "Voy a revisar primero tu ventana disponible."}\n\n` +
+            `${metadatosDias?.ayuda ?? "Marca solo los dias que quieres reservar para ti."}\n\n` +
+            "Si prefieres, puedes escribir algo como `martes y domingo`, elegirlo abajo o tocar `Todos disponibles`.",
         },
       ]);
       setFlujoPlanificacion((actual) => ({
@@ -1016,13 +1268,23 @@ export default function AIAssistant() {
         return;
       }
 
+      const metadatosDias = construirMetadatosDiasPlanificacion({
+        alcance: "tarea",
+        objetivoId: tareaSeleccionada.id,
+        tareas,
+        cursos,
+        examenes,
+      });
+
       anexarMensajesAsistenteLocales([
         { tipo: "user", mensaje: texto },
         {
           tipo: "ai",
           mensaje:
             `Perfecto. Voy a reorganizar la tarea **${tareaSeleccionada.titulo}**.\n\n` +
-            "Ahora dime que dias quieres dejar libres. Puedes responder `martes y domingo` o `ninguno`.",
+            `${metadatosDias?.detalle ?? "Voy a revisar primero en que dias todavia la puedo mover."}\n\n` +
+            `${metadatosDias?.ayuda ?? "Marca solo los dias que quieres reservar para ti dentro de esta tarea."}\n\n` +
+            "Abajo te dejo solo los dias que de verdad puedo tocar en este caso.",
         },
       ]);
       setFlujoPlanificacion((actual) => ({
@@ -1047,13 +1309,23 @@ export default function AIAssistant() {
         return;
       }
 
+      const metadatosDias = construirMetadatosDiasPlanificacion({
+        alcance: "curso",
+        objetivoId: cursoSeleccionado.id,
+        tareas,
+        cursos,
+        examenes,
+      });
+
       anexarMensajesAsistenteLocales([
         { tipo: "user", mensaje: texto },
         {
           tipo: "ai",
           mensaje:
             `Perfecto. Voy a reorganizar el repaso de **${cursoSeleccionado.nombre}**.\n\n` +
-            "Ahora dime que dias quieres dejar libres. Puedes responder `martes y domingo` o `ninguno`.",
+            `${metadatosDias?.detalle ?? "Voy a revisar primero el rango util para este repaso."}\n\n` +
+            `${metadatosDias?.ayuda ?? "Marca solo los dias que quieres reservar para ti dentro de este rango."}\n\n` +
+            "Abajo te dejo solo los dias que de verdad puedo usar para este repaso.",
         },
       ]);
       setFlujoPlanificacion((actual) => ({
@@ -1065,9 +1337,19 @@ export default function AIAssistant() {
     }
 
     if (flujoPlanificacion.paso === "dias") {
-      const diasBloqueados = extraerDiasBloqueados(texto);
+      const metadatosDias = construirMetadatosDiasPlanificacion({
+        alcance: flujoPlanificacion.alcance,
+        objetivoId: flujoPlanificacion.objetivoId,
+        tareas,
+        cursos,
+        examenes,
+      });
+      const diasPermitidos = metadatosDias?.diasPermitidos ?? [];
+      const diasDetectados = extraerDiasBloqueados(texto);
+      const diasBloqueados = diasDetectados.filter((dia) => diasPermitidos.includes(dia));
+      const diasFueraDeRango = diasDetectados.filter((dia) => !diasPermitidos.includes(dia));
       const respuestaVacia =
-        !diasBloqueados.length &&
+        !diasDetectados.length &&
         !textoNormalizado.includes("ninguno") &&
         !textoNormalizado.includes("ningun") &&
         !textoNormalizado.includes("ninguna");
@@ -1078,14 +1360,43 @@ export default function AIAssistant() {
           {
             tipo: "ai",
             mensaje:
-              "No pude detectar los dias. Prueba algo como `martes y domingo` o simplemente escribe `ninguno`.",
+              "No logre leer bien los dias. Si quieres, usa los botones de abajo o escribe algo como `martes y domingo`. Si todos te sirven, responde `ninguno`.",
           },
         ]);
         return;
       }
 
+      if (diasPermitidos.length > 0 && diasBloqueados.length >= diasPermitidos.length) {
+        anexarMensajesAsistenteLocales([
+          { tipo: "user", mensaje: texto },
+          {
+            tipo: "ai",
+            mensaje:
+              `${metadatosDias?.detalle ?? "En este caso tengo un rango util bastante corto."}\n\n` +
+              "Con esa seleccion me quedo sin ningun dia util para programar el bloque. " +
+              `Deja al menos ${obtenerResumenDiasBloqueados(diasPermitidos)} disponible o toca \`Todos disponibles\` y seguimos.`,
+          },
+        ]);
+        return;
+      }
+
+      const resumenDias =
+        diasBloqueados.length > 0
+          ? `Perfecto. Voy a reservar ${obtenerResumenDiasBloqueados(diasBloqueados)} dentro de esta planificacion.`
+          : "Perfecto. Dentro de este rango no vas a bloquear ningun dia util.";
+      const notaFueraDeRango = diasFueraDeRango.length
+        ? `\n\nOjo: ${obtenerResumenDiasBloqueados(diasFueraDeRango)} no afecta este caso porque queda fuera del rango real que puedo usar aqui.`
+        : "";
+
       anexarMensajesAsistenteLocales([
         { tipo: "user", mensaje: texto },
+        {
+          tipo: "ai",
+          mensaje: `${resumenDias}${notaFueraDeRango}`,
+        },
+      ]);
+
+      anexarMensajesAsistenteLocales([
         {
           tipo: "ai",
           mensaje:
@@ -1219,6 +1530,31 @@ export default function AIAssistant() {
     setMensaje("");
   };
 
+  const alternarDiaPlanificacion = (dia: number) => {
+    if (metadatosDiasPlanificacion && !metadatosDiasPlanificacion.diasPermitidos.includes(dia)) {
+      return;
+    }
+
+    setDiasSeleccionadosPlanificacion((actual) =>
+      actual.includes(dia)
+        ? actual.filter((item) => item !== dia)
+        : [...actual, dia].sort((a, b) => a - b),
+    );
+  };
+
+  const usarPresetDiasPlanificacion = (dias: number[]) => {
+    const diasPermitidos = metadatosDiasPlanificacion?.diasPermitidos ?? [];
+    setDiasSeleccionadosPlanificacion(
+      dias.filter((dia, indice) => diasPermitidos.includes(dia) && dias.indexOf(dia) === indice),
+    );
+  };
+
+  const confirmarDiasPlanificacion = () => {
+    if (asistentePensando) return;
+    procesarMensajePlanificacion(obtenerTextoDiasBloqueadosParaMensaje(diasSeleccionadosPlanificacion));
+    setMensaje("");
+  };
+
   const alternarExpansionMensaje = (mensajeId: string) => {
     setMensajesExpandidos((actual) => ({
       ...actual,
@@ -1315,8 +1651,8 @@ export default function AIAssistant() {
             </div>
           </div>
 
-          <ScrollArea className="flex-1 p-4 sm:p-6">
-            <div className="mx-auto max-w-5xl space-y-5">
+          <ScrollArea className="flex-1">
+            <div className="mx-auto flex min-h-full max-w-5xl flex-col gap-5 px-4 py-4 pb-14 sm:px-6 sm:py-6 sm:pb-20">
               {mensajesChat.length === 0 ? (
                 <EstadoVacio onAction={ejecutarAccionRapida} />
               ) : (
@@ -1358,7 +1694,16 @@ export default function AIAssistant() {
                 ))
               )}
 
-              {panelOpcionesPlanificacion ? (
+              {flujoPlanificacion.activo && flujoPlanificacion.paso === "dias" ? (
+                <SelectorDiasPlanificacion
+                  metadatos={metadatosDiasPlanificacion}
+                  diasSeleccionados={diasSeleccionadosPlanificacion}
+                  disabled={asistentePensando}
+                  onToggleDia={alternarDiaPlanificacion}
+                  onPreset={usarPresetDiasPlanificacion}
+                  onConfirm={confirmarDiasPlanificacion}
+                />
+              ) : panelOpcionesPlanificacion ? (
                 <SelectorPlanificacionRapida
                   panel={panelOpcionesPlanificacion}
                   disabled={asistentePensando}
@@ -1488,7 +1833,7 @@ function MensajeAsistente({
   const esLargo = contenido.length > 520 || contenido.split("\n").length > 9;
   const clasesScrollMensaje = esLargo
     ? `${
-        expandido ? "max-h-[420px]" : "max-h-[260px]"
+        expandido ? "max-h-[min(62vh,38rem)]" : "max-h-[min(48vh,26rem)]"
       } overflow-y-auto overscroll-contain pr-2 [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300 hover:[&::-webkit-scrollbar-thumb]:bg-slate-400`
     : "";
 
@@ -1539,59 +1884,222 @@ function SelectorPlanificacionRapida({
           <Sparkles className="h-5 w-5 text-white" />
         </div>
 
-        <div className="min-w-0 flex-1 overflow-hidden rounded-[24px] border border-blue-100 bg-gradient-to-br from-white via-blue-50/80 to-purple-50/70 p-4 text-slate-900 shadow-md shadow-slate-200/60 sm:rounded-[28px] sm:p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge className="rounded-full bg-blue-50 text-blue-700">Opciones guiadas</Badge>
-                <Badge className="rounded-full bg-purple-50 text-purple-700">{panel.pasoEtiqueta}</Badge>
-              </div>
-              <div className="mt-3 text-base font-semibold text-slate-900">{panel.titulo}</div>
-              <p className="mt-1 text-sm leading-6 text-slate-600">{panel.descripcion}</p>
+        <div className="min-w-0 flex-1 overflow-hidden rounded-[26px] border border-slate-200 bg-white text-slate-900 shadow-lg shadow-slate-200/70 sm:rounded-[30px]">
+          <div className="bg-gradient-to-r from-slate-950 via-blue-950 to-indigo-900 px-4 py-4 text-white sm:px-5 sm:py-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="rounded-full border border-white/10 bg-white/10 text-white">Guia interactiva</Badge>
+              <Badge className="rounded-full border border-cyan-300/20 bg-cyan-300/10 text-cyan-100">{panel.pasoEtiqueta}</Badge>
             </div>
+            <div className="mt-3 text-base font-semibold sm:text-lg">{panel.titulo}</div>
+            <p className="mt-1 text-sm leading-6 text-white/75">{panel.descripcion}</p>
           </div>
 
-          <div className={`mt-4 grid gap-3 ${clasesGrid}`}>
-            {panel.opciones.map((opcion) => {
-              const clases = obtenerClasesOpcionPlanificacion(opcion.tono);
+          <div className="bg-slate-50 p-4 sm:p-5">
+            <div className={`grid gap-3 ${clasesGrid}`}>
+              {panel.opciones.map((opcion) => {
+                const clases = obtenerClasesOpcionPlanificacion(opcion.tono);
 
-              return (
-                <button
-                  key={opcion.id}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => onSelect(opcion.valor)}
-                  className={`group rounded-2xl border p-4 text-left transition ${clases.tarjeta} ${
-                    disabled ? "cursor-not-allowed opacity-60" : "hover:-translate-y-0.5 hover:shadow-sm"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${clases.icono}`}>
-                      <opcion.Icono className="h-5 w-5" />
+                return (
+                  <button
+                    key={opcion.id}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => onSelect(opcion.valor)}
+                    className={`group h-full rounded-[22px] border p-4 text-left transition ${clases.tarjeta} ${
+                      disabled ? "cursor-not-allowed opacity-60" : "hover:-translate-y-0.5 hover:shadow-md"
+                    }`}
+                  >
+                    <div className="flex h-full flex-col">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${clases.icono}`}>
+                          <opcion.Icono className="h-5 w-5" />
+                        </div>
+                        {opcion.badge ? <Badge className={clases.badge}>{opcion.badge}</Badge> : null}
+                      </div>
+
+                      <div className="mt-4 flex-1">
+                        <div className="font-semibold text-slate-900">{opcion.titulo}</div>
+                        <p className="mt-1 text-sm leading-6 text-slate-600">{opcion.descripcion}</p>
+                        {opcion.detalle ? (
+                          <p className="mt-2 text-xs text-slate-500">{opcion.detalle}</p>
+                        ) : null}
+                      </div>
+
+                      <div className={`mt-4 inline-flex items-center gap-1 text-xs font-semibold ${clases.flecha}`}>
+                        Elegir esta opcion
+                        <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+                      </div>
                     </div>
-                    {opcion.badge ? <Badge className={clases.badge}>{opcion.badge}</Badge> : null}
-                  </div>
+                  </button>
+                );
+              })}
+            </div>
 
-                  <div className="mt-4">
-                    <div className="font-semibold text-slate-900">{opcion.titulo}</div>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">{opcion.descripcion}</p>
-                    {opcion.detalle ? (
-                      <p className="mt-2 text-xs text-slate-500">{opcion.detalle}</p>
-                    ) : null}
-                  </div>
+            <p className="mt-4 text-xs text-slate-500">
+              Puedes tocar una opcion para seguir mas rapido o escribir tu respuesta si prefieres.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-                  <div className={`mt-3 inline-flex items-center gap-1 text-xs font-semibold ${clases.flecha}`}>
-                    Elegir
-                    <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
-                  </div>
-                </button>
-              );
-            })}
+function SelectorDiasPlanificacion({
+  metadatos,
+  diasSeleccionados,
+  onToggleDia,
+  onPreset,
+  onConfirm,
+  disabled,
+}: {
+  metadatos: MetadatosDiasPlanificacion | null;
+  diasSeleccionados: number[];
+  onToggleDia: (dia: number) => void;
+  onPreset: (dias: number[]) => void;
+  onConfirm: () => void;
+  disabled: boolean;
+}) {
+  const diasDisponibles = metadatos?.diasDisponibles ?? [];
+  const diasPermitidos = metadatos?.diasPermitidos ?? [];
+  const diasFinDeSemana = diasPermitidos.filter((dia) => dia === 5 || dia === 6);
+  const diasLaborables = diasPermitidos.filter((dia) => dia >= 0 && dia <= 4);
+  const resumen =
+    diasSeleccionados.length === 0
+      ? diasDisponibles.length
+        ? `No vas a bloquear ningun dia util. Voy a poder usar ${describirListaDiasPlanificables(diasDisponibles)} si encuentro huecos libres.`
+        : "No hay dias disponibles para esta planificacion en este momento."
+      : `Voy a reservar ${obtenerResumenDiasBloqueados(diasSeleccionados)} y no los usare para estudio.`;
+
+  return (
+    <div className="flex w-full justify-start pr-4 sm:pr-10">
+      <div className="flex min-w-0 max-w-[min(96%,48rem)] items-start gap-2 sm:max-w-[min(88%,52rem)] sm:gap-3">
+        <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 shadow-md sm:h-10 sm:w-10">
+          <CalendarClock className="h-5 w-5 text-white" />
+        </div>
+
+        <div className="min-w-0 flex-1 overflow-hidden rounded-[26px] border border-slate-200 bg-white text-slate-900 shadow-lg shadow-slate-200/70 sm:rounded-[30px]">
+          <div className="bg-gradient-to-r from-slate-950 via-blue-950 to-indigo-900 px-4 py-4 text-white sm:px-5 sm:py-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="rounded-full border border-white/10 bg-white/10 text-white">Paso 3</Badge>
+              <Badge className="rounded-full border border-cyan-300/20 bg-cyan-300/10 text-cyan-100">Dias reservados</Badge>
+            </div>
+            <div className="mt-3 text-base font-semibold sm:text-lg">Marca solo los dias que realmente quieres dejar para ti</div>
+            <p className="mt-1 text-sm leading-6 text-white/75">
+              Solo te muestro los dias que de verdad puedo tocar en este caso. Si un dia no aparece aqui, es porque ya paso o queda fuera del rango de esta planificacion.
+            </p>
           </div>
 
-          <p className="mt-4 text-xs text-slate-500">
-            Puedes tocar una opcion para seguir mas rapido o escribir tu respuesta si prefieres.
-          </p>
+          <div className="bg-slate-50 p-4 sm:p-5">
+            <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+              <div className="text-sm font-semibold text-slate-900">Lo que tengo en cuenta</div>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                {metadatos?.detalle ?? "Voy a usar el rango disponible que tenga este caso."}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-slate-500">
+                {metadatos?.ayuda ?? "Marca solo los dias que quieres reservar para ti."}
+              </p>
+            </div>
+
+            <div className="mt-4">
+              <div className="mb-3 text-sm font-semibold text-slate-900">Dias que si puedo usar ahora</div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                {diasDisponibles.map((diaDisponible) => {
+                  const activo = diasSeleccionados.includes(diaDisponible.dia);
+
+                  return (
+                    <button
+                      key={`${diaDisponible.dia}-${diaDisponible.etiquetaFecha}`}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => onToggleDia(diaDisponible.dia)}
+                      className={`rounded-[22px] border px-4 py-4 text-left transition ${
+                        activo
+                          ? "border-rose-300 bg-rose-50 text-rose-700 shadow-sm"
+                          : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50"
+                      } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-semibold">{diaDisponible.etiquetaDia}</div>
+                          <div className="mt-1 text-xs text-slate-500">{diaDisponible.etiquetaFecha}</div>
+                        </div>
+                        {diaDisponible.destacado ? (
+                          <Badge className="bg-white/80 text-slate-700">{diaDisponible.destacado}</Badge>
+                        ) : null}
+                      </div>
+                      <div className="mt-3 text-xs font-medium">
+                        {activo ? "Reservado para ti" : "Disponible para estudio"}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={disabled}
+                className="rounded-full bg-white"
+                onClick={() => onPreset([])}
+              >
+                Todos disponibles
+              </Button>
+              {diasFinDeSemana.length > 0 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={disabled}
+                  className="rounded-full bg-white"
+                  onClick={() => onPreset(diasFinDeSemana)}
+                >
+                  Reservar fin de semana
+                </Button>
+              ) : null}
+              {diasLaborables.length > 0 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={disabled}
+                  className="rounded-full bg-white"
+                  onClick={() => onPreset(diasLaborables)}
+                >
+                  Reservar dias laborables
+                </Button>
+              ) : null}
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4">
+              <div className="text-sm font-semibold text-slate-900">Resumen rapido</div>
+              <p className="mt-1 text-sm leading-6 text-slate-600">{resumen}</p>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              <Button
+                type="button"
+                disabled={disabled || diasDisponibles.length === 0}
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                onClick={onConfirm}
+              >
+                Continuar con esta seleccion
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={disabled}
+                className="bg-white"
+                onClick={() => onPreset([])}
+              >
+                Limpiar seleccion
+              </Button>
+            </div>
+
+            <p className="mt-3 text-xs text-slate-500">
+              Si prefieres, todavia puedes escribir los dias manualmente en el chat.
+            </p>
+          </div>
         </div>
       </div>
     </div>
