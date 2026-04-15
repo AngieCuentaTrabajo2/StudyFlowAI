@@ -32,9 +32,15 @@ import { Switch } from "../components/ui/switch";
 import { Textarea } from "../components/ui/textarea";
 
 export default function Settings() {
-  const { usuarioActual, actualizarPerfil } = useStudyFlow();
+  const {
+    usuarioActual,
+    actualizarPerfil,
+    permisoNotificacionesNavegador,
+    solicitarPermisoNotificacionesNavegador,
+  } = useStudyFlow();
   const [perfil, setPerfil] = useState<PerfilUsuario | null>(usuarioActual);
   const [estadoGuardado, setEstadoGuardado] = useState<"idle" | "saved">("idle");
+  const [mensajePermisoNavegador, setMensajePermisoNavegador] = useState("");
 
   useEffect(() => {
     setPerfil(usuarioActual);
@@ -71,6 +77,29 @@ export default function Settings() {
     setEstadoGuardado("saved");
     window.setTimeout(() => setEstadoGuardado("idle"), 2500);
   };
+
+  const resumenPermisoNavegador = {
+    granted: {
+      etiqueta: "Activadas",
+      descripcion: "StudyFlow puede mostrar avisos del navegador mientras tengas la app abierta.",
+      estilo: "bg-emerald-50 text-emerald-700",
+    },
+    denied: {
+      etiqueta: "Bloqueadas",
+      descripcion: "El navegador las bloqueo. Puedes habilitarlas otra vez desde el candado o ajustes del sitio.",
+      estilo: "bg-rose-50 text-rose-700",
+    },
+    default: {
+      etiqueta: "Pendientes",
+      descripcion: "Todavia no nos diste permiso. Puedes activarlas para ver alertas reales de tareas y examenes.",
+      estilo: "bg-amber-50 text-amber-700",
+    },
+    unsupported: {
+      etiqueta: "No disponible",
+      descripcion: "Este navegador no permite notificaciones del sistema para la app.",
+      estilo: "bg-slate-100 text-slate-700",
+    },
+  }[permisoNotificacionesNavegador];
 
   return (
     <div className="space-y-8">
@@ -374,6 +403,49 @@ export default function Settings() {
                 setPerfil({ ...perfil, notificaciones: { ...perfil.notificaciones, semanal: value } })
               }
             />
+
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-slate-900">Notificaciones del navegador</span>
+                    <Badge className={resumenPermisoNavegador.estilo}>{resumenPermisoNavegador.etiqueta}</Badge>
+                  </div>
+                  <p className="text-sm text-slate-600">{resumenPermisoNavegador.descripcion}</p>
+                </div>
+
+                <Button
+                  variant="outline"
+                  className="sm:shrink-0"
+                  disabled={
+                    permisoNotificacionesNavegador === "granted" ||
+                    permisoNotificacionesNavegador === "unsupported"
+                  }
+                  onClick={async () => {
+                    const permiso = await solicitarPermisoNotificacionesNavegador();
+                    setMensajePermisoNavegador(
+                      permiso === "granted"
+                        ? "Listo, ya puedes recibir avisos reales del navegador."
+                        : permiso === "denied"
+                          ? "El navegador bloqueo el permiso. Si quieres activarlo, revisa los ajustes del sitio."
+                          : permiso === "unsupported"
+                            ? "Este navegador no soporta notificaciones del sistema para la app."
+                            : "Permiso pendiente. Cuando quieras, podemos volver a intentarlo.",
+                    );
+                  }}
+                >
+                  {permisoNotificacionesNavegador === "granted"
+                    ? "Ya activadas"
+                    : permisoNotificacionesNavegador === "denied"
+                      ? "Revisar navegador"
+                      : "Activar avisos"}
+                </Button>
+              </div>
+
+              {mensajePermisoNavegador ? (
+                <p className="mt-3 text-sm text-slate-600">{mensajePermisoNavegador}</p>
+              ) : null}
+            </div>
           </CardContent>
         </Card>
       </div>

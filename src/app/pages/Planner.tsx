@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { BookOpen, Calendar, Clock, Coffee, GripVertical, Move, Pencil, Settings, Sparkles, Trash2, type LucideIcon } from "lucide-react";
+import { BookOpen, Calendar, Clock, Coffee, GripVertical, Move, Pencil, Redo2, Settings, Sparkles, Trash2, Undo2, type LucideIcon } from "lucide-react";
 import {
   obtenerColorValor,
   obtenerEtiquetaDiaPlanificador,
@@ -242,6 +242,10 @@ export default function Planner() {
     moverBloquePlanificador,
     actualizarBloquePlanificador,
     eliminarBloquePlanificador,
+    puedeDeshacerPlanificador,
+    puedeRehacerPlanificador,
+    deshacerCambiosPlanificador,
+    rehacerCambiosPlanificador,
     cursos,
     examenes,
   } = useStudyFlow();
@@ -280,13 +284,39 @@ export default function Planner() {
             Organiza tu semana con bloques utiles, visuales y priorizados por contexto academico.
           </p>
         </div>
-        <Button
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 sm:w-auto"
-          onClick={() => navigate("/app/assistant?accion=planificar")}
-        >
-          <Sparkles className="mr-2 h-5 w-5" />
-          Planificar con IA
-        </Button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            disabled={!puedeDeshacerPlanificador}
+            onClick={() => {
+              const respuesta = deshacerCambiosPlanificador();
+              setMensajeEdicion(respuesta.mensaje);
+            }}
+          >
+            <Undo2 className="mr-2 h-4 w-4" />
+            Deshacer
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            disabled={!puedeRehacerPlanificador}
+            onClick={() => {
+              const respuesta = rehacerCambiosPlanificador();
+              setMensajeEdicion(respuesta.mensaje);
+            }}
+          >
+            <Redo2 className="mr-2 h-4 w-4" />
+            Rehacer
+          </Button>
+          <Button
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 sm:w-auto"
+            onClick={() => navigate("/app/assistant?accion=planificar")}
+          >
+            <Sparkles className="mr-2 h-5 w-5" />
+            Planificar con IA
+          </Button>
+        </div>
       </div>
 
       <div className="grid min-w-0 gap-6 xl:grid-cols-4">

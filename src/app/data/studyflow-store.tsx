@@ -3,6 +3,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -169,6 +170,11 @@ type EstadoStudyFlow = {
   fuenteAsistente: "groq" | "sistema" | "error" | null;
 };
 
+type RespuestaMovimientoPlanificador = {
+  ok: boolean;
+  mensaje: string;
+};
+
 type DatosRegistro = {
   name: string;
   email: string;
@@ -223,6 +229,8 @@ type ValorContextoStudyFlow = EstadoStudyFlow & {
   marcarNotificacionLeida: (notificacionId: string) => void;
   marcarTodasNotificacionesLeidas: () => void;
   limpiarNotificacionesLeidas: () => void;
+  permisoNotificacionesNavegador: NotificationPermission | "unsupported";
+  solicitarPermisoNotificacionesNavegador: () => Promise<NotificationPermission | "unsupported">;
   enviarMensajeAsistente: (mensaje: string) => void;
   anexarMensajesAsistenteLocales: (
     mensajes: Array<{ tipo: "user" | "ai"; mensaje: string }>,
@@ -247,6 +255,10 @@ type ValorContextoStudyFlow = EstadoStudyFlow & {
   moverBloquePlanificador: (bloqueId: string, dia: number, horaInicio: number) => void;
   actualizarBloquePlanificador: (bloqueId: string, cambios: Partial<BloquePlanificador>) => void;
   eliminarBloquePlanificador: (bloqueId: string) => void;
+  puedeDeshacerPlanificador: boolean;
+  puedeRehacerPlanificador: boolean;
+  deshacerCambiosPlanificador: () => RespuestaMovimientoPlanificador;
+  rehacerCambiosPlanificador: () => RespuestaMovimientoPlanificador;
   obtenerCursoPorId: (cursoId?: string) => Curso | undefined;
   sincronizarConBackend: () => Promise<void>;
 };
@@ -324,6 +336,17 @@ function normalizarTextoPlanificacion(valor: string) {
 
 function ordenarBloquesPlanificador(bloques: BloquePlanificador[]) {
   return [...bloques].sort((a, b) => a.dia - b.dia || a.horaInicio - b.horaInicio);
+}
+
+function clonarBloquesPlanificador(bloques: BloquePlanificador[]) {
+  return bloques.map((bloque) => ({ ...bloque }));
+}
+
+function sonBloquesPlanificadorIguales(
+  bloquesA: BloquePlanificador[],
+  bloquesB: BloquePlanificador[],
+) {
+  return JSON.stringify(ordenarBloquesPlanificador(bloquesA)) === JSON.stringify(ordenarBloquesPlanificador(bloquesB));
 }
 
 function crearDisponibilidadSemanalBase(): DisponibilidadDia[] {
@@ -405,6 +428,46 @@ function extraerPayloadPerfilApi(cambios: Partial<PerfilUsuario>): Partial<Usuar
   } = cambios;
 
   return payload;
+}
+
+function debeMostrarNotificacionDelNavegador(
+  notificacion: NotificacionItem,
+  usuario: PerfilUsuario | null,
+) {
+  if (!usuario) {
+    return false;
+  }
+
+  const texto = normalizarTextoPlanificacion(`${notificacion.titulo} ${notificacion.mensaje}`);
+
+  if (texto.includes("examen") || texto.includes("evaluacion") || texto.includes("parcial") || texto.includes("control")) {
+    return usuario.notificaciones.examenes;
+  }
+
+  if (
+    texto.includes("tarea") ||
+    texto.includes("entrega") ||
+    texto.includes("repaso") ||
+    texto.includes("calendario") ||
+    texto.includes("curso")
+  ) {
+    return usuario.notificaciones.tareas;
+  }
+
+  if (
+    texto.includes("ia") ||
+    texto.includes("asistente") ||
+    texto.includes("planificacion") ||
+    texto.includes("horario")
+  ) {
+    return usuario.notificaciones.ia;
+  }
+
+  if (texto.includes("semanal") || texto.includes("resumen")) {
+    return usuario.notificaciones.semanal;
+  }
+
+  return true;
 }
 
 function obtenerFranjaDesdeHora(hora: number): FranjaDisponibilidad {
@@ -1646,10 +1709,70 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
       return crearEstadoInicial();
     }
   });
+  const [historialPlanificador, setHistorialPlanificador] = useState<BloquePlanificador[][]>([]);
+  const [futuroPlanificador, setFuturoPlanificador] = useState<BloquePlanificador[][]>([]);
+  const [permisoNotificacionesNavegador, setPermisoNotificacionesNavegador] = useState<
+    NotificationPermission | "unsupported"
+  >(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      return "unsupported";
+    }
+
+    return window.Notification.permission;
+  });
+  const notificacionesConocidasRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     window.localStorage.setItem(CLAVE_ALMACENAMIENTO, JSON.stringify(estado));
   }, [estado]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      setPermisoNotificacionesNavegador("unsupported");
+      return;
+    }
+
+    setPermisoNotificacionesNavegador(window.Notification.permission);
+  }, []);
+
+  useEffect(() => {
+    setHistorialPlanificador([]);
+    setFuturoPlanificador([]);
+  }, [estado.usuarioActual?.id]);
+
+  useEffect(() => {
+    if (!notificacionesConocidasRef.current.size) {
+      notificacionesConocidasRef.current = new Set(estado.notificaciones.map((item) => item.id));
+      return;
+    }
+
+    const nuevas = estado.notificaciones.filter(
+      (item) => item.noLeida && !notificacionesConocidasRef.current.has(item.id),
+    );
+
+    notificacionesConocidasRef.current = new Set(estado.notificaciones.map((item) => item.id));
+
+    if (
+      permisoNotificacionesNavegador !== "granted" ||
+      typeof window === "undefined" ||
+      !("Notification" in window)
+    ) {
+      return;
+    }
+
+    nuevas
+      .filter((item) => debeMostrarNotificacionDelNavegador(item, estado.usuarioActual))
+      .forEach((item) => {
+        try {
+          new window.Notification(`StudyFlow AI · ${item.titulo}`, {
+            body: item.mensaje,
+            tag: item.id,
+          });
+        } catch {
+          // Ignora errores del navegador sin romper la app.
+        }
+      });
+  }, [estado.notificaciones, estado.usuarioActual, permisoNotificacionesNavegador]);
 
   useEffect(() => {
     const usuarioId = estado.usuarioActual?.id;
@@ -1672,6 +1795,37 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
     const requiereCompletarPerfilAcademico = usuarioRequiereCompletarPerfilAcademico(
       estado.usuarioActual,
     );
+    const registrarCambioPlanificador = (bloquesAntes: BloquePlanificador[]) => {
+      const snapshot = clonarBloquesPlanificador(bloquesAntes);
+
+      setHistorialPlanificador((actual) => {
+        const ultimo = actual[actual.length - 1];
+        if (ultimo && sonBloquesPlanificadorIguales(ultimo, snapshot)) {
+          return actual;
+        }
+
+        return [...actual, snapshot].slice(-30);
+      });
+      setFuturoPlanificador([]);
+    };
+    const guardarPlanificadorEnBackend = (bloques: BloquePlanificador[]) => {
+      if (!usuarioId) {
+        return;
+      }
+
+      api
+        .guardarPlanificador(usuarioId, bloques)
+        .then((resultado) => {
+          setEstado((actual) => ({
+            ...actual,
+            bloquesPlanificador: sincronizarBloquesClaseConCursos(
+              actual.cursos,
+              resultado.bloques,
+            ),
+          }));
+        })
+        .catch(() => {});
+    };
 
     const persistirNotificacion = (estudianteId: string, temporal: NotificacionItem) => {
       api
@@ -2158,6 +2312,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           noLeida: true,
         };
 
+        registrarCambioPlanificador(estado.bloquesPlanificador);
         setEstado((actual) => ({
           ...actual,
           bloquesPlanificador: bloquesActualizados,
@@ -2165,7 +2320,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         }));
 
         if (usuarioId) {
-          api.guardarPlanificador(usuarioId, bloquesActualizados).catch(() => {});
+          guardarPlanificadorEnBackend(bloquesActualizados);
           persistirNotificacion(usuarioId, notificacionLocal);
         }
 
@@ -2233,6 +2388,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           noLeida: true,
         };
 
+        registrarCambioPlanificador(estado.bloquesPlanificador);
         setEstado((actual) => ({
           ...actual,
           bloquesPlanificador: bloquesActualizados,
@@ -2240,7 +2396,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         }));
 
         if (usuarioId) {
-          api.guardarPlanificador(usuarioId, bloquesActualizados).catch(() => {});
+          guardarPlanificadorEnBackend(bloquesActualizados);
           persistirNotificacion(usuarioId, notificacionLocal);
         }
 
@@ -2432,6 +2588,21 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
 
         if (usuarioId) {
           api.limpiarNotificacionesLeidas(usuarioId).catch(() => {});
+        }
+      },
+      permisoNotificacionesNavegador,
+      solicitarPermisoNotificacionesNavegador: async () => {
+        if (typeof window === "undefined" || !("Notification" in window)) {
+          setPermisoNotificacionesNavegador("unsupported");
+          return "unsupported";
+        }
+
+        try {
+          const permiso = await window.Notification.requestPermission();
+          setPermisoNotificacionesNavegador(permiso);
+          return permiso;
+        } catch {
+          return permisoNotificacionesNavegador;
         }
       },
       enviarMensajeAsistente: (mensaje) => {
@@ -2703,6 +2874,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           noLeida: true,
         };
 
+        registrarCambioPlanificador(estado.bloquesPlanificador);
         setEstado((actual) => ({
           ...actual,
           fuenteAsistente: "sistema",
@@ -2711,7 +2883,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         }));
 
         if (usuarioId) {
-          api.guardarPlanificador(usuarioId, bloquesActualizados).catch(() => {});
+          guardarPlanificadorEnBackend(bloquesActualizados);
           persistirNotificacion(usuarioId, notificacionLocal);
         }
 
@@ -2739,6 +2911,11 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           bloque.id === bloqueId ? { ...bloque, dia, horaInicio } : bloque,
         );
 
+        if (sonBloquesPlanificadorIguales(bloquesActualizados, estado.bloquesPlanificador)) {
+          return;
+        }
+
+        registrarCambioPlanificador(estado.bloquesPlanificador);
         setEstado((actual) => ({
           ...actual,
           bloquesPlanificador: actual.bloquesPlanificador.map((bloque) =>
@@ -2746,14 +2923,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           ),
         }));
 
-        if (usuarioId) {
-          api.guardarPlanificador(usuarioId, bloquesActualizados).then((resultado) => {
-            setEstado((actual) => ({
-              ...actual,
-              bloquesPlanificador: resultado.bloques,
-            }));
-          }).catch(() => {});
-        }
+        guardarPlanificadorEnBackend(bloquesActualizados);
       },
       actualizarBloquePlanificador: (bloqueId, cambios) => {
         const bloqueObjetivo = estado.bloquesPlanificador.find((bloque) => bloque.id === bloqueId);
@@ -2765,6 +2935,11 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           bloque.id === bloqueId ? { ...bloque, ...cambios } : bloque,
         );
 
+        if (sonBloquesPlanificadorIguales(bloquesActualizados, estado.bloquesPlanificador)) {
+          return;
+        }
+
+        registrarCambioPlanificador(estado.bloquesPlanificador);
         setEstado((actual) => ({
           ...actual,
           bloquesPlanificador: actual.bloquesPlanificador.map((bloque) =>
@@ -2772,17 +2947,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           ),
         }));
 
-        if (usuarioId) {
-          api
-            .guardarPlanificador(usuarioId, bloquesActualizados)
-            .then((resultado) => {
-              setEstado((actual) => ({
-                ...actual,
-                bloquesPlanificador: resultado.bloques,
-              }));
-            })
-            .catch(() => {});
-        }
+        guardarPlanificadorEnBackend(bloquesActualizados);
       },
       eliminarBloquePlanificador: (bloqueId) => {
         const bloqueObjetivo = estado.bloquesPlanificador.find((bloque) => bloque.id === bloqueId);
@@ -2792,25 +2957,68 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
 
         const bloquesActualizados = estado.bloquesPlanificador.filter((bloque) => bloque.id !== bloqueId);
 
+        registrarCambioPlanificador(estado.bloquesPlanificador);
         setEstado((actual) => ({
           ...actual,
           bloquesPlanificador: actual.bloquesPlanificador.filter((bloque) => bloque.id !== bloqueId),
         }));
 
-        if (usuarioId) {
-          api
-            .guardarPlanificador(usuarioId, bloquesActualizados)
-            .then((resultado) => {
-              setEstado((actual) => ({
-                ...actual,
-                bloquesPlanificador: resultado.bloques,
-              }));
-            })
-            .catch(() => {});
+        guardarPlanificadorEnBackend(bloquesActualizados);
+      },
+      puedeDeshacerPlanificador: historialPlanificador.length > 0,
+      puedeRehacerPlanificador: futuroPlanificador.length > 0,
+      deshacerCambiosPlanificador: () => {
+        const snapshotAnterior = historialPlanificador[historialPlanificador.length - 1];
+        if (!snapshotAnterior) {
+          return {
+            ok: false,
+            mensaje: "Por ahora no hay cambios del planner para deshacer.",
+          };
         }
+
+        const snapshotActual = clonarBloquesPlanificador(estado.bloquesPlanificador);
+        const snapshotRestaurado = clonarBloquesPlanificador(snapshotAnterior);
+
+        setHistorialPlanificador((actual) => actual.slice(0, -1));
+        setFuturoPlanificador((actual) => [...actual, snapshotActual].slice(-30));
+        setEstado((actual) => ({
+          ...actual,
+          bloquesPlanificador: snapshotRestaurado,
+        }));
+        guardarPlanificadorEnBackend(snapshotRestaurado);
+
+        return {
+          ok: true,
+          mensaje: "Deshice el ultimo cambio del planificador.",
+        };
+      },
+      rehacerCambiosPlanificador: () => {
+        const snapshotSiguiente = futuroPlanificador[futuroPlanificador.length - 1];
+        if (!snapshotSiguiente) {
+          return {
+            ok: false,
+            mensaje: "Por ahora no hay cambios pendientes para rehacer.",
+          };
+        }
+
+        const snapshotActual = clonarBloquesPlanificador(estado.bloquesPlanificador);
+        const snapshotAplicado = clonarBloquesPlanificador(snapshotSiguiente);
+
+        setFuturoPlanificador((actual) => actual.slice(0, -1));
+        setHistorialPlanificador((actual) => [...actual, snapshotActual].slice(-30));
+        setEstado((actual) => ({
+          ...actual,
+          bloquesPlanificador: snapshotAplicado,
+        }));
+        guardarPlanificadorEnBackend(snapshotAplicado);
+
+        return {
+          ok: true,
+          mensaje: "Rehice el cambio mas reciente del planificador.",
+        };
       },
     };
-  }, [estado]);
+  }, [estado, futuroPlanificador, historialPlanificador, permisoNotificacionesNavegador]);
 
   return <StudyFlowContext.Provider value={valor}>{children}</StudyFlowContext.Provider>;
 }
