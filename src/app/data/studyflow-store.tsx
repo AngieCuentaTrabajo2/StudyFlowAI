@@ -15,7 +15,7 @@ import {
   parseISO,
   startOfToday,
 } from "date-fns";
-import { api, type ContextoApi, type UsuarioApi } from "./api";
+import { api, type ContextoApi, type TareaApi, type UsuarioApi } from "./api";
 import { construirBloquesClaseDesdeCurso } from "./course-schedule";
 
 export type Prioridad = "low" | "medium" | "high";
@@ -375,7 +375,7 @@ function normalizarDisponibilidadSemanal(
   });
 }
 
-function normalizarSubtareas(subtareas: Subtarea[] | null | undefined) {
+function normalizarSubtareas(subtareas: Subtarea[] | null | undefined): Subtarea[] {
   if (!Array.isArray(subtareas)) {
     return [];
   }
@@ -390,7 +390,7 @@ function normalizarSubtareas(subtareas: Subtarea[] | null | undefined) {
     .filter((subtarea) => subtarea.titulo.length > 0);
 }
 
-function recalcularEstadoDesdeSubtareas(tarea: Tarea) {
+function recalcularEstadoDesdeSubtareas(tarea: Tarea): Tarea {
   const subtareas = normalizarSubtareas(tarea.subtareas);
   if (!subtareas.length) {
     return {
@@ -401,7 +401,7 @@ function recalcularEstadoDesdeSubtareas(tarea: Tarea) {
 
   const totalCompletadas = subtareas.filter((subtarea) => subtarea.completada).length;
   const progreso = Math.round((totalCompletadas / subtareas.length) * 100);
-  const estado =
+  const estado: EstadoTarea =
     progreso >= 100
       ? "completed"
       : tarea.estado === "completed"
@@ -413,6 +413,15 @@ function recalcularEstadoDesdeSubtareas(tarea: Tarea) {
     subtareas,
     progreso,
     estado,
+  };
+}
+
+function normalizarTareaApi(tarea: TareaApi, subtareas?: Subtarea[] | null): Tarea {
+  return {
+    ...tarea,
+    prioridad: tarea.prioridad,
+    estado: tarea.estado,
+    subtareas: normalizarSubtareas(subtareas),
   };
 }
 
@@ -1560,7 +1569,7 @@ function crearEstadoInicial(): EstadoStudyFlow {
   };
 }
 
-function normalizarTareas(tareas: Tarea[]) {
+function normalizarTareas(tareas: Tarea[]): Tarea[] {
   const hoy = startOfToday();
   return tareas.map((tarea) => {
     const tareaNormalizada = recalcularEstadoDesdeSubtareas({
@@ -1630,11 +1639,18 @@ function generarHorarioDesdeEstado(estado: EstadoStudyFlow) {
   return [...estado.bloquesPlanificador.filter((bloque) => bloque.tipo === "class"), ...bloques];
 }
 
-function integrarContexto(estadoActual: EstadoStudyFlow, contexto: ContextoApi) {
-  const cursos = contexto.cursos.map((curso) => ({
+function integrarContexto(estadoActual: EstadoStudyFlow, contexto: ContextoApi): EstadoStudyFlow {
+  const cursos: Curso[] = contexto.cursos.map((curso) => ({
     ...curso,
     materiales: estadoActual.cursos.find((item) => item.id === curso.id)?.materiales ?? [],
   }));
+
+  const tareasIntegradas: Tarea[] = contexto.tareas.map((tarea) =>
+    normalizarTareaApi(
+      tarea,
+      estadoActual.tareas.find((item) => item.id === tarea.id)?.subtareas,
+    ),
+  );
 
   return {
     ...estadoActual,
@@ -1665,13 +1681,7 @@ function integrarContexto(estadoActual: EstadoStudyFlow, contexto: ContextoApi) 
         }
       : estadoActual.usuarioActual,
     cursos,
-    tareas: normalizarTareas(
-      contexto.tareas.map((tarea) => ({
-        ...tarea,
-        subtareas:
-          estadoActual.tareas.find((item) => item.id === tarea.id)?.subtareas ?? [],
-      })),
-    ),
+    tareas: normalizarTareas(tareasIntegradas),
     examenes: contexto.examenes,
     bloquesPlanificador: sincronizarBloquesClaseConCursos(cursos, contexto.bloquesPlanificador),
     notificaciones: contexto.notificaciones,
@@ -2071,7 +2081,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
                 tareas: normalizarTareas(
                   actual.tareas.map((item) =>
                     item.id === tareaLocal.id
-                      ? { ...nuevaTarea, subtareas: item.subtareas ?? [] }
+                      ? normalizarTareaApi(nuevaTarea, item.subtareas)
                       : item,
                   ),
                 ),
