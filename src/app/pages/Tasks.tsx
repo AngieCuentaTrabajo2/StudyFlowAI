@@ -1,12 +1,13 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
-import { AlertCircle, BookOpen, Calendar, Clock, Pencil, Plus, Search, Sparkles } from "lucide-react";
+import { AlertCircle, BookOpen, Calendar, CheckCircle2, Circle, Clock, Pencil, Plus, Search, Sparkles, Trash2 } from "lucide-react";
 import {
   formatearFechaCorta,
   obtenerEstadoVisualTarea,
   useStudyFlow,
   type EstadoTarea,
   type Prioridad,
+  type Subtarea,
   type Tarea,
 } from "../data/studyflow-store";
 import { Badge } from "../components/ui/badge";
@@ -50,6 +51,9 @@ export default function Tasks() {
     alternarTareaCompletada,
     actualizarTarea,
     agendarTareaEnCalendario,
+    agregarSubtarea,
+    alternarSubtarea,
+    eliminarSubtarea,
   } = useStudyFlow();
   const [searchParams, setSearchParams] = useSearchParams();
   const tareaDestacadaId = searchParams.get("focus");
@@ -335,6 +339,12 @@ export default function Tasks() {
                         />
                       </div>
                     </div>
+                    <ChecklistTarea
+                      tarea={tarea}
+                      onAgregar={(titulo) => agregarSubtarea(tarea.id, titulo)}
+                      onAlternar={(subtareaId) => alternarSubtarea(tarea.id, subtareaId)}
+                      onEliminar={(subtareaId) => eliminarSubtarea(tarea.id, subtareaId)}
+                    />
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <Dialog
@@ -576,11 +586,11 @@ export default function Tasks() {
                               </Badge>
                             </div>
                           </div>
-                          <div>
-                            <div className="mb-2 flex items-center justify-between text-sm">
-                              <span className="text-gray-600">Avance</span>
-                              <span className="font-semibold">{tarea.progreso}%</span>
-                            </div>
+                        <div>
+                          <div className="mb-2 flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Avance</span>
+                            <span className="font-semibold">{tarea.progreso}%</span>
+                          </div>
                             <div className="h-2 rounded-full bg-gray-200">
                               <div
                                 className="h-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600"
@@ -588,6 +598,12 @@ export default function Tasks() {
                               />
                             </div>
                           </div>
+                          <ChecklistTarea
+                            tarea={tarea}
+                            onAgregar={(titulo) => agregarSubtarea(tarea.id, titulo)}
+                            onAlternar={(subtareaId) => alternarSubtarea(tarea.id, subtareaId)}
+                            onEliminar={(subtareaId) => eliminarSubtarea(tarea.id, subtareaId)}
+                          />
                         </div>
                         <div className="flex flex-col gap-2 sm:flex-row">
                           <Dialog
@@ -760,6 +776,105 @@ export default function Tasks() {
           </div>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function ChecklistTarea({
+  tarea,
+  onAgregar,
+  onAlternar,
+  onEliminar,
+}: {
+  tarea: Tarea;
+  onAgregar: (titulo: string) => { ok: boolean; mensaje: string };
+  onAlternar: (subtareaId: string) => void;
+  onEliminar: (subtareaId: string) => void;
+}) {
+  const [nuevaSubtarea, setNuevaSubtarea] = useState("");
+  const [mensaje, setMensaje] = useState("");
+  const totalCompletadas = tarea.subtareas.filter((subtarea) => subtarea.completada).length;
+
+  return (
+    <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="text-sm font-semibold text-slate-900">Checklist de avance</div>
+          <p className="text-xs text-slate-500">
+            {tarea.subtareas.length > 0
+              ? `${totalCompletadas} de ${tarea.subtareas.length} subtareas completas`
+              : "Todavia no agregaste subtareas para esta entrega."}
+          </p>
+        </div>
+        {tarea.subtareas.length > 0 ? (
+          <Badge className="w-fit bg-white text-slate-700">
+            {Math.round((totalCompletadas / tarea.subtareas.length) * 100)}% checklist
+          </Badge>
+        ) : null}
+      </div>
+
+      <div className="mt-4 space-y-2">
+        {tarea.subtareas.map((subtarea) => (
+          <div
+            key={subtarea.id}
+            className="flex items-center gap-3 rounded-2xl border border-white bg-white px-3 py-3 shadow-sm"
+          >
+            <button
+              type="button"
+              onClick={() => onAlternar(subtarea.id)}
+              className={`rounded-full transition ${
+                subtarea.completada ? "text-emerald-600" : "text-slate-300 hover:text-blue-600"
+              }`}
+            >
+              {subtarea.completada ? <CheckCircle2 className="h-5 w-5" /> : <Circle className="h-5 w-5" />}
+            </button>
+            <div
+              className={`flex-1 text-sm ${
+                subtarea.completada ? "text-slate-400 line-through" : "text-slate-700"
+              }`}
+            >
+              {subtarea.titulo}
+            </div>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 rounded-full text-slate-400 hover:bg-red-50 hover:text-red-600"
+              onClick={() => onEliminar(subtarea.id)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+        <Input
+          value={nuevaSubtarea}
+          onChange={(event) => {
+            setNuevaSubtarea(event.target.value);
+            setMensaje("");
+          }}
+          placeholder="Agregar paso pequeno, por ejemplo: probar endpoint login"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          className="bg-white sm:w-auto"
+          onClick={() => {
+            const resultado = onAgregar(nuevaSubtarea);
+            setMensaje(resultado.mensaje);
+            if (resultado.ok) {
+              setNuevaSubtarea("");
+            }
+          }}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Agregar
+        </Button>
+      </div>
+
+      {mensaje ? <p className="mt-2 text-xs text-slate-500">{mensaje}</p> : null}
     </div>
   );
 }

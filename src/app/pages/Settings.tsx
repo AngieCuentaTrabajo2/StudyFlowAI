@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import WeeklyAvailabilityEditor from "../components/WeeklyAvailabilityEditor";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import {
@@ -376,6 +377,21 @@ export default function Settings() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="border-none shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarClock className="h-5 w-5" />
+            Disponibilidad semanal para planificar
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <WeeklyAvailabilityEditor
+            disponibilidad={perfil.disponibilidadSemanal}
+            onChange={(disponibilidadSemanal) => setPerfil({ ...perfil, disponibilidadSemanal })}
+          />
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 xl:grid-cols-2">
         <Card className="border-none shadow-lg">

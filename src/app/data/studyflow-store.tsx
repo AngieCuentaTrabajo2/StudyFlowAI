@@ -28,6 +28,21 @@ export type ModoPlanificacionTodo =
   | "agregar-repasos"
   | "agregar-todo";
 
+export type FranjaDisponibilidad = "manana" | "tarde" | "noche";
+
+export type DisponibilidadDia = {
+  dia: number;
+  manana: boolean;
+  tarde: boolean;
+  noche: boolean;
+};
+
+export type Subtarea = {
+  id: string;
+  titulo: string;
+  completada: boolean;
+};
+
 export type PerfilUsuario = {
   id: string;
   nombres: string;
@@ -43,6 +58,7 @@ export type PerfilUsuario = {
   metas: string;
   horasEstudioDiarias: number;
   horasSueno: number;
+  disponibilidadSemanal: DisponibilidadDia[];
   notificaciones: {
     tareas: boolean;
     examenes: boolean;
@@ -78,6 +94,7 @@ export type Tarea = {
   estado: EstadoTarea;
   horasEstimadas: number;
   progreso: number;
+  subtareas: Subtarea[];
 };
 
 export type Examen = {
@@ -177,10 +194,17 @@ type ValorContextoStudyFlow = EstadoStudyFlow & {
     semestre: string;
   }) => Promise<boolean>;
   agregarTarea: (
-    tarea: Omit<Tarea, "id" | "estado" | "progreso"> & { estado?: EstadoTarea; progreso?: number },
+    tarea: Omit<Tarea, "id" | "estado" | "progreso" | "subtareas"> & {
+      estado?: EstadoTarea;
+      progreso?: number;
+      subtareas?: Subtarea[];
+    },
   ) => void;
   actualizarTarea: (tareaId: string, cambios: Partial<Tarea>) => void;
   alternarTareaCompletada: (tareaId: string) => void;
+  agregarSubtarea: (tareaId: string, titulo: string) => { ok: boolean; mensaje: string };
+  alternarSubtarea: (tareaId: string, subtareaId: string) => void;
+  eliminarSubtarea: (tareaId: string, subtareaId: string) => void;
   posponerTarea: (tareaId: string, dias?: number) => { ok: boolean; mensaje: string; nuevaFecha?: string };
   agendarTareaEnCalendario: (
     tareaId: string,
@@ -232,6 +256,11 @@ const etiquetasDias = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sab
 const HORA_MIN_PLANIFICADOR = 7;
 const HORA_MAX_PLANIFICADOR = 23;
 const HORAS_PREFERIDAS_REPASO = [18, 19, 20, 16, 17, 14, 15, 10, 11, 12, 13, 8, 9, 21, 7];
+const HORAS_POR_FRANJA: Record<FranjaDisponibilidad, number[]> = {
+  manana: [7, 8, 9, 10, 11],
+  tarde: [12, 13, 14, 15, 16, 17],
+  noche: [18, 19, 20, 21],
+};
 const HORAS_PLANIFICACION_POR_JORNADA: Record<JornadaPlanificacion, number[]> = {
   manana: [8, 9, 10, 11],
   tarde: [14, 15, 16, 17, 18],
@@ -297,6 +326,103 @@ function ordenarBloquesPlanificador(bloques: BloquePlanificador[]) {
   return [...bloques].sort((a, b) => a.dia - b.dia || a.horaInicio - b.horaInicio);
 }
 
+function crearDisponibilidadSemanalBase(): DisponibilidadDia[] {
+  return etiquetasDias.map((_, indice) => ({
+    dia: indice,
+    manana: true,
+    tarde: true,
+    noche: indice !== 5,
+  }));
+}
+
+function normalizarDisponibilidadSemanal(
+  disponibilidad: DisponibilidadDia[] | null | undefined,
+) {
+  const base = crearDisponibilidadSemanalBase();
+
+  return base.map((diaBase) => {
+    const actual = disponibilidad?.find((item) => item.dia === diaBase.dia);
+
+    return {
+      dia: diaBase.dia,
+      manana: typeof actual?.manana === "boolean" ? actual.manana : diaBase.manana,
+      tarde: typeof actual?.tarde === "boolean" ? actual.tarde : diaBase.tarde,
+      noche: typeof actual?.noche === "boolean" ? actual.noche : diaBase.noche,
+    };
+  });
+}
+
+function normalizarSubtareas(subtareas: Subtarea[] | null | undefined) {
+  if (!Array.isArray(subtareas)) {
+    return [];
+  }
+
+  return subtareas
+    .filter((subtarea) => subtarea && typeof subtarea === "object")
+    .map((subtarea) => ({
+      id: typeof subtarea.id === "string" && subtarea.id ? subtarea.id : crearId("subtask"),
+      titulo: typeof subtarea.titulo === "string" ? subtarea.titulo.trim() : "",
+      completada: Boolean(subtarea.completada),
+    }))
+    .filter((subtarea) => subtarea.titulo.length > 0);
+}
+
+function recalcularEstadoDesdeSubtareas(tarea: Tarea) {
+  const subtareas = normalizarSubtareas(tarea.subtareas);
+  if (!subtareas.length) {
+    return {
+      ...tarea,
+      subtareas,
+    };
+  }
+
+  const totalCompletadas = subtareas.filter((subtarea) => subtarea.completada).length;
+  const progreso = Math.round((totalCompletadas / subtareas.length) * 100);
+  const estado =
+    progreso >= 100
+      ? "completed"
+      : tarea.estado === "completed"
+        ? "in-progress"
+        : tarea.estado;
+
+  return {
+    ...tarea,
+    subtareas,
+    progreso,
+    estado,
+  };
+}
+
+function extraerPayloadTareaApi(cambios: Partial<Tarea>) {
+  const { subtareas: _subtareas, ...payload } = cambios;
+  return payload;
+}
+
+function extraerPayloadPerfilApi(cambios: Partial<PerfilUsuario>): Partial<UsuarioApi> {
+  const {
+    disponibilidadSemanal: _disponibilidadSemanal,
+    ...payload
+  } = cambios;
+
+  return payload;
+}
+
+function obtenerFranjaDesdeHora(hora: number): FranjaDisponibilidad {
+  if (hora <= 11) return "manana";
+  if (hora <= 17) return "tarde";
+  return "noche";
+}
+
+function obtenerDisponibilidadDia(
+  disponibilidadSemanal: DisponibilidadDia[] | undefined,
+  dia: number,
+) {
+  return (
+    disponibilidadSemanal?.find((item) => item.dia === dia) ??
+    crearDisponibilidadSemanalBase().find((item) => item.dia === dia)!
+  );
+}
+
 function sincronizarBloquesClaseConCursos(cursos: Curso[], bloquesPlanificador: BloquePlanificador[]) {
   const bloquesNoClase = bloquesPlanificador.filter((bloque) => bloque.tipo !== "class");
   const bloquesClaseActuales = bloquesPlanificador.filter((bloque) => bloque.tipo === "class");
@@ -347,16 +473,51 @@ function obtenerDiasCandidatosPlanificacion(fechaObjetivo: string) {
   );
 }
 
-function obtenerHorasCandidatasRepaso(dia: number) {
+function obtenerHorasCandidatasRepaso(
+  dia: number,
+  disponibilidadSemanal?: DisponibilidadDia[],
+) {
   const ahora = new Date();
   const diaActual = obtenerDiaPlanificadorDesdeFecha(ahora);
   const horaActual = ahora.getHours();
 
-  return HORAS_PREFERIDAS_REPASO.filter((hora) => (dia === diaActual ? hora > horaActual : true));
+  return HORAS_PREFERIDAS_REPASO.filter((hora) => {
+    const disponibilidadDia = obtenerDisponibilidadDia(disponibilidadSemanal, dia);
+    const franja = obtenerFranjaDesdeHora(hora);
+    const disponible =
+      franja === "manana"
+        ? disponibilidadDia.manana
+        : franja === "tarde"
+          ? disponibilidadDia.tarde
+          : disponibilidadDia.noche;
+
+    return disponible && (dia === diaActual ? hora > horaActual : true);
+  });
 }
 
-function obtenerHorasCandidatasSegunJornada(dia: number, jornada: JornadaPlanificacion) {
-  const horasBase = HORAS_PLANIFICACION_POR_JORNADA[jornada] ?? HORAS_PREFERIDAS_REPASO;
+function obtenerHorasCandidatasSegunJornada(
+  dia: number,
+  jornada: JornadaPlanificacion,
+  disponibilidadSemanal?: DisponibilidadDia[],
+) {
+  const disponibilidadDia = obtenerDisponibilidadDia(disponibilidadSemanal, dia);
+  const franjasDisponibles = (["manana", "tarde", "noche"] as FranjaDisponibilidad[]).filter(
+    (franja) => disponibilidadDia[franja],
+  );
+  const horasPermitidas = new Set(
+    (jornada === "flexible"
+      ? franjasDisponibles.flatMap((franja) => HORAS_POR_FRANJA[franja])
+      : disponibilidadDia[jornada]
+        ? HORAS_PLANIFICACION_POR_JORNADA[jornada]
+        : []
+    ).filter((hora) => hora >= HORA_MIN_PLANIFICADOR && hora <= HORA_MAX_PLANIFICADOR),
+  );
+  const horasBase =
+    jornada === "flexible"
+      ? HORAS_PREFERIDAS_REPASO.filter((hora) => horasPermitidas.has(hora))
+      : (HORAS_PLANIFICACION_POR_JORNADA[jornada] ?? HORAS_PREFERIDAS_REPASO).filter((hora) =>
+          horasPermitidas.has(hora),
+        );
   const ahora = new Date();
   const diaActual = obtenerDiaPlanificadorDesdeFecha(ahora);
   const horaActual = ahora.getHours();
@@ -630,12 +791,14 @@ function programarObjetivosConRestricciones({
   horasDiariasMaximas,
   diasBloqueados,
   jornada,
+  disponibilidadSemanal,
 }: {
   objetivos: ObjetivoPlanificacionAutomatica[];
   bloquesBase: BloquePlanificador[];
   horasDiariasMaximas: number;
   diasBloqueados: number[];
   jornada: JornadaPlanificacion;
+  disponibilidadSemanal?: DisponibilidadDia[];
 }) {
   const bloquesProgramados: BloquePlanificador[] = [];
   const resumen: string[] = [];
@@ -647,7 +810,7 @@ function programarObjetivosConRestricciones({
     );
 
     for (const dia of diasCandidatos) {
-      for (const hora of obtenerHorasCandidatasSegunJornada(dia, jornada)) {
+      for (const hora of obtenerHorasCandidatasSegunJornada(dia, jornada, disponibilidadSemanal)) {
         if (horasRestantes <= 0) {
           break;
         }
@@ -726,12 +889,13 @@ function programarBloquesAutomaticos(
   },
   bloquesActuales: BloquePlanificador[],
   horasSolicitadas: number,
+  disponibilidadSemanal?: DisponibilidadDia[],
 ) {
   const bloquesProgramados: BloquePlanificador[] = [];
   let horasRestantes = Math.max(1, Math.round(horasSolicitadas));
 
   for (const dia of obtenerDiasCandidatosPlanificacion(configuracion.fechaObjetivo)) {
-    for (const hora of obtenerHorasCandidatasRepaso(dia)) {
+    for (const hora of obtenerHorasCandidatasRepaso(dia, disponibilidadSemanal)) {
       if (horasRestantes <= 0) {
         break;
       }
@@ -910,6 +1074,7 @@ function resolverPlanificacionInteligenteBase({
     horasDiariasMaximas,
     diasBloqueados: diasRestringidos,
     jornada,
+    disponibilidadSemanal: estado.usuarioActual?.disponibilidadSemanal,
   });
   const bloquesFinales = ordenarBloquesPlanificador([
     ...bloquesBase,
@@ -1012,6 +1177,7 @@ function crearPerfilBase(): PerfilUsuario {
     metas: "Mantener un promedio alto, llegar con orden a examenes y reducir el estres academico.",
     horasEstudioDiarias: 4,
     horasSueno: 8,
+    disponibilidadSemanal: crearDisponibilidadSemanalBase(),
     notificaciones: {
       tareas: true,
       examenes: true,
@@ -1042,6 +1208,7 @@ function normalizarUsuarioApi(
     metas: usuario.metas ?? base.metas,
     horasEstudioDiarias: usuario.horasEstudioDiarias ?? base.horasEstudioDiarias,
     horasSueno: usuario.horasSueno ?? base.horasSueno,
+    disponibilidadSemanal: base.disponibilidadSemanal,
     notificaciones: usuario.notificaciones ?? base.notificaciones,
     aplicacion: usuario.aplicacion ?? base.aplicacion,
   };
@@ -1085,6 +1252,7 @@ function normalizarUsuarioPersistido(usuario: unknown): PerfilUsuario | null {
         ? candidato.horasEstudioDiarias
         : base.horasEstudioDiarias,
     horasSueno: typeof candidato.horasSueno === "number" ? candidato.horasSueno : base.horasSueno,
+    disponibilidadSemanal: normalizarDisponibilidadSemanal(candidato.disponibilidadSemanal),
     notificaciones:
       candidato.notificaciones && typeof candidato.notificaciones === "object"
         ? {
@@ -1211,6 +1379,11 @@ function crearEstadoInicial(): EstadoStudyFlow {
       estado: "in-progress",
       horasEstimadas: 3,
       progreso: 40,
+      subtareas: [
+        { id: "task-1-sub-1", titulo: "Ajustar el modelo logico", completada: true },
+        { id: "task-1-sub-2", titulo: "Validar consultas clave", completada: false },
+        { id: "task-1-sub-3", titulo: "Documentar el caso final", completada: false },
+      ],
     },
     {
       id: "task-2",
@@ -1222,6 +1395,10 @@ function crearEstadoInicial(): EstadoStudyFlow {
       estado: "pending",
       horasEstimadas: 4,
       progreso: 15,
+      subtareas: [
+        { id: "task-2-sub-1", titulo: "Completar autenticacion", completada: false },
+        { id: "task-2-sub-2", titulo: "Agregar pruebas basicas", completada: false },
+      ],
     },
   ];
 
@@ -1323,16 +1500,21 @@ function crearEstadoInicial(): EstadoStudyFlow {
 function normalizarTareas(tareas: Tarea[]) {
   const hoy = startOfToday();
   return tareas.map((tarea) => {
-    if (tarea.estado === "completed") {
-      return { ...tarea, progreso: 100 };
+    const tareaNormalizada = recalcularEstadoDesdeSubtareas({
+      ...tarea,
+      subtareas: normalizarSubtareas(tarea.subtareas),
+    });
+
+    if (tareaNormalizada.estado === "completed") {
+      return { ...tareaNormalizada, progreso: 100 };
     }
 
-    const diasRestantes = differenceInCalendarDays(parseISO(tarea.fechaEntrega), hoy);
+    const diasRestantes = differenceInCalendarDays(parseISO(tareaNormalizada.fechaEntrega), hoy);
     if (diasRestantes < 0) {
-      return { ...tarea, estado: "overdue" as const };
+      return { ...tareaNormalizada, estado: "overdue" as const };
     }
 
-    return tarea;
+    return tareaNormalizada;
   });
 }
 
@@ -1413,13 +1595,20 @@ function integrarContexto(estadoActual: EstadoStudyFlow, contexto: ContextoApi) 
           horasEstudioDiarias:
             contexto.usuario?.horasEstudioDiarias ?? estadoActual.usuarioActual.horasEstudioDiarias,
           horasSueno: contexto.usuario?.horasSueno ?? estadoActual.usuarioActual.horasSueno,
+          disponibilidadSemanal: estadoActual.usuarioActual.disponibilidadSemanal,
           notificaciones:
             contexto.usuario?.notificaciones ?? estadoActual.usuarioActual.notificaciones,
           aplicacion: contexto.usuario?.aplicacion ?? estadoActual.usuarioActual.aplicacion,
         }
       : estadoActual.usuarioActual,
     cursos,
-    tareas: normalizarTareas(contexto.tareas),
+    tareas: normalizarTareas(
+      contexto.tareas.map((tarea) => ({
+        ...tarea,
+        subtareas:
+          estadoActual.tareas.find((item) => item.id === tarea.id)?.subtareas ?? [],
+      })),
+    ),
     examenes: contexto.examenes,
     bloquesPlanificador: sincronizarBloquesClaseConCursos(cursos, contexto.bloquesPlanificador),
     notificaciones: contexto.notificaciones,
@@ -1633,14 +1822,21 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         setEstado((actual) => ({ ...actual, usuarioActual: null }));
       },
       actualizarPerfil: (cambios) => {
+        const cambiosNormalizados =
+          "disponibilidadSemanal" in cambios
+            ? {
+                ...cambios,
+                disponibilidadSemanal: normalizarDisponibilidadSemanal(cambios.disponibilidadSemanal),
+              }
+            : cambios;
         setEstado((actual) => ({
           ...actual,
-          usuarioActual: actual.usuarioActual ? { ...actual.usuarioActual, ...cambios } : null,
+          usuarioActual: actual.usuarioActual ? { ...actual.usuarioActual, ...cambiosNormalizados } : null,
         }));
 
         if (usuarioId) {
           api
-            .actualizarPerfil(usuarioId, cambios)
+            .actualizarPerfil(usuarioId, extraerPayloadPerfilApi(cambiosNormalizados))
             .then((resultado) => {
               setEstado((actual) => ({
                 ...actual,
@@ -1687,6 +1883,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           id: crearId("task"),
           estado: tarea.estado ?? "pending",
           progreso: tarea.progreso ?? 0,
+          subtareas: normalizarSubtareas(tarea.subtareas),
         };
         const notificacionLocal: NotificacionItem = {
           id: crearId("notif"),
@@ -1718,7 +1915,11 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
               setEstado((actual) => ({
                 ...actual,
                 tareas: normalizarTareas(
-                  actual.tareas.map((item) => (item.id === tareaLocal.id ? nuevaTarea : item)),
+                  actual.tareas.map((item) =>
+                    item.id === tareaLocal.id
+                      ? { ...nuevaTarea, subtareas: item.subtareas ?? [] }
+                      : item,
+                  ),
                 ),
               }));
             })
@@ -1728,14 +1929,18 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         }
       },
       actualizarTarea: (tareaId, cambios) => {
+        const cambiosNormalizados =
+          "subtareas" in cambios
+            ? { ...cambios, subtareas: normalizarSubtareas(cambios.subtareas) }
+            : cambios;
         setEstado((actual) => ({
           ...actual,
           tareas: normalizarTareas(
-            actual.tareas.map((tarea) => (tarea.id === tareaId ? { ...tarea, ...cambios } : tarea)),
+            actual.tareas.map((tarea) => (tarea.id === tareaId ? { ...tarea, ...cambiosNormalizados } : tarea)),
           ),
         }));
 
-        api.actualizarTarea(tareaId, cambios).catch(() => {});
+        api.actualizarTarea(tareaId, extraerPayloadTareaApi(cambiosNormalizados)).catch(() => {});
       },
       alternarTareaCompletada: (tareaId) => {
         const tareaActual = estado.tareas.find((item) => item.id === tareaId);
@@ -1760,6 +1965,13 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
                     ...item,
                     estado: item.estado === "completed" ? "pending" : "completed",
                     progreso: item.estado === "completed" ? Math.max(item.progreso, 0) : 100,
+                    subtareas:
+                      item.estado === "completed"
+                        ? item.subtareas
+                        : normalizarSubtareas(item.subtareas).map((subtarea) => ({
+                            ...subtarea,
+                            completada: true,
+                          })),
                   }
                 : item,
             ),
@@ -1781,6 +1993,73 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
             persistirNotificacion(usuarioId, notificacionLocal);
           }
         }
+      },
+      agregarSubtarea: (tareaId, titulo) => {
+        const tituloLimpio = titulo.trim();
+        if (!tituloLimpio) {
+          return {
+            ok: false,
+            mensaje: "Escribe primero la subtarea que quieres agregar.",
+          };
+        }
+
+        setEstado((actual) => ({
+          ...actual,
+          tareas: normalizarTareas(
+            actual.tareas.map((tarea) =>
+              tarea.id === tareaId
+                ? {
+                    ...tarea,
+                    subtareas: [
+                      ...normalizarSubtareas(tarea.subtareas),
+                      { id: crearId("subtask"), titulo: tituloLimpio, completada: false },
+                    ],
+                  }
+                : tarea,
+            ),
+          ),
+        }));
+
+        return {
+          ok: true,
+          mensaje: "Subtarea agregada al checklist.",
+        };
+      },
+      alternarSubtarea: (tareaId, subtareaId) => {
+        setEstado((actual) => ({
+          ...actual,
+          tareas: normalizarTareas(
+            actual.tareas.map((tarea) =>
+              tarea.id === tareaId
+                ? {
+                    ...tarea,
+                    subtareas: normalizarSubtareas(tarea.subtareas).map((subtarea) =>
+                      subtarea.id === subtareaId
+                        ? { ...subtarea, completada: !subtarea.completada }
+                        : subtarea,
+                    ),
+                  }
+                : tarea,
+            ),
+          ),
+        }));
+      },
+      eliminarSubtarea: (tareaId, subtareaId) => {
+        setEstado((actual) => ({
+          ...actual,
+          tareas: normalizarTareas(
+            actual.tareas.map((tarea) =>
+              tarea.id === tareaId
+                ? {
+                    ...tarea,
+                    subtareas: normalizarSubtareas(tarea.subtareas).filter(
+                      (subtarea) => subtarea.id !== subtareaId,
+                    ),
+                  }
+                : tarea,
+            ),
+          ),
+        }));
       },
       posponerTarea: (tareaId, dias = 1) => {
         const tareaActual = estado.tareas.find((item) => item.id === tareaId);
@@ -1848,6 +2127,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           },
           estado.bloquesPlanificador,
           horasSolicitadas,
+          estado.usuarioActual?.disponibilidadSemanal,
         );
 
         if (resultado.horasProgramadas === 0) {
@@ -1922,6 +2202,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           },
           estado.bloquesPlanificador,
           horasSolicitadas,
+          estado.usuarioActual?.disponibilidadSemanal,
         );
 
         if (resultado.horasProgramadas === 0) {
@@ -2386,6 +2667,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           horasDiariasMaximas,
           diasBloqueados: diasRestringidos,
           jornada,
+          disponibilidadSemanal: estado.usuarioActual?.disponibilidadSemanal,
         });
 
         if (resultado.horasProgramadas === 0) {

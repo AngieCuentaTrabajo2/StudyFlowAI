@@ -10,6 +10,7 @@ import {
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import WeeklyAvailabilityEditor from "../components/WeeklyAvailabilityEditor";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -254,6 +255,21 @@ export default function Planner() {
   const examenProximo = examenes.slice().sort((a, b) => a.fecha.localeCompare(b.fecha))[0];
   const cursoProximo = cursos.find((curso) => curso.id === examenProximo?.cursoId);
   const cursosConMayorCarga = useMemo(() => cursos.slice(0, 3), [cursos]);
+  const resumenDisponibilidad = useMemo(() => {
+    const disponibilidad = usuarioActual?.disponibilidadSemanal ?? [];
+    const diasActivos = disponibilidad.filter((dia) => dia.manana || dia.tarde || dia.noche);
+    const diasSinEspacio = disponibilidad.filter((dia) => !dia.manana && !dia.tarde && !dia.noche);
+
+    if (!disponibilidad.length) {
+      return "Por ahora el planner asumira que todos tus dias estan disponibles.";
+    }
+
+    if (!diasSinEspacio.length) {
+      return "Toda tu semana tiene al menos una franja activa para que el planner pueda trabajar.";
+    }
+
+    return `${diasActivos.length} dias con alguna franja activa y ${diasSinEspacio.length} dia${diasSinEspacio.length === 1 ? "" : "s"} reservados por completo para ti.`;
+  }, [usuarioActual?.disponibilidadSemanal]);
 
   return (
     <div className="space-y-8 overflow-x-hidden">
@@ -303,6 +319,16 @@ export default function Planner() {
                 min={5}
                 step={1}
                 onValueChange={([valor]) => actualizarPerfil({ horasSueno: valor })}
+              />
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="mb-2 text-sm font-semibold text-slate-900">Disponibilidad real de tu semana</div>
+              <p className="mb-4 text-sm text-slate-600">{resumenDisponibilidad}</p>
+              <WeeklyAvailabilityEditor
+                compact
+                disponibilidad={usuarioActual?.disponibilidadSemanal ?? []}
+                onChange={(disponibilidadSemanal) => actualizarPerfil({ disponibilidadSemanal })}
               />
             </div>
 
