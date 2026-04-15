@@ -15,7 +15,7 @@ import { esTareaActiva, obtenerPorcentajeCumplimiento, useStudyFlow } from "../d
 import { Badge } from "../components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 
-const etiquetasDias = ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"];
+const etiquetasDias = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
 export default function ProgressPage() {
   const { tareas, cursos, examenes, usuarioActual, bloquesPlanificador } = useStudyFlow();
@@ -93,17 +93,17 @@ export default function ProgressPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="mb-2 text-3xl font-bold">Progreso y analiticas</h1>
+        <h1 className="mb-2 text-3xl font-bold">Progreso y analíticas</h1>
         <p className="text-gray-600">
-          Lee tu rendimiento con datos reales de tus tareas, examenes y bloques de estudio.
+          Lee tu rendimiento con datos reales de tus tareas, exámenes y bloques de estudio.
         </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard icon={CheckCircle} value={`${porcentajeCumplimiento}%`} label="Porcentaje de cumplimiento" tone="green" />
         <MetricCard icon={Clock} value={`${totalHoras.toFixed(1)}h`} label="Total de horas planificadas" tone="blue" />
-        <MetricCard icon={Target} value={`${rachaEstimada} dias`} label="Racha estimada de estudio" tone="purple" />
-        <MetricCard icon={Award} value={`${examenesPreparados}/${examenes.length}`} label="Examenes preparados" tone="orange" />
+        <MetricCard icon={Target} value={`${rachaEstimada} días`} label="Racha estimada de estudio" tone="purple" />
+        <MetricCard icon={Award} value={`${examenesPreparados}/${examenes.length}`} label="Exámenes preparados" tone="orange" />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
@@ -145,7 +145,7 @@ export default function ProgressPage() {
 
       <Card className="border-none shadow-lg">
         <CardHeader>
-          <CardTitle>Avance academico por curso</CardTitle>
+          <CardTitle>Avance académico por curso</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {progresoCursos.map((curso) => (
@@ -179,7 +179,7 @@ export default function ProgressPage() {
               </div>
               <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-500">
                 <span>{curso.horas}h de estudio en la semana</span>
-                <span>Preparacion media de examenes: {curso.examenes}%</span>
+                <span>Preparación media de exámenes: {curso.examenes}%</span>
               </div>
             </div>
           ))}
@@ -195,10 +195,10 @@ export default function ProgressPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-gray-700">
-            <p>Tu cumplimiento actual del horario va en {cumplimientoHorario}% segun los bloques de estudio creados.</p>
-            <p>Estas sosteniendo un promedio de {horasPromedioDiarias}h diarias de estudio planificado.</p>
+            <p>Tu cumplimiento actual del horario va en {cumplimientoHorario}% según los bloques de estudio creados.</p>
+            <p>Estás sosteniendo un promedio de {horasPromedioDiarias}h diarias de estudio planificado.</p>
             <p>El curso con mayor avance es {cursoMasFuerte?.curso ?? "tu curso principal"}.</p>
-            <p>El curso que mas apoyo necesita ahora es {cursoMasDificil?.curso ?? "tu curso con menor progreso"}.</p>
+            <p>El curso que más apoyo necesita ahora es {cursoMasDificil?.curso ?? "tu curso con menor progreso"}.</p>
           </CardContent>
         </Card>
 
@@ -213,8 +213,8 @@ export default function ProgressPage() {
             <p>
               Tus cursos con mayor carga ahora son {cursosConMayorCarga.map((curso) => curso.curso).join(", ") || "los cursos activos"}.
             </p>
-            <p>Manten tu racha actual y procura no dejar tareas largas para el ultimo dia.</p>
-            <p>Si quieres subir tu cumplimiento, agrega un bloque corto de cierre diario para revisar pendientes y proximos examenes.</p>
+            <p>Mantén tu racha actual y procura no dejar tareas largas para el último día.</p>
+            <p>Si quieres subir tu cumplimiento, agrega un bloque corto de cierre diario para revisar pendientes y próximos exámenes.</p>
           </CardContent>
         </Card>
       </div>

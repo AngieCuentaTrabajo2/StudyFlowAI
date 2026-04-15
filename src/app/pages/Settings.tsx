@@ -86,12 +86,12 @@ export default function Settings() {
     },
     denied: {
       etiqueta: "Bloqueadas",
-      descripcion: "El navegador las bloqueo. Puedes habilitarlas otra vez desde el candado o ajustes del sitio.",
+      descripcion: "El navegador las bloqueó. Puedes habilitarlas otra vez desde el candado o ajustes del sitio.",
       estilo: "bg-rose-50 text-rose-700",
     },
     default: {
       etiqueta: "Pendientes",
-      descripcion: "Todavia no nos diste permiso. Puedes activarlas para ver alertas reales de tareas y examenes.",
+      descripcion: "Todavía no nos diste permiso. Puedes activarlas para ver alertas reales de tareas y exámenes.",
       estilo: "bg-amber-50 text-amber-700",
     },
     unsupported: {
@@ -105,7 +105,7 @@ export default function Settings() {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="mb-2 text-3xl font-bold">Configuracion y perfil</h1>
+          <h1 className="mb-2 text-3xl font-bold">Configuración y perfil</h1>
           <p className="text-gray-600">
             Ajusta tus datos, preferencias de estudio y el comportamiento del sistema desde un solo lugar.
           </p>
@@ -162,7 +162,7 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              Informacion personal
+              Información personal
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
@@ -201,7 +201,7 @@ export default function Settings() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <School className="h-5 w-5" />
-            Informacion academica
+            Información académica
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
@@ -254,7 +254,7 @@ export default function Settings() {
             </Select>
           </div>
           <div>
-            <Label>Metodo de estudio</Label>
+            <Label>Método de estudio</Label>
             <Select
               value={perfil.metodoEstudio}
               onValueChange={(metodoEstudio) => setPerfil({ ...perfil, metodoEstudio })}
@@ -284,12 +284,12 @@ export default function Settings() {
               <SelectContent>
                 <SelectItem value="amigable">Amigable</SelectItem>
                 <SelectItem value="responsable">Responsable</SelectItem>
-                <SelectItem value="frio">Frio</SelectItem>
+                <SelectItem value="frio">Frío</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="md:col-span-2">
-            <Label>Metas academicas</Label>
+            <Label>Metas académicas</Label>
             <Textarea
               value={perfil.metas}
               onChange={(event) => setPerfil({ ...perfil, metas: event.target.value })}
@@ -310,7 +310,7 @@ export default function Settings() {
           <CardContent className="space-y-6">
             <div className="rounded-2xl bg-gray-50 p-4">
               <div className="mb-3 flex items-center justify-between">
-                <Label>Horas de estudio sugeridas por dia</Label>
+                <Label>Horas de estudio sugeridas por día</Label>
                 <span className="text-sm font-semibold text-blue-600">{perfil.horasEstudioDiarias}h</span>
               </div>
               <Slider
@@ -326,7 +326,7 @@ export default function Settings() {
 
             <div className="rounded-2xl bg-gray-50 p-4">
               <div className="mb-3 flex items-center justify-between">
-                <Label>Horas de sueno</Label>
+                <Label>Horas de sueño</Label>
                 <span className="text-sm font-semibold text-purple-600">{perfil.horasSueno}h</span>
               </div>
               <Slider
@@ -345,13 +345,13 @@ export default function Settings() {
                 icon={CalendarClock}
                 titulo="Carga semanal"
                 valor={`${perfil.horasEstudioDiarias * 7}h`}
-                descripcion="Segun tu objetivo diario"
+                descripcion="Según tu objetivo diario"
               />
               <MiniDato
                 icon={Sparkles}
                 titulo="Enfoque preferido"
                 valor={formatearMetodo(perfil.metodoEstudio)}
-                descripcion="Guia tus recomendaciones de estudio"
+                descripcion="Guía tus recomendaciones de estudio"
               />
               <MiniDato
                 icon={User}
@@ -380,8 +380,8 @@ export default function Settings() {
               }
             />
             <FilaToggle
-              label="Alertas de examenes"
-              descripcion="Notificaciones de evaluaciones proximas."
+              label="Alertas de exámenes"
+              descripcion="Notificaciones de evaluaciones próximas."
               checked={perfil.notificaciones.examenes}
               onCheckedChange={(value) =>
                 setPerfil({ ...perfil, notificaciones: { ...perfil.notificaciones, examenes: value } })
@@ -389,7 +389,7 @@ export default function Settings() {
             />
             <FilaToggle
               label="Recomendaciones IA"
-              descripcion="Consejos adaptados a tu carga academica."
+              descripcion="Consejos adaptados a tu carga académica."
               checked={perfil.notificaciones.ia}
               onCheckedChange={(value) =>
                 setPerfil({ ...perfil, notificaciones: { ...perfil.notificaciones, ia: value } })
@@ -427,7 +427,7 @@ export default function Settings() {
                       permiso === "granted"
                         ? "Listo, ya puedes recibir avisos reales del navegador."
                         : permiso === "denied"
-                          ? "El navegador bloqueo el permiso. Si quieres activarlo, revisa los ajustes del sitio."
+                          ? "El navegador bloqueó el permiso. Si quieres activarlo, revisa los ajustes del sitio."
                           : permiso === "unsupported"
                             ? "Este navegador no soporta notificaciones del sistema para la app."
                             : "Permiso pendiente. Cuando quieras, podemos volver a intentarlo.",
@@ -470,7 +470,7 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Moon className="h-5 w-5" />
-              Aplicacion
+              Aplicación
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -483,7 +483,7 @@ export default function Settings() {
               }
             />
             <FilaToggle
-              label="Integracion con calendario"
+              label="Integración con calendario"
               descripcion="Sincroniza tus horarios y recordatorios en un solo lugar."
               checked={perfil.aplicacion.googleCalendar}
               onCheckedChange={(value) =>
@@ -491,8 +491,8 @@ export default function Settings() {
               }
             />
             <FilaToggle
-              label="Sugerencias automaticas"
-              descripcion="Recibe recomendaciones y ajustes segun tu ritmo academico."
+              label="Sugerencias automáticas"
+              descripcion="Recibe recomendaciones y ajustes según tu ritmo académico."
               checked={perfil.aplicacion.sugerenciasAutomaticas}
               onCheckedChange={(value) =>
                 setPerfil({
@@ -513,12 +513,12 @@ export default function Settings() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-800">
-              Aqui puedes actualizar tus datos de acceso y mantener tu cuenta al dia.
+              Aquí puedes actualizar tus datos de acceso y mantener tu cuenta al día.
             </div>
             <div className="grid gap-4 md:grid-cols-3">
-              <Input type="password" placeholder="Contrasena actual" />
-              <Input type="password" placeholder="Nueva contrasena" />
-              <Input type="password" placeholder="Confirmar contrasena" />
+              <Input type="password" placeholder="Contraseña actual" />
+              <Input type="password" placeholder="Nueva contraseña" />
+              <Input type="password" placeholder="Confirmar contraseña" />
             </div>
           </CardContent>
         </Card>
@@ -542,7 +542,7 @@ function formatearTonoAsistente(tono: PerfilUsuario["tonoAsistente"]) {
   const etiquetas: Record<PerfilUsuario["tonoAsistente"], string> = {
     amigable: "Amigable",
     responsable: "Responsable",
-    frio: "Frio",
+    frio: "Frío",
   };
 
   return etiquetas[tono] ?? tono;

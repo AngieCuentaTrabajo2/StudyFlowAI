@@ -65,7 +65,7 @@ export default function LoginPage() {
     }
 
     if (!success) {
-      setError("No pudimos iniciar sesion. Verifica tus datos o crea una cuenta.");
+      setError("No pudimos iniciar sesión. Verifica tus datos o crea una cuenta.");
       return;
     }
 
@@ -86,7 +86,7 @@ export default function LoginPage() {
         client_id: googleClientId,
         callback: async ({ credential }) => {
           if (!credential) {
-            setError("Google no devolvio credenciales validas.");
+            setError("Google no devolvió credenciales válidas.");
             return;
           }
 
@@ -101,7 +101,7 @@ export default function LoginPage() {
           }
 
           if (resultado === "error") {
-            setError("No pudimos iniciar sesion con Google. Intenta otra vez en un momento.");
+            setError("No pudimos iniciar sesión con Google. Intenta otra vez en un momento.");
             return;
           }
 
@@ -159,17 +159,17 @@ export default function LoginPage() {
           </Link>
 
           <h1 className="mb-2 text-3xl font-bold">Bienvenido de nuevo</h1>
-          <p className="mb-8 text-gray-600">Inicia sesion para continuar con tus estudios.</p>
+          <p className="mb-8 text-gray-600">Inicia sesión para continuar con tus estudios.</p>
 
           {planSeleccionado === "premium" && (
             <div className="mb-6 rounded-2xl border border-purple-100 bg-purple-50 px-4 py-3 text-sm text-purple-700">
-              Tu plan seleccionado fue <strong>Premium</strong>. Inicia sesion para continuar sin pasarela de pago en esta demo.
+              Tu plan seleccionado fue <strong>Premium</strong>. Inicia sesión para continuar sin pasarela de pago en esta demo.
             </div>
           )}
 
           <form onSubmit={handleLogin} className="space-y-6">
             <div>
-              <Label htmlFor="email">Correo electronico</Label>
+              <Label htmlFor="email">Correo electrónico</Label>
               <div className="relative mt-2">
                 <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                 <Input
@@ -185,7 +185,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <Label htmlFor="password">Contrasena</Label>
+              <Label htmlFor="password">Contraseña</Label>
               <div className="relative mt-2">
                 <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                 <Input
@@ -211,7 +211,7 @@ export default function LoginPage() {
               disabled={cargando || cargandoGoogle}
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
-              {cargando ? "Ingresando..." : "Iniciar sesion"}
+              {cargando ? "Ingresando..." : "Iniciar sesión"}
             </Button>
 
             {googleClientId ? (
@@ -231,7 +231,7 @@ export default function LoginPage() {
           <p className="mt-8 text-center text-gray-600">
             No tienes una cuenta?{" "}
             <Link to="/register" className="font-semibold text-blue-600 hover:underline">
-              Registrate gratis
+              Regístrate gratis
             </Link>
           </p>
         </div>
@@ -239,14 +239,14 @@ export default function LoginPage() {
 
       <div className="hidden bg-gradient-to-br from-slate-950 via-blue-950 to-purple-900 p-12 lg:flex lg:items-center lg:justify-center">
         <div className="max-w-lg text-white">
-          <h2 className="mb-6 text-4xl font-bold">Tu centro de control academico</h2>
+          <h2 className="mb-6 text-4xl font-bold">Tu centro de control académico</h2>
           <p className="mb-8 text-xl text-white/80">
-            Organiza cursos, tareas, examenes y estudio en una experiencia clara, moderna y lista para crecer con IA.
+            Organiza cursos, tareas, exámenes y estudio en una experiencia clara, moderna y lista para crecer con IA.
           </p>
 
           <div className="grid gap-4">
             {[
-              "Planificacion diaria con prioridades automaticas",
+              "Planificación diaria con prioridades automáticas",
               "Calendario inteligente con bloques de estudio",
               "Seguimiento de avance y recordatorios relevantes",
             ].map((item) => (

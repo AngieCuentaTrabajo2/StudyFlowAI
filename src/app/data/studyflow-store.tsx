@@ -1,4 +1,4 @@
-import {
+﻿import {
   createContext,
   useContext,
   useEffect,
@@ -264,7 +264,7 @@ type ValorContextoStudyFlow = EstadoStudyFlow & {
 };
 
 const CLAVE_ALMACENAMIENTO = "studyflow-ai-state-v1";
-const etiquetasDias = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"];
+const etiquetasDias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 const HORA_MIN_PLANIFICADOR = 7;
 const HORA_MAX_PLANIFICADOR = 23;
 const HORAS_PREFERIDAS_REPASO = [18, 19, 20, 16, 17, 14, 15, 10, 11, 12, 13, 8, 9, 21, 7];
@@ -1028,7 +1028,7 @@ function resolverPlanificacionInteligenteBase({
   if (diasRestringidos.length >= 7) {
     return {
       ok: false,
-      mensaje: "No puedo planificar si todos los dias estan bloqueados. Deja al menos un dia disponible.",
+      mensaje: "No puedo planificar si todos los días están bloqueados. Deja al menos un día disponible.",
       resumen: [],
       bloquesCreados: 0,
       horasProgramadas: 0,
@@ -1044,7 +1044,7 @@ function resolverPlanificacionInteligenteBase({
   if (alcance === "tarea" && !tareaObjetivo) {
     return {
       ok: false,
-      mensaje: "No encontre la tarea que quieres reorganizar.",
+      mensaje: "No encontré la tarea que quieres reorganizar.",
       resumen: [],
       bloquesCreados: 0,
       horasProgramadas: 0,
@@ -1057,7 +1057,7 @@ function resolverPlanificacionInteligenteBase({
   if (alcance === "curso" && !cursoObjetivo) {
     return {
       ok: false,
-      mensaje: "No encontre el curso que quieres reorganizar.",
+      mensaje: "No encontré el curso que quieres reorganizar.",
       resumen: [],
       bloquesCreados: 0,
       horasProgramadas: 0,
@@ -1124,8 +1124,8 @@ function resolverPlanificacionInteligenteBase({
       ok: false,
       mensaje:
         alcance === "todo" && modoTodo === "solo-calendarizado"
-          ? "No encontre bloques de estudio ya calendarizados. Primero agrega una tarea o repaso al calendario, o elige incluir nuevos pendientes."
-          : "No encontre tareas o repasos para reorganizar con esa opcion.",
+          ? "No encontré bloques de estudio ya calendarizados. Primero agrega una tarea o repaso al calendario, o elige incluir nuevos pendientes."
+          : "No encontré tareas o repasos para reorganizar con esa opción.",
       resumen: [],
       bloquesCreados: 0,
       horasProgramadas: 0,
@@ -1154,7 +1154,7 @@ function resolverPlanificacionInteligenteBase({
   ]);
   const descripcionAplicacion =
     alcance === "todo"
-      ? `Replanifique ${resultado.bloques.length} bloques de tareas y repasos.`
+      ? `Replanifiqué ${resultado.bloques.length} bloques de tareas y repasos.`
       : alcance === "tarea"
         ? `Reorganicé la tarea ${tareaObjetivo?.titulo ?? ""}.`
         : `Reorganicé el repaso de ${cursoObjetivo?.nombre ?? ""}.`;
@@ -1163,7 +1163,7 @@ function resolverPlanificacionInteligenteBase({
     return {
       ok: false,
       mensaje:
-        "No encontre huecos libres con esas restricciones. Prueba liberando un dia o usando una franja mas flexible.",
+        "No encontré huecos libres con esas restricciones. Prueba liberando un día o usando una franja más flexible.",
       resumen: resultado.resumen,
       bloquesCreados: 0,
       horasProgramadas: 0,
@@ -1178,7 +1178,7 @@ function resolverPlanificacionInteligenteBase({
     ok: true,
     mensaje:
       resultado.horasProgramadas < totalHorasSolicitadas
-        ? `Aplique la planificacion, pero solo encontre ${resultado.horasProgramadas}h libres de ${totalHorasSolicitadas}h posibles.`
+        ? `Apliqué la planificación, pero solo encontré ${resultado.horasProgramadas}h libres de ${totalHorasSolicitadas}h posibles.`
         : `Listo. Reorganicé tu horario y reservé ${resultado.horasProgramadas}h en espacios libres.`,
     resumen: resultado.resumen,
     bloquesCreados: resultado.bloques.length,
@@ -1246,7 +1246,7 @@ function crearPerfilBase(): PerfilUsuario {
     horasDisponibles: "4-6",
     metodoEstudio: "pomodoro",
     tonoAsistente: "responsable",
-    metas: "Mantener un promedio alto, llegar con orden a examenes y reducir el estres academico.",
+    metas: "Mantener un promedio alto, llegar con orden a exámenes y reducir el estrés académico.",
     horasEstudioDiarias: 4,
     horasSueno: 8,
     disponibilidadSemanal: crearDisponibilidadSemanalBase(),
@@ -1379,10 +1379,10 @@ function crearEstadoInicial(): EstadoStudyFlow {
       id: "course-bd",
       nombre: "Base de Datos",
       docente: "Dr. Carlos Ramirez",
-      horario: "Lun, Mie 08:00 - 10:00",
+      horario: "Lun, Mié 08:00 - 10:00",
       semestre: "5",
       color: "blue",
-      descripcion: "Modelo relacional, normalizacion, SQL avanzado y diseno de esquemas.",
+      descripcion: "Modelo relacional, normalización, SQL avanzado y diseño de esquemas.",
       materiales: [
         { id: "m1", nombre: "Normalizacion paso a paso", tipo: "PDF" },
         { id: "m2", nombre: "Casos practicos de SQL", tipo: "PDF" },
@@ -1391,25 +1391,25 @@ function crearEstadoInicial(): EstadoStudyFlow {
     },
     {
       id: "course-prog",
-      nombre: "Programacion II",
-      docente: "Ing. Maria Lopez",
+      nombre: "Programación II",
+      docente: "Ing. María Lopez",
       horario: "Mar, Jue 10:00 - 12:00",
       semestre: "5",
       color: "purple",
-      descripcion: "Programacion orientada a objetos, APIs, buenas practicas y testing.",
+      descripcion: "Programación orientada a objetos, APIs, buenas prácticas y testing.",
       materiales: [
-        { id: "m4", nombre: "Patrones de diseno", tipo: "PDF" },
+        { id: "m4", nombre: "Patrones de diseño", tipo: "PDF" },
         { id: "m5", nombre: "POO en Java", tipo: "Video" },
       ],
     },
     {
       id: "course-calc",
-      nombre: "Calculo II",
+      nombre: "Cálculo II",
       docente: "Mat. Juan Perez",
-      horario: "Lun, Mie 14:00 - 16:00",
+      horario: "Lun, Mié 14:00 - 16:00",
       semestre: "5",
       color: "green",
-      descripcion: "Integrales, series y aplicaciones al analisis matematico.",
+      descripcion: "Integrales, series y aplicaciones al análisis matemático.",
       materiales: [
         { id: "m6", nombre: "Guia de integrales", tipo: "PDF" },
         { id: "m7", nombre: "Ejercicios resueltos", tipo: "PDF" },
@@ -1417,12 +1417,12 @@ function crearEstadoInicial(): EstadoStudyFlow {
     },
     {
       id: "course-fis",
-      nombre: "Fisica II",
+      nombre: "Física II",
       docente: "Dra. Ana Martinez",
       horario: "Mar, Vie 08:00 - 10:00",
       semestre: "5",
       color: "orange",
-      descripcion: "Electromagnetismo, optica y resolucion de problemas aplicados.",
+      descripcion: "Electromagnetismo, óptica y resolución de problemas aplicados.",
       materiales: [
         { id: "m8", nombre: "Laboratorio 3", tipo: "Documento" },
         { id: "m9", nombre: "Resumen de ondas", tipo: "PDF" },
@@ -1430,12 +1430,12 @@ function crearEstadoInicial(): EstadoStudyFlow {
     },
     {
       id: "course-soft",
-      nombre: "Ingenieria de Software",
+      nombre: "Ingeniería de Software",
       docente: "Ing. Roberto Silva",
       horario: "Jue, Vie 14:00 - 16:00",
       semestre: "5",
       color: "red",
-      descripcion: "Metodologias agiles, levantamiento de requisitos y trabajo colaborativo.",
+      descripcion: "Metodologías ágiles, levantamiento de requisitos y trabajo colaborativo.",
       materiales: [{ id: "m10", nombre: "Plantilla de backlog", tipo: "Documento" }],
     },
   ];
@@ -1445,14 +1445,14 @@ function crearEstadoInicial(): EstadoStudyFlow {
       id: "task-1",
       cursoId: "course-bd",
       titulo: "Proyecto final - Parte 2",
-      descripcion: "Completar el modelo logico y consultas del caso final.",
+      descripcion: "Completar el modelo lógico y consultas del caso final.",
       fechaEntrega: format(addDays(hoy, 3), "yyyy-MM-dd"),
       prioridad: "high",
       estado: "in-progress",
       horasEstimadas: 3,
       progreso: 40,
       subtareas: [
-        { id: "task-1-sub-1", titulo: "Ajustar el modelo logico", completada: true },
+        { id: "task-1-sub-1", titulo: "Ajustar el modelo lógico", completada: true },
         { id: "task-1-sub-2", titulo: "Validar consultas clave", completada: false },
         { id: "task-1-sub-3", titulo: "Documentar el caso final", completada: false },
       ],
@@ -1461,15 +1461,15 @@ function crearEstadoInicial(): EstadoStudyFlow {
       id: "task-2",
       cursoId: "course-prog",
       titulo: "Implementar API REST",
-      descripcion: "Completar endpoints de autenticacion y pruebas basicas.",
+      descripcion: "Completar endpoints de autenticación y pruebas básicas.",
       fechaEntrega: format(addDays(hoy, 2), "yyyy-MM-dd"),
       prioridad: "high",
       estado: "pending",
       horasEstimadas: 4,
       progreso: 15,
       subtareas: [
-        { id: "task-2-sub-1", titulo: "Completar autenticacion", completada: false },
-        { id: "task-2-sub-2", titulo: "Agregar pruebas basicas", completada: false },
+        { id: "task-2-sub-1", titulo: "Completar autenticación", completada: false },
+        { id: "task-2-sub-2", titulo: "Agregar pruebas básicas", completada: false },
       ],
     },
   ];
@@ -1481,13 +1481,13 @@ function crearEstadoInicial(): EstadoStudyFlow {
       titulo: "Examen parcial 2",
       fecha: format(addDays(hoy, 3), "yyyy-MM-dd"),
       hora: "08:00",
-      temas: ["Normalizacion", "SQL avanzado", "Transacciones"],
+      temas: ["Normalización", "SQL avanzado", "Transacciones"],
       preparacion: 75,
     },
     {
       id: "exam-2",
       cursoId: "course-prog",
-      titulo: "Evaluacion de Programacion",
+      titulo: "Evaluación de Programación",
       fecha: format(addDays(hoy, 5), "yyyy-MM-dd"),
       hora: "10:00",
       temas: ["POO", "API REST", "Testing"],
@@ -1532,15 +1532,15 @@ function crearEstadoInicial(): EstadoStudyFlow {
     {
       id: "notif-1",
       tipo: "urgent",
-      titulo: "Manana tienes examen de Base de Datos",
-      mensaje: "Tu examen parcial es manana a las 08:00. Prioriza SQL avanzado y normalizacion.",
+      titulo: "Mañana tienes examen de Base de Datos",
+      mensaje: "Tu examen parcial es mañana a las 08:00. Prioriza SQL avanzado y normalización.",
       creadaEn: new Date(hoy.getTime() - 1000 * 60 * 60).toISOString(),
       noLeida: true,
     },
     {
       id: "notif-2",
       tipo: "warning",
-      titulo: "Tu tarea de Programacion vence en 2 dias",
+      titulo: "Tu tarea de Programación vence en 2 días",
       mensaje: "La tarea Implementar API REST va en 15%. Te conviene avanzar hoy.",
       creadaEn: new Date(hoy.getTime() - 1000 * 60 * 60 * 3).toISOString(),
       noLeida: true,
@@ -1552,7 +1552,7 @@ function crearEstadoInicial(): EstadoStudyFlow {
       id: "chat-1",
       tipo: "ai",
       mensaje:
-        "Hola, Jhan 😊 Todo bien. Ya revise tus cursos, tareas y examenes, asi que de una puedo ayudarte a organizar tu semana, resumir temas o armarte un plan de estudio bacan.",
+        "Hola, Jhan 😊 Todo bien. Ya revisé tus cursos, tareas y exámenes, así que de una puedo ayudarte a organizar tu semana, resumir temas o armarte un plan de estudio bacán.",
       hora: "10:30",
     },
   ];
@@ -1939,7 +1939,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
             id: crearId("notif"),
             tipo: "success",
             titulo: "Bienvenido a StudyFlow AI",
-            mensaje: "Tu perfil fue creado y tu panel academico esta listo para empezar.",
+            mensaje: "Tu perfil fue creado y tu panel académico está listo para empezar.",
             creadaEn: new Date().toISOString(),
             noLeida: true,
           };
@@ -2053,7 +2053,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           id: crearId("notif"),
           tipo: "info",
           titulo: "Nueva tarea creada",
-          mensaje: `Se agrego "${tarea.titulo}" para ${curso?.nombre ?? "tu curso"}.`,
+          mensaje: `Se agregó "${tarea.titulo}" para ${curso?.nombre ?? "tu curso"}.`,
           creadaEn: new Date().toISOString(),
           noLeida: true,
         };
@@ -2114,7 +2114,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
                 id: crearId("notif"),
                 tipo: "success" as const,
                 titulo: tareaActual.estado === "completed" ? "Tarea reabierta" : "Tarea completada",
-                mensaje: `"${tareaActual.titulo}" actualizo su estado en tu panel academico.`,
+                mensaje: `"${tareaActual.titulo}" actualizó su estado en tu panel académico.`,
                 creadaEn: new Date().toISOString(),
                 noLeida: true,
               }
@@ -2263,7 +2263,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
 
         return {
           ok: true,
-          mensaje: `Listo. La movi para ${formatearFechaCorta(nuevaFecha)}.`,
+          mensaje: `Listo. La moví para ${formatearFechaCorta(nuevaFecha)}.`,
           nuevaFecha,
         };
       },
@@ -2297,7 +2297,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         if (resultado.horasProgramadas === 0) {
           return {
             ok: false,
-            mensaje: "No encontre espacios libres antes de la entrega. Prueba con menos horas o mueve bloques en el planificador.",
+            mensaje: "No encontré espacios libres antes de la entrega. Prueba con menos horas o mueve bloques en el planificador.",
             horasProgramadas: 0,
           };
         }
@@ -2317,7 +2317,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           mensaje:
             resultado.horasProgramadas < horasSolicitadas
               ? `Solo pude reservar ${resultado.horasProgramadas}h de ${horasSolicitadas}h para "${tareaObjetivo.titulo}".`
-              : `Reserve ${resultado.horasProgramadas}h para trabajar "${tareaObjetivo.titulo}" en espacios libres del calendario.`,
+              : `Reservé ${resultado.horasProgramadas}h para trabajar "${tareaObjetivo.titulo}" en espacios libres del calendario.`,
           creadaEn: new Date().toISOString(),
           noLeida: true,
         };
@@ -2338,8 +2338,8 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           ok: true,
           mensaje:
             resultado.horasProgramadas < horasSolicitadas
-              ? `Se programaron ${resultado.horasProgramadas}h. No encontre mas huecos libres por ahora.`
-              : `Listo. Ya te reserve ${resultado.horasProgramadas}h para esa tarea en el calendario.`,
+              ? `Se programaron ${resultado.horasProgramadas}h. No encontré más huecos libres por ahora.`
+              : `Listo. Ya te reservé ${resultado.horasProgramadas}h para esa tarea en el calendario.`,
           horasProgramadas: resultado.horasProgramadas,
         };
       },
@@ -2373,7 +2373,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         if (resultado.horasProgramadas === 0) {
           return {
             ok: false,
-            mensaje: "No encontre espacios libres para ese curso. Prueba con menos horas o libera bloques en el planificador.",
+            mensaje: "No encontré espacios libres para ese curso. Prueba con menos horas o libera bloques en el planificador.",
             horasProgramadas: 0,
           };
         }
@@ -2393,7 +2393,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           mensaje:
             resultado.horasProgramadas < horasSolicitadas
               ? `Solo pude reservar ${resultado.horasProgramadas}h de ${horasSolicitadas}h para ${cursoObjetivo.nombre}.`
-              : `Reserve ${resultado.horasProgramadas}h de repaso general para ${cursoObjetivo.nombre}.`,
+              : `Reservé ${resultado.horasProgramadas}h de repaso general para ${cursoObjetivo.nombre}.`,
           creadaEn: new Date().toISOString(),
           noLeida: true,
         };
@@ -2415,7 +2415,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           mensaje:
             resultado.horasProgramadas < horasSolicitadas
               ? `Se programaron ${resultado.horasProgramadas}h de repaso para el curso.`
-              : `Listo. Ya te reserve ${resultado.horasProgramadas}h de repaso para ese curso.`,
+              : `Listo. Ya te reservé ${resultado.horasProgramadas}h de repaso para ese curso.`,
           horasProgramadas: resultado.horasProgramadas,
         };
       },
@@ -2679,7 +2679,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
               {
                 id: crearId("chat"),
                 tipo: "ai",
-                mensaje: "Inicia sesion para usar el asistente con Groq.",
+                mensaje: "Inicia sesión para usar el asistente con Groq.",
                 hora: formatearHoraChat(),
               },
             ],
@@ -2742,7 +2742,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         if (diasRestringidos.length >= 7) {
           return {
             ok: false,
-            mensaje: "No puedo planificar si todos los dias estan bloqueados. Deja al menos un dia disponible.",
+            mensaje: "No puedo planificar si todos los días están bloqueados. Deja al menos un día disponible.",
             resumen: [],
             bloquesCreados: 0,
             horasProgramadas: 0,
@@ -2755,7 +2755,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         if (alcance === "tarea" && !tareaObjetivo) {
           return {
             ok: false,
-            mensaje: "No encontre la tarea que quieres reorganizar.",
+            mensaje: "No encontré la tarea que quieres reorganizar.",
             resumen: [],
             bloquesCreados: 0,
             horasProgramadas: 0,
@@ -2765,7 +2765,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         if (alcance === "curso" && !cursoObjetivo) {
           return {
             ok: false,
-            mensaje: "No encontre el curso que quieres reorganizar.",
+            mensaje: "No encontré el curso que quieres reorganizar.",
             resumen: [],
             bloquesCreados: 0,
             horasProgramadas: 0,
@@ -2829,8 +2829,8 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
             ok: false,
             mensaje:
               alcance === "todo" && modoTodo === "solo-calendarizado"
-                ? "No encontre bloques de estudio ya calendarizados. Primero agrega una tarea o repaso al calendario, o elige incluir nuevos pendientes."
-                : "No encontre tareas o repasos para reorganizar con esa opcion.",
+                ? "No encontré bloques de estudio ya calendarizados. Primero agrega una tarea o repaso al calendario, o elige incluir nuevos pendientes."
+                : "No encontré tareas o repasos para reorganizar con esa opción.",
             resumen: [],
             bloquesCreados: 0,
             horasProgramadas: 0,
@@ -2855,7 +2855,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           return {
             ok: false,
             mensaje:
-              "No encontre huecos libres con esas restricciones. Prueba liberando un dia o usando una franja mas flexible.",
+              "No encontré huecos libres con esas restricciones. Prueba liberando un día o usando una franja más flexible.",
             resumen: resultado.resumen,
             bloquesCreados: 0,
             horasProgramadas: 0,
@@ -2868,7 +2868,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
         ]);
         const resumenPlanificacion =
           alcance === "todo"
-            ? `Replanifique ${resultado.bloques.length} bloques de tareas y repasos.`
+            ? `Replanifiqué ${resultado.bloques.length} bloques de tareas y repasos.`
             : alcance === "tarea"
               ? `Reorganicé la tarea ${tareaObjetivo?.titulo ?? ""}.`
               : `Reorganicé el repaso de ${cursoObjetivo?.nombre ?? ""}.`;
@@ -2877,7 +2877,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           tipo: resultado.horasProgramadas < totalHorasSolicitadas ? "warning" : "success",
           titulo:
             resultado.horasProgramadas < totalHorasSolicitadas
-              ? "Planificacion aplicada parcialmente"
+              ? "Planificación aplicada parcialmente"
               : "Horario reorganizado con IA",
           mensaje: resumenPlanificacion,
           creadaEn: new Date().toISOString(),
@@ -2901,8 +2901,8 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           ok: true,
           mensaje:
             resultado.horasProgramadas < totalHorasSolicitadas
-              ? `Aplique la planificacion, pero solo encontre ${resultado.horasProgramadas}h libres de ${totalHorasSolicitadas}h posibles.`
-              : `Listo. Reorganicé tu horario y reserve ${resultado.horasProgramadas}h en espacios libres.`,
+              ? `Apliqué la planificación, pero solo encontré ${resultado.horasProgramadas}h libres de ${totalHorasSolicitadas}h posibles.`
+              : `Listo. Reorganicé tu horario y reservé ${resultado.horasProgramadas}h en espacios libres.`,
           resumen: resultado.resumen,
           bloquesCreados: resultado.bloques.length,
           horasProgramadas: resultado.horasProgramadas,
@@ -3086,7 +3086,7 @@ export function obtenerTiempoRelativoNotificacion(creadaEn: string) {
   if (horas < 24) return `Hace ${horas} hora${horas === 1 ? "" : "s"}`;
   const dias = Math.floor(horas / 24);
   if (dias === 1) return "Ayer";
-  return `Hace ${dias} dias`;
+  return `Hace ${dias} días`;
 }
 
 export function obtenerEtiquetaDiaPlanificador(dia: number) {
@@ -3143,7 +3143,7 @@ export function obtenerAlertasInteligentes(
       alertas.push({
         id: `smart-task-today-${tarea.id}`,
         titulo: `${tarea.titulo} vence hoy`,
-        descripcion: `${curso?.nombre ?? "Tu curso"} necesita atencion inmediata para que no se te pase.`,
+        descripcion: `${curso?.nombre ?? "Tu curso"} necesita atención inmediata para que no se te pase.`,
         nivel: tarea.prioridad === "high" ? "critica" : "alta",
         tipo: "tarea",
         destino: `/app/tasks?focus=${tarea.id}`,
@@ -3158,8 +3158,8 @@ export function obtenerAlertasInteligentes(
     if (diasRestantes === 1 && tarea.progreso < 80) {
       alertas.push({
         id: `smart-task-soon-${tarea.id}`,
-        titulo: `${tarea.titulo} vence manana`,
-        descripcion: `${curso?.nombre ?? "Tu curso"} aun va en ${tarea.progreso}%. Te conviene cerrarla hoy.`,
+        titulo: `${tarea.titulo} vence mañana`,
+        descripcion: `${curso?.nombre ?? "Tu curso"} aún va en ${tarea.progreso}%. Te conviene cerrarla hoy.`,
         nivel: "alta",
         tipo: "tarea",
         destino: `/app/tasks?focus=${tarea.id}`,
@@ -3174,8 +3174,8 @@ export function obtenerAlertasInteligentes(
     if (diasRestantes <= 3 && tarea.prioridad === "high" && tarea.progreso < 60) {
       alertas.push({
         id: `smart-task-priority-${tarea.id}`,
-        titulo: `${tarea.titulo} ya deberia avanzar`,
-        descripcion: `${curso?.nombre ?? "Tu curso"} es prioridad alta y vence pronto. Mejor no dejarla para el ultimo dia.`,
+        titulo: `${tarea.titulo} ya debería avanzar`,
+        descripcion: `${curso?.nombre ?? "Tu curso"} es prioridad alta y vence pronto. Mejor no dejarla para el último día.`,
         nivel: "media",
         tipo: "tarea",
         destino: `/app/tasks?focus=${tarea.id}`,
@@ -3201,8 +3201,8 @@ export function obtenerAlertasInteligentes(
     if (diasRestantes <= 1 && examen.preparacion < 70) {
       alertas.push({
         id: `smart-exam-critical-${examen.id}`,
-        titulo: `${examen.titulo} esta demasiado cerca`,
-        descripcion: `${curso?.nombre ?? "Tu curso"} llega en ${diasRestantes === 0 ? "horas" : "1 dia"} y tu preparacion va en ${examen.preparacion}%.`,
+        titulo: `${examen.titulo} está demasiado cerca`,
+        descripcion: `${curso?.nombre ?? "Tu curso"} llega en ${diasRestantes === 0 ? "horas" : "1 día"} y tu preparación va en ${examen.preparacion}%.`,
         nivel: "critica",
         tipo: "examen",
         destino: `/app/exams?focus=${examen.id}`,
@@ -3218,7 +3218,7 @@ export function obtenerAlertasInteligentes(
       alertas.push({
         id: `smart-exam-soon-${examen.id}`,
         titulo: `${examen.titulo} necesita repaso`,
-        descripcion: `${curso?.nombre ?? "Tu curso"} esta cerca y tu preparacion aun no llega a una zona segura.`,
+        descripcion: `${curso?.nombre ?? "Tu curso"} está cerca y tu preparación aún no llega a una zona segura.`,
         nivel: "alta",
         tipo: "examen",
         destino: `/app/exams?focus=${examen.id}`,
@@ -3233,8 +3233,8 @@ export function obtenerAlertasInteligentes(
     if (diasRestantes <= 5 && bloquesCurso.length === 0) {
       alertas.push({
         id: `smart-exam-plan-${examen.id}`,
-        titulo: `Aun no tienes bloques para ${examen.titulo}`,
-        descripcion: `${curso?.nombre ?? "Tu curso"} se acerca y todavia no aparece en tu planificador.`,
+        titulo: `Aún no tienes bloques para ${examen.titulo}`,
+        descripcion: `${curso?.nombre ?? "Tu curso"} se acerca y todavía no aparece en tu planificador.`,
         nivel: "media",
         tipo: "examen",
         destino: `/app/planner`,
@@ -3251,3 +3251,4 @@ export function obtenerAlertasInteligentes(
     .slice(0, 5)
     .map(({ prioridad, diasRestantes, ...alerta }) => alerta);
 }
+

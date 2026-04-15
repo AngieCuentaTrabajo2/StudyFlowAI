@@ -19,7 +19,7 @@ const planes = [
     precio: "S/ 0",
     caracteristicas: [
       "Hasta 5 cursos",
-      "Tareas y examenes en un solo lugar",
+      "Tareas y exámenes en un solo lugar",
       "Tokens del agente limitados",
       "Recordatorios esenciales",
     ],
@@ -36,7 +36,7 @@ const planes = [
       "Tokens del agente ilimitados",
       "Planificador inteligente",
       "Asistente IA para organizar y resolver dudas",
-      "Resumenes y prioridades automaticas",
+      "Resúmenes y prioridades automáticas",
     ],
     destino: "/register?plan=premium",
     cta: "Elegir premium",
@@ -55,7 +55,7 @@ export default function LandingPage() {
             <div className="max-w-2xl md:max-w-[28rem] lg:max-w-[30rem]">
             <div className="mb-5 inline-flex max-w-full items-center gap-2 rounded-full bg-blue-50 px-4 py-2">
               <Sparkles className="h-4 w-4 text-blue-600" />
-              <span className="truncate text-sm font-medium text-blue-600">Asistente academico con IA</span>
+              <span className="truncate text-sm font-medium text-blue-600">Asistente académico con IA</span>
             </div>
             <h1 className="mb-5 text-4xl font-bold leading-tight sm:text-5xl lg:text-6xl">
               Organiza tus estudios con{" "}
@@ -65,7 +65,7 @@ export default function LandingPage() {
             </h1>
             <p className="mb-8 max-w-[27rem] text-base leading-relaxed text-gray-600 sm:text-xl">
               StudyFlow AI ayuda a estudiantes universitarios a gestionar cursos, tareas,
-              examenes, horarios y habitos de estudio de manera inteligente y personalizada.
+              exámenes, horarios y hábitos de estudio de manera inteligente y personalizada.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
               <Link to="/register?plan=gratis">
@@ -109,9 +109,9 @@ export default function LandingPage() {
       <section id="beneficios" className="bg-gray-50 px-4 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 text-center sm:mb-16">
-            <h2 className="mb-4 text-3xl font-bold sm:text-4xl">Todo lo que necesitas para triunfar academicamente</h2>
+            <h2 className="mb-4 text-3xl font-bold sm:text-4xl">Todo lo que necesitas para triunfar académicamente</h2>
             <p className="text-base text-gray-600 sm:text-xl">
-              Herramientas inteligentes disenadas para estudiantes universitarios
+              Herramientas inteligentes diseñadas para estudiantes universitarios
             </p>
           </div>
 
@@ -120,14 +120,14 @@ export default function LandingPage() {
               {
                 icono: CheckCircle,
                 color: "bg-blue-100 text-blue-600",
-                titulo: "Organiza tareas automaticamente",
-                texto: "La IA prioriza tus pendientes segun urgencia y complejidad",
+                titulo: "Organiza tareas automáticamente",
+                texto: "La IA prioriza tus pendientes según urgencia y complejidad",
               },
               {
                 icono: Calendar,
                 color: "bg-purple-100 text-purple-600",
                 titulo: "Crea horarios inteligentes",
-                texto: "Genera planes de estudio personalizados segun tu disponibilidad",
+                texto: "Genera planes de estudio personalizados según tu disponibilidad",
               },
               {
                 icono: Bell,
@@ -138,7 +138,7 @@ export default function LandingPage() {
               {
                 icono: Sparkles,
                 color: "bg-orange-100 text-orange-600",
-                titulo: "Obten apoyo academico con IA",
+                titulo: "Obtén apoyo académico con IA",
                 texto: "Asistente disponible para resolver dudas y organizar tu estudio",
               },
             ].map((item) => (
@@ -159,15 +159,15 @@ export default function LandingPage() {
       <section id="caracteristicas" className="px-4 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-7xl">
           <div className="mb-12 text-center sm:mb-16">
-            <h2 className="mb-4 text-3xl font-bold sm:text-4xl">Como funciona</h2>
-            <p className="text-base text-gray-600 sm:text-xl">Tres pasos simples para transformar tu vida academica</p>
+          <h2 className="mb-4 text-3xl font-bold sm:text-4xl">Cómo funciona</h2>
+          <p className="text-base text-gray-600 sm:text-xl">Tres pasos simples para transformar tu vida académica</p>
           </div>
 
           <div className="grid gap-8 md:grid-cols-3">
             {[
-              ["1", "Registra tus cursos", "Agrega tus materias, horarios y actividades academicas en minutos"],
-              ["2", "La IA organiza todo", "El asistente crea automaticamente horarios, prioridades y recordatorios"],
-              ["3", "Alcanza tus metas", "Sigue tu plan personalizado y mejora tu rendimiento academico"],
+              ["1", "Registra tus cursos", "Agrega tus materias, horarios y actividades académicas en minutos"],
+              ["2", "La IA organiza todo", "El asistente crea automáticamente horarios, prioridades y recordatorios"],
+              ["3", "Alcanza tus metas", "Sigue tu plan personalizado y mejora tu rendimiento académico"],
             ].map(([numero, titulo, texto]) => (
               <div key={numero} className="text-center">
                 <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600">
@@ -186,7 +186,7 @@ export default function LandingPage() {
           <div className="mb-12 text-center sm:mb-16">
             <h2 className="mb-4 text-3xl font-bold sm:text-4xl">Lo que dicen nuestros usuarios</h2>
             <p className="text-base text-gray-600 sm:text-xl">
-              Miles de estudiantes ya mejoraron su rendimiento academico
+              Miles de estudiantes ya mejoraron su rendimiento académico
             </p>
           </div>
 
@@ -194,9 +194,9 @@ export default function LandingPage() {
             {[
               {
                 nombre: "Maria Garcia",
-                carrera: "Ingenieria Industrial",
+                carrera: "Ingeniería Industrial",
                 texto:
-                  "StudyFlow AI cambio mi forma de estudiar. Ahora puedo organizar todas mis tareas sin estres y mi rendimiento mejoro notablemente.",
+                  "StudyFlow AI cambió mi forma de estudiar. Ahora puedo organizar todas mis tareas sin estrés y mi rendimiento mejoró notablemente.",
                 imagen:
                   "https://images.unsplash.com/photo-1608453162650-cba45689c284?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwc3R1ZGVudCUyMHdvbWFuJTIwaGFwcHl8ZW58MXx8fHwxNzc0NDQ5NTMwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
               },
@@ -204,7 +204,7 @@ export default function LandingPage() {
                 nombre: "Carlos Mendoza",
                 carrera: "Medicina",
                 texto:
-                  "El planificador inteligente es increible. Me ayuda a distribuir mi tiempo de estudio de manera eficiente.",
+                  "El planificador inteligente es increíble. Me ayuda a distribuir mi tiempo de estudio de manera eficiente.",
                 imagen:
                   "https://images.unsplash.com/photo-1772971919691-598c37fe4b81?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx1bml2ZXJzaXR5JTIwc3R1ZGVudCUyMG1hbiUyMGZvY3VzZWR8ZW58MXx8fHwxNzc0NDQ5NTMwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
               },
@@ -212,7 +212,7 @@ export default function LandingPage() {
                 nombre: "Ana Lopez",
                 carrera: "Derecho",
                 texto:
-                  "Nunca habia sido tan organizada. El asistente IA me recuerda todo y me ayuda a priorizar.",
+                  "Nunca había sido tan organizada. El asistente IA me recuerda todo y me ayuda a priorizar.",
                 imagen:
                   "https://images.unsplash.com/photo-1763890869725-83a0af1d0b8a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzdHVkZW50JTIwbGFwdG9wJTIwc3R1ZHlpbmclMjBtb2Rlcm58ZW58MXx8fHwxNzc0NDQ5NTMwfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
               },
@@ -248,7 +248,7 @@ export default function LandingPage() {
           <div className="mb-12 text-center sm:mb-16">
             <h2 className="mb-4 text-3xl font-bold sm:text-4xl">Planes simples para estudiantes</h2>
             <p className="text-base text-gray-600 sm:text-xl">
-              Dos opciones claras para empezar y crecer sin pagar de mas
+              Dos opciones claras para empezar y crecer sin pagar de más
             </p>
           </div>
 
@@ -263,7 +263,7 @@ export default function LandingPage() {
                 {plan.destacado && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                     <span className="rounded-full bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-1 text-sm font-semibold text-white">
-                      Mas popular
+                      Más popular
                     </span>
                   </div>
                 )}
@@ -303,9 +303,9 @@ export default function LandingPage() {
 
       <section className="bg-gradient-to-br from-blue-600 to-purple-600 px-4 py-14 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-4xl text-center text-white">
-          <h2 className="mb-6 text-3xl font-bold sm:text-4xl">Listo para transformar tu vida academica?</h2>
+          <h2 className="mb-6 text-3xl font-bold sm:text-4xl">¿Listo para transformar tu vida académica?</h2>
           <p className="mb-8 text-base opacity-90 sm:text-xl">
-            Unete a miles de estudiantes que ya estan alcanzando sus metas con StudyFlow AI
+            Únete a miles de estudiantes que ya están alcanzando sus metas con StudyFlow AI
           </p>
           <Link to="/register?plan=gratis">
             <Button size="lg" className="w-full bg-white px-6 text-base text-blue-600 hover:bg-gray-100 sm:w-auto sm:px-8 sm:text-lg">
@@ -320,10 +320,10 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl">
           <div className="mb-8 grid gap-8 md:grid-cols-4">
             {[
-              ["Producto", ["Caracteristicas", "Precios", "Casos de uso"]],
-              ["Compania", ["Sobre nosotros", "Blog", "Carreras"]],
-              ["Recursos", ["Centro de ayuda", "Guias", "Comunidad"]],
-              ["Legal", ["Privacidad", "Terminos", "Seguridad"]],
+              ["Producto", ["Características", "Precios", "Casos de uso"]],
+              ["Compañía", ["Sobre nosotros", "Blog", "Carreras"]],
+              ["Recursos", ["Centro de ayuda", "Guías", "Comunidad"]],
+              ["Legal", ["Privacidad", "Términos", "Seguridad"]],
             ].map(([titulo, items]) => (
               <div key={titulo}>
                 <h3 className="mb-4 font-semibold">{titulo}</h3>

@@ -167,7 +167,7 @@ export default function DashboardHeader() {
     <>
       <Dialog open={dialogoNotificacionesAbierto} onOpenChange={setDialogoNotificacionesAbierto}>
         <DialogContent className="w-full max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-[32px] border-none p-0 shadow-2xl sm:max-w-[calc(100vw-2rem)] lg:max-w-[74rem] xl:max-w-[80rem]">
-          <div className="grid max-h-[84vh] overflow-hidden bg-white lg:grid-cols-[1fr_1.16fr] xl:grid-cols-[0.98fr_1.22fr]">
+          <div className="grid max-h-[84vh] overflow-hidden bg-white dark:bg-slate-950 lg:grid-cols-[1fr_1.16fr] xl:grid-cols-[0.98fr_1.22fr]">
             <div className="border-b border-white/10 bg-gradient-to-br from-slate-950 via-blue-950 to-purple-900 p-6 text-white md:p-7 lg:border-b-0 lg:border-r lg:border-r-white/10 lg:p-8">
               <DialogHeader className="space-y-3 text-left">
                 <div className="flex items-start gap-4">
@@ -245,16 +245,16 @@ export default function DashboardHeader() {
               </div>
             </div>
 
-            <div className="flex min-h-0 flex-col bg-slate-50">
-              <div className="border-b border-slate-200 px-6 py-5 md:px-7 lg:px-8">
+            <div className="flex min-h-0 flex-col bg-slate-50 dark:bg-slate-900">
+              <div className="border-b border-slate-200 px-6 py-5 dark:border-slate-800 md:px-7 lg:px-8">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold text-slate-900">Acciones recomendadas</div>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Acciones recomendadas</div>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                       Abre una alerta para ir directo al curso, tarea o examen que lo necesita.
                     </p>
                   </div>
-                  <Badge className="bg-slate-100 text-slate-700">
+                  <Badge className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                     {totalIndicadorNotificaciones} elemento{totalIndicadorNotificaciones === 1 ? "" : "s"}
                   </Badge>
                 </div>
@@ -265,9 +265,9 @@ export default function DashboardHeader() {
                   {alertasInteligentes.length > 0 ? (
                     <section>
                       <div className="mb-3 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
                           <AlertTriangle className="h-4 w-4 text-amber-500" />
-                          Alertas que necesitan accion
+                          Alertas que necesitan acción
                         </div>
                         <Badge className="bg-amber-100 text-amber-700">
                           {totalCriticas + totalAltas} prioridad alta
@@ -289,11 +289,11 @@ export default function DashboardHeader() {
                   {notificacionesRecientes.length > 0 ? (
                     <section className={alertasInteligentes.length > 0 ? "mt-6" : ""}>
                       <div className="mb-3 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
                           <Bell className="h-4 w-4 text-blue-600" />
                           Recordatorios recientes
                         </div>
-                        <Badge className="bg-slate-100 text-slate-700">
+                        <Badge className="bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                           {notificacionesRecientes.length} visibles
                         </Badge>
                       </div>
@@ -306,7 +306,7 @@ export default function DashboardHeader() {
                   ) : null}
 
                   {alertasInteligentes.length === 0 && notificacionesRecientes.length === 0 ? (
-                    <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+                    <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
                       No hay alertas urgentes ahora mismo. Tu panel se ve bastante controlado.
                     </div>
                   ) : null}
@@ -332,13 +332,13 @@ export default function DashboardHeader() {
         </DialogContent>
       </Dialog>
 
-      <header className="fixed left-0 right-0 top-0 z-30 h-16 border-b border-gray-200 bg-white/95 backdrop-blur lg:left-64">
+      <header className="fixed left-0 right-0 top-0 z-30 h-16 border-b border-gray-200 bg-white/95 backdrop-blur transition-colors dark:border-slate-800 dark:bg-slate-950/95 lg:left-64">
         <div className="flex h-full items-center justify-between gap-4 px-4 lg:px-8">
           <div className="lg:hidden">
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5 text-gray-700" />
+                  <Menu className="h-5 w-5 text-gray-700 dark:text-slate-200" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="p-0">
@@ -352,16 +352,16 @@ export default function DashboardHeader() {
 
           <div className="max-w-xl min-w-0 flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-slate-500" />
               <Input
                 value={busqueda}
                 onChange={(event) => setBusqueda(event.target.value)}
                 placeholder="Buscar..."
-                className="border-gray-200 bg-gray-50 pl-10 sm:placeholder:text-sm md:placeholder:text-base"
+                className="border-gray-200 bg-gray-50 pl-10 text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 sm:placeholder:text-sm md:placeholder:text-base"
               />
 
               {busqueda.trim() ? (
-                <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
+                <div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-950">
                   {resultados.length > 0 ? (
                     <div className="max-h-96 overflow-y-auto p-2">
                       {resultados.map((resultado) => (
@@ -369,7 +369,7 @@ export default function DashboardHeader() {
                           key={resultado.id}
                           type="button"
                           onClick={() => irAResultado(resultado.destino)}
-                          className="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-gray-50"
+                          className="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-gray-50 dark:hover:bg-slate-900"
                         >
                           <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
                             {resultado.tipo === "curso" ? (
@@ -382,8 +382,8 @@ export default function DashboardHeader() {
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="truncate font-medium">{resultado.titulo}</span>
-                              <Badge className="bg-gray-100 text-gray-600">
+                              <span className="truncate font-medium text-slate-900 dark:text-slate-100">{resultado.titulo}</span>
+                              <Badge className="bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-300">
                                 {resultado.tipo === "curso"
                                   ? "Curso"
                                   : resultado.tipo === "tarea"
@@ -391,13 +391,13 @@ export default function DashboardHeader() {
                                     : "Examen"}
                               </Badge>
                             </div>
-                            <p className="mt-1 truncate text-sm text-gray-500">{resultado.subtitulo}</p>
+                            <p className="mt-1 truncate text-sm text-gray-500 dark:text-slate-400">{resultado.subtitulo}</p>
                           </div>
                         </button>
                       ))}
                     </div>
                   ) : (
-                    <div className="p-4 text-sm text-gray-500">
+                    <div className="p-4 text-sm text-gray-500 dark:text-slate-400">
                       No encontramos resultados para <strong>{busqueda}</strong>.
                     </div>
                   )}
@@ -413,7 +413,7 @@ export default function DashboardHeader() {
               className="relative h-9 w-9 sm:h-10 sm:w-10"
               onClick={() => setDialogoNotificacionesAbierto(true)}
             >
-              <Bell className="h-5 w-5 text-gray-600" />
+              <Bell className="h-5 w-5 text-gray-600 dark:text-slate-300" />
               {totalIndicadorNotificaciones > 0 ? (
                 <Badge className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center bg-red-500 p-0 text-xs text-white">
                   {totalIndicadorNotificaciones}

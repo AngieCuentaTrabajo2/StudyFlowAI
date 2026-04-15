@@ -265,14 +265,14 @@ export default function Planner() {
     const diasSinEspacio = disponibilidad.filter((dia) => !dia.manana && !dia.tarde && !dia.noche);
 
     if (!disponibilidad.length) {
-      return "Por ahora el planner asumira que todos tus dias estan disponibles.";
+      return "Por ahora el planner asumirá que todos tus días están disponibles.";
     }
 
     if (!diasSinEspacio.length) {
       return "Toda tu semana tiene al menos una franja activa para que el planner pueda trabajar.";
     }
 
-    return `${diasActivos.length} dias con alguna franja activa y ${diasSinEspacio.length} dia${diasSinEspacio.length === 1 ? "" : "s"} reservados por completo para ti.`;
+    return `${diasActivos.length} días con alguna franja activa y ${diasSinEspacio.length} día${diasSinEspacio.length === 1 ? "" : "s"} reservado${diasSinEspacio.length === 1 ? "" : "s"} por completo para ti.`;
   }, [usuarioActual?.disponibilidadSemanal]);
 
   return (
@@ -281,7 +281,7 @@ export default function Planner() {
         <div>
           <h1 className="mb-2 text-2xl font-bold sm:text-3xl">Planificador inteligente</h1>
           <p className="max-w-2xl text-sm text-gray-600 sm:text-base">
-            Organiza tu semana con bloques utiles, visuales y priorizados por contexto academico.
+            Organiza tu semana con bloques útiles, visuales y priorizados por contexto académico.
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
@@ -329,7 +329,7 @@ export default function Planner() {
           </CardHeader>
           <CardContent className="space-y-5 sm:space-y-6">
             <div>
-              <Label className="mb-3 block">Horas libres para estudiar por dia</Label>
+              <Label className="mb-3 block">Horas libres para estudiar por día</Label>
               <p className="mb-2 text-xl font-bold text-blue-600 sm:text-2xl">{usuarioActual?.horasEstudioDiarias ?? 4}h</p>
               <Slider
                 value={[usuarioActual?.horasEstudioDiarias ?? 4]}
@@ -341,7 +341,7 @@ export default function Planner() {
             </div>
 
             <div>
-              <Label className="mb-3 block">Horas de sueno</Label>
+              <Label className="mb-3 block">Horas de sueño</Label>
               <p className="mb-2 text-xl font-bold text-purple-600 sm:text-2xl">{usuarioActual?.horasSueno ?? 8}h</p>
               <Slider
                 value={[usuarioActual?.horasSueno ?? 8]}
@@ -391,7 +391,7 @@ export default function Planner() {
             <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-700">
               <div className="mb-2 flex items-center gap-2 font-semibold">
                 <Move className="h-4 w-4" />
-                Edicion manual activa
+                Edición manual activa
               </div>
               <p>
                 Arrastra tus bloques de estudio a otra celda para reorganizar tu semana. Los bloques de clase vienen desde cada curso y quedan reservados.
@@ -401,10 +401,10 @@ export default function Planner() {
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
               <div className="mb-2 flex items-center gap-2 font-semibold text-slate-700">
                 <Sparkles className="h-4 w-4" />
-                Planificacion conversacional
+                Planificación conversacional
               </div>
               <p>
-                Puedes lanzar el flujo inteligente desde el boton superior. El asistente te preguntara si quieres reorganizar todo, una tarea o un curso, y luego aplicara restricciones antes de mover bloques.
+                Puedes lanzar el flujo inteligente desde el botón superior. El asistente te preguntará si quieres reorganizar todo, una tarea o un curso, y luego aplicará restricciones antes de mover bloques.
               </p>
             </div>
 
@@ -531,7 +531,7 @@ export default function Planner() {
             <div>
               <h2 className="mb-2 text-lg font-semibold">Resumen de IA</h2>
               <p className="text-gray-700">
-                Se asigno mas tiempo a {cursoProximo?.nombre ?? "tus cursos criticos"} por cercania de evaluacion y por el volumen de tareas activas. Ahora tambien puedes mover cada bloque manualmente para adaptar el plan a tu ritmo real.
+                Se asignó más tiempo a {cursoProximo?.nombre ?? "tus cursos críticos"} por cercanía de evaluación y por el volumen de tareas activas. Ahora también puedes mover cada bloque manualmente para adaptar el plan a tu ritmo real.
               </p>
             </div>
           </div>
@@ -539,7 +539,7 @@ export default function Planner() {
       </Card>
 
       <Dialog open={Boolean(bloqueEnEdicion)} onOpenChange={(abierto) => !abierto && setBloqueEnEdicion(null)}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Editar bloque</DialogTitle>
           </DialogHeader>

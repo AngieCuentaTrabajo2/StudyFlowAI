@@ -1,4 +1,4 @@
-import "dotenv/config";
+﻿import "dotenv/config";
 import cors from "cors";
 import express from "express";
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
@@ -313,7 +313,7 @@ function extraerHerramientasSolicitadasEnTexto(texto, herramientasLocales) {
 function detectarSolicitudPreguntasPractica(mensaje) {
   const texto = normalizarTexto(mensaje || "");
   return (
-    texto.includes("preguntas de practica") ||
+    texto.includes("preguntas de práctica") ||
     texto.includes("pregunta de practica") ||
     texto.includes("practiquemos") ||
     (texto.includes("hazme preguntas") && texto.includes("practica"))
@@ -339,10 +339,10 @@ function construirRespuestaAclaratoriaPractica(contexto) {
   const cursos = deduplicarPorClave(contexto.cursos, (curso) => `${curso.nombre}-${curso.docente}-${curso.horario}`).slice(0, 4);
 
   if (!cursos.length) {
-    return "Claro. Puedo hacerte preguntas de practica, pero primero dime de que curso o tema quieres que sean.";
+    return "Claro. Puedo hacerte preguntas de práctica, pero primero dime de que curso o tema quieres que sean.";
   }
 
-  return `Claro. Te hago preguntas de practica, pero primero dime de que curso quieres que sean.\n\nPuedes elegir uno de estos: ${cursos.map((curso) => curso.nombre).join(", ")}.`;
+  return `Claro. Te hago preguntas de práctica, pero primero dime de que curso quieres que sean.\n\nPuedes elegir uno de estos: ${cursos.map((curso) => curso.nombre).join(", ")}.`;
 }
 
 function textoIncluyeAlguno(texto, terminos) {
@@ -453,15 +453,15 @@ function construirPlanEstudioSistema(contexto) {
   const bloquesEstudio = contexto.bloquesPlanificador.filter((bloque) => bloque.tipo === "study");
 
   if (!prioridades.length) {
-    return "Tu panel no muestra urgencias inmediatas. Puedes dedicar hoy un bloque corto a repasar apuntes, ordenar pendientes y dejar lista la siguiente sesion de estudio.";
+    return "Tu panel no muestra urgencias inmediatas. Puedes dedicar hoy un bloque corto a repasar apuntes, ordenar pendientes y dejar lista la siguiente sesión de estudio.";
   }
 
   const recomendaciones = [
     `1. Empieza por ${prioridades[0]}.`,
     prioridades[1] ? `2. Luego avanza con ${prioridades[1]}.` : "2. Usa el segundo bloque para repaso activo o ejercicios cortos.",
     bloquesEstudio.length
-      ? `3. Ya tienes ${bloquesEstudio.length} bloque${bloquesEstudio.length === 1 ? "" : "s"} de estudio guardado${bloquesEstudio.length === 1 ? "" : "s"}; aprovecha esos bloques para cerrar el dia con repaso breve.`
-      : "3. Si puedes, reserva hoy un bloque de 45 a 60 minutos para consolidar lo mas urgente.",
+      ? `3. Ya tienes ${bloquesEstudio.length} bloque${bloquesEstudio.length === 1 ? "" : "s"} de estudio guardado${bloquesEstudio.length === 1 ? "" : "s"}; aprovecha esos bloques para cerrar el día con repaso breve.`
+      : "3. Si puedes, reserva hoy un bloque de 45 a 60 minutos para consolidar lo más urgente.",
   ];
 
   return recomendaciones.join("\n");
@@ -474,21 +474,21 @@ function construirResumenSistema({ mensaje, contexto }) {
   if (!curso) {
     const prioridades = construirPrioridadesSistema(contexto, 3);
     return (
-      "Puedo darte un resumen rapido aunque Groq se este demorando. Ahora mismo tu mejor enfoque es este: " +
+      "Puedo darte un resumen rápido aunque Groq se esté demorando. Ahora mismo tu mejor enfoque es este: " +
       `${prioridades.length ? unirListaNatural(prioridades) : "ordenar tus temas y pendientes principales"}.`
     );
   }
 
   if (!temas.length) {
     return (
-      `Resumen rapido para ${curso.nombre}: enfocate en conceptos base, aplicaciones practicas y repaso activo. ` +
-      "Haz una pasada corta de teoria, luego un ejemplo resuelto y cierra explicando el tema con tus propias palabras."
+      `Resumen rápido para ${curso.nombre}: enfócate en conceptos base, aplicaciones prácticas y repaso activo. ` +
+      "Haz una pasada corta de teoría, luego un ejemplo resuelto y cierra explicando el tema con tus propias palabras."
     );
   }
 
   return (
-    `Resumen rapido para ${curso.nombre}: ahora mismo conviene enfocarte en ${unirListaNatural(temas)}. ` +
-    "Para estudiarlo bien, define cada tema en una frase, comparalo con los otros, resuelve un ejemplo por tema y termina con una autoexplicacion sin mirar tus apuntes."
+    `Resumen rápido para ${curso.nombre}: ahora mismo conviene enfocarte en ${unirListaNatural(temas)}. ` +
+    "Para estudiarlo bien, define cada tema en una frase, compáralo con los otros, resuelve un ejemplo por tema y termina con una autoexplicación sin mirar tus apuntes."
   );
 }
 
@@ -499,14 +499,14 @@ function construirExplicacionSistema({ mensaje, contexto }) {
 
   if (curso && temaPrincipal) {
     return (
-      `Te doy una explicacion corta y segura mientras Groq vuelve: en ${curso.nombre}, un buen modo de entender ${temaPrincipal} es dividirlo en cuatro partes: que es, para que sirve, cual es el procedimiento o logica principal y que error suele cometerse al aplicarlo. ` +
-      `Si estudias ${temaPrincipal} con ese esquema y luego lo conectas con ${temas[1] ?? "un ejemplo practico"}, ya tendras una base bastante solida.`
+      `Te doy una explicación corta y segura mientras Groq vuelve: en ${curso.nombre}, un buen modo de entender ${temaPrincipal} es dividirlo en cuatro partes: qué es, para qué sirve, cuál es el procedimiento o lógica principal y qué error suele cometerse al aplicarlo. ` +
+      `Si estudias ${temaPrincipal} con ese esquema y luego lo conectas con ${temas[1] ?? "un ejemplo práctico"}, ya tendrás una base bastante sólida.`
     );
   }
 
   return (
-    "Te doy una explicacion util mientras Groq se demora: para entender cualquier tema rapido, separalo en definicion, objetivo, pasos clave, ejemplo y errores comunes. " +
-    "Si me dices el curso o el tema exacto, te lo bajo a un formato mucho mas concreto."
+    "Te doy una explicación útil mientras Groq se demora: para entender cualquier tema rápido, sepáralo en definición, objetivo, pasos clave, ejemplo y errores comunes. " +
+    "Si me dices el curso o el tema exacto, te lo bajo a un formato mucho más concreto."
   );
 }
 
@@ -515,10 +515,10 @@ function construirRespuestaGeneralSistema({ contexto, detalleError }) {
   const cursos = obtenerCursosUnicos(contexto).slice(0, 3).map((curso) => curso.nombre);
 
   return (
-    `Groq se esta demorando mas de lo normal${detalleError ? ` (${detalleError})` : ""}, pero no te dejo sin respuesta. ` +
-    `${prioridades.length ? `Ahora mismo tus focos mas claros son ${unirListaNatural(prioridades)}. ` : ""}` +
-    `${cursos.length ? `Tambien puedo ayudarte con ${unirListaNatural(cursos)}. ` : ""}` +
-    "Si quieres, te organizo la semana, te resumo un tema, te doy prioridades o te hago preguntas de practica."
+    `Groq se está demorando más de lo normal${detalleError ? ` (${detalleError})` : ""}, pero no te dejo sin respuesta. ` +
+    `${prioridades.length ? `Ahora mismo tus focos más claros son ${unirListaNatural(prioridades)}. ` : ""}` +
+    `${cursos.length ? `También puedo ayudarte con ${unirListaNatural(cursos)}. ` : ""}` +
+    "Si quieres, te organizo la semana, te resumo un tema, te doy prioridades o te hago preguntas de práctica."
   );
 }
 
@@ -550,15 +550,15 @@ function construirRespuestaDirectaPanel({ mensaje, contexto }) {
       )
       .join("; ");
 
-    return `Ahora mismo tienes ${tareasActivas.length} tareas activas: ${tareasPendientes.length} pendientes vigentes y ${tareasAtrasadas.length} atrasadas. Las mas cercanas son: ${muestra}.`;
+    return `Ahora mismo tienes ${tareasActivas.length} tareas activas: ${tareasPendientes.length} pendientes vigentes y ${tareasAtrasadas.length} atrasadas. Las más cercanas son: ${muestra}.`;
   }
 
   if (detectarConsultaDirectaExamenes(mensaje)) {
     if (!examenesProximos.length) {
-      return "Ahora mismo no veo examenes proximos registrados.";
+      return "Ahora mismo no veo exámenes próximos registrados.";
     }
 
-    return `Tienes ${examenesProximos.length} examen${examenesProximos.length === 1 ? "" : "es"} proximo${examenesProximos.length === 1 ? "" : "s"}: ${unirListaNatural(
+    return `Tienes ${examenesProximos.length} examen${examenesProximos.length === 1 ? "" : "es"} próximo${examenesProximos.length === 1 ? "" : "s"}: ${unirListaNatural(
       examenesProximos.map(
         (examen) =>
           `${examen.titulo} de ${cursosPorId.get(examen.cursoId)?.nombre ?? "Curso no identificado"} el ${formatearFechaRespuesta(examen.fecha)}`,
@@ -577,20 +577,20 @@ function construirRespuestaSistemaRapida({ mensaje, contexto, detalleError }) {
 
   if (textoIncluyeAlguno(texto, ["hola", "buenas", "buen dia", "buenas tardes", "buenas noches", "que tal"])) {
     return (
-      `Hola. Mientras Groq se demora, sigo viendo tu panel real: ${tareasActivas.length} tareas activas y ${examenesProximos.length} examenes proximos. ` +
-      `${cursoRelevante ? `Tu curso mas prioritario ahora parece ser ${cursoRelevante.nombre}. ` : ""}` +
-      "Si quieres, te organizo el dia o te preparo practica."
+      `Hola. Mientras Groq se demora, sigo viendo tu panel real: ${tareasActivas.length} tareas activas y ${examenesProximos.length} exámenes próximos. ` +
+      `${cursoRelevante ? `Tu curso más prioritario ahora parece ser ${cursoRelevante.nombre}. ` : ""}` +
+      "Si quieres, te organizo el día o te preparo práctica."
     );
   }
 
   if (textoIncluyeAlguno(texto, ["gracias", "muchas gracias", "thanks"])) {
-    return "De nada. Aunque Groq se demore, igual puedo seguir apoyandote con tareas, prioridades, planes de estudio y preguntas de practica.";
+    return "De nada. Aunque Groq se demore, igual puedo seguir apoyándote con tareas, prioridades, planes de estudio y preguntas de práctica.";
   }
 
   if (textoIncluyeAlguno(texto, ["quien eres", "que puedes hacer", "en que me puedes ayudar", "ayudame"])) {
     const cursos = obtenerCursosUnicos(contexto).slice(0, 4).map((curso) => curso.nombre);
     return (
-      "Soy StudyFlow AI. Incluso sin Groq en este momento puedo ayudarte a revisar tareas, examenes, prioridades, organizar tu semana, proponerte preguntas de practica y darte resumenes rapidos de enfoque. " +
+      "Soy StudyFlow AI. Incluso sin Groq en este momento puedo ayudarte a revisar tareas, exámenes, prioridades, organizar tu semana, proponerte preguntas de práctica y darte resúmenes rápidos de enfoque. " +
       `${cursos.length ? `Ahora mismo tengo contexto de ${unirListaNatural(cursos)}.` : ""}`
     );
   }
@@ -601,7 +601,7 @@ function construirRespuestaSistemaRapida({ mensaje, contexto, detalleError }) {
       obtenerCursosUnicos(contexto)[0];
 
     if (!curso) {
-      return "Groq se esta demorando un poco. Mientras tanto, dime de que curso o tema quieres las preguntas de practica y te las preparo al toque.";
+      return "Groq se está demorando un poco. Mientras tanto, dime de qué curso o tema quieres las preguntas de práctica y te las preparo al toque.";
     }
 
     const temas = deduplicarPorClave(
@@ -620,16 +620,16 @@ function construirRespuestaSistemaRapida({ mensaje, contexto, detalleError }) {
       temas.length > 0
         ? temas.map(
             (tema, indice) =>
-              `${indice + 1}. Explicame ${tema} con tus palabras y dame un ejemplo aplicado a ${curso.nombre}.`,
+              `${indice + 1}. Explícame ${tema} con tus palabras y dame un ejemplo aplicado a ${curso.nombre}.`,
           )
         : [
-            `1. Cual dirias que es el concepto mas importante de ${curso.nombre} y por que?`,
-            `2. Como aplicarias un tema clave de ${curso.nombre} en un caso practico o ejercicio real?`,
-            `3. Que parte de ${curso.nombre} te cuesta mas y como la explicarias paso a paso?`,
+            `1. ¿Cuál dirías que es el concepto más importante de ${curso.nombre} y por qué?`,
+            `2. ¿Cómo aplicarías un tema clave de ${curso.nombre} en un caso práctico o ejercicio real?`,
+            `3. ¿Qué parte de ${curso.nombre} te cuesta más y cómo la explicarías paso a paso?`,
           ];
 
     return (
-      `Groq se esta demorando mas de lo normal, pero avancemos igual. Aqui van preguntas de practica de ${curso.nombre}:\n\n` +
+      `Groq se está demorando más de lo normal, pero avancemos igual. Aquí van preguntas de práctica de ${curso.nombre}:\n\n` +
       `${preguntas.join("\n")}\n\n` +
       "Si quieres, en el siguiente mensaje te corrijo tus respuestas o te subo la dificultad."
     );
@@ -637,14 +637,14 @@ function construirRespuestaSistemaRapida({ mensaje, contexto, detalleError }) {
 
   if (textoIncluyeAlguno(texto, ["organiza", "organizar", "plan", "planifica", "planificar", "semana", "hoy", "horario"])) {
     return (
-      "Groq se esta demorando un poco, asi que te dejo un plan rapido basado en tu contexto real:\n\n" +
+      "Groq se está demorando un poco, así que te dejo un plan rápido basado en tu contexto real:\n\n" +
       construirPlanEstudioSistema(contexto)
     );
   }
 
   if (texto.includes("tarea") || texto.includes("pendiente") || texto.includes("prioridad")) {
     if (!tareasActivas.length) {
-      return "Ahora mismo no veo tareas activas registradas. Si quieres, puedo ayudarte a planificar la semana o revisar tus examenes proximos.";
+      return "Ahora mismo no veo tareas activas registradas. Si quieres, puedo ayudarte a planificar la semana o revisar tus exámenes próximos.";
     }
 
     const resumen = tareasActivas
@@ -655,12 +655,12 @@ function construirRespuestaSistemaRapida({ mensaje, contexto, detalleError }) {
       )
       .join("; ");
 
-    return `Groq se esta demorando un poco. Mientras tanto, tu panel muestra ${tareasActivas.length} tareas activas: ${tareasPendientes.length} pendientes vigentes y ${tareasAtrasadas.length} atrasadas. Lo mas cercano ahora es: ${resumen}.`;
+    return `Groq se está demorando un poco. Mientras tanto, tu panel muestra ${tareasActivas.length} tareas activas: ${tareasPendientes.length} pendientes vigentes y ${tareasAtrasadas.length} atrasadas. Lo más cercano ahora es: ${resumen}.`;
   }
 
   if (texto.includes("examen")) {
     if (!examenesProximos.length) {
-      return "No veo examenes proximos registrados por ahora. Si quieres, revisamos tus tareas activas o armamos un mini plan de estudio.";
+      return "No veo exámenes próximos registrados por ahora. Si quieres, revisamos tus tareas activas o armamos un mini plan de estudio.";
     }
 
     const resumen = examenesProximos
@@ -671,16 +671,16 @@ function construirRespuestaSistemaRapida({ mensaje, contexto, detalleError }) {
       )
       .join("; ");
 
-    return `Groq se esta demorando un poco. Mientras tanto, tus examenes mas cercanos son: ${resumen}.`;
+    return `Groq se está demorando un poco. Mientras tanto, tus exámenes más cercanos son: ${resumen}.`;
   }
 
   if (textoIncluyeAlguno(texto, ["curso", "cursos", "materia", "materias"])) {
     const cursos = obtenerCursosUnicos(contexto);
     if (!cursos.length) {
-      return "Todavia no veo cursos registrados en tu panel. Si quieres, primero podemos crear uno y luego conectarlo con tareas y examenes.";
+      return "Todavía no veo cursos registrados en tu panel. Si quieres, primero podemos crear uno y luego conectarlo con tareas y exámenes.";
     }
 
-    return `Tus cursos actuales son ${unirListaNatural(cursos.slice(0, 5).map((curso) => curso.nombre))}. Si quieres, te digo cual conviene priorizar y por que.`;
+    return `Tus cursos actuales son ${unirListaNatural(cursos.slice(0, 5).map((curso) => curso.nombre))}. Si quieres, te digo cuál conviene priorizar y por qué.`;
   }
 
   if (textoIncluyeAlguno(texto, ["resume", "resumen", "resumeme", "resumir"])) {
@@ -842,7 +842,7 @@ function construirResumenContextualTexto(contextoCompacto) {
 
   if (contextoCompacto.resumenContextual.examenesProximos.length) {
     secciones.push(
-      `Examenes proximos reales: ${contextoCompacto.resumenContextual.examenesProximos
+      `Exámenes próximos reales: ${contextoCompacto.resumenContextual.examenesProximos
         .map(
           (examen) =>
             `${examen.titulo} de ${examen.curso} el ${convertirFechaAOrdenable(examen.fecha)} a las ${examen.hora}, preparacion ${examen.preparacion}%`,
@@ -850,7 +850,7 @@ function construirResumenContextualTexto(contextoCompacto) {
         .join("; ")}.`,
     );
   } else {
-    secciones.push("No hay examenes proximos registrados.");
+    secciones.push("No hay exámenes próximos registrados.");
   }
 
   return secciones.join("\n");
@@ -859,7 +859,7 @@ function construirResumenContextualTexto(contextoCompacto) {
 function ajustarRespuestaAsistente(mensaje) {
   const texto = limpiarMarcadoresHerramientas(mensaje);
   if (!texto) {
-    return "No pude darte una respuesta clara esta vez. Intenta preguntarme de nuevo con otras palabras o dime si quieres que te ayude con tareas, cursos, examenes o estudio.";
+    return "No pude darte una respuesta clara esta vez. Intenta preguntarme de nuevo con otras palabras o dime si quieres que te ayude con tareas, cursos, exámenes o estudio.";
   }
 
   const textoNormalizado = normalizarTexto(texto);
@@ -872,7 +872,7 @@ function ajustarRespuestaAsistente(mensaje) {
   ];
 
   if (patronesConfusion.some((patron) => textoNormalizado.includes(patron))) {
-    return "No lo capte del todo. Puedes preguntarmelo de nuevo con otras palabras o decirme si quieres ayuda con tus tareas, cursos, examenes o con una explicacion academica.";
+    return "No lo capté del todo. Puedes preguntármelo de nuevo con otras palabras o decirme si quieres ayuda con tus tareas, cursos, exámenes o con una explicación académica.";
   }
 
   return texto;
@@ -1029,7 +1029,7 @@ function obtenerDefinicionesHerramientas() {
       type: "function",
       function: {
         name: "listar_examenes_proximos",
-        description: "Obtiene los examenes proximos reales del estudiante.",
+        description: "Obtiene los exámenes próximos reales del estudiante.",
         parameters: { type: "object", properties: {} },
       },
     },
@@ -1037,7 +1037,7 @@ function obtenerDefinicionesHerramientas() {
       type: "function",
       function: {
         name: "obtener_prioridades_hoy",
-        description: "Obtiene las prioridades academicas actuales del estudiante usando tareas y examenes cercanos.",
+        description: "Obtiene las prioridades académicas actuales del estudiante usando tareas y exámenes cercanos.",
         parameters: { type: "object", properties: {} },
       },
     },
@@ -1045,7 +1045,7 @@ function obtenerDefinicionesHerramientas() {
       type: "function",
       function: {
         name: "obtener_contexto_general",
-        description: "Obtiene un resumen general del estado academico del estudiante.",
+        description: "Obtiene un resumen general del estado académico del estudiante.",
         parameters: { type: "object", properties: {} },
       },
     },
@@ -1154,7 +1154,7 @@ async function generarRespuestaConIA({ mensaje, contexto }) {
     {
       role: "system",
       content:
-        `Eres StudyFlow AI, un asistente academico universitario en espanol. Responde con tono claro, util, conversacional, humano y profesional. ${instruccionTono} Debes basarte en los datos reales del sistema y en las herramientas disponibles. No inventes datos del estudiante. Si el usuario pregunta por tareas, cursos, examenes, prioridades, seguimiento de lo hablado o referencias como 'eso', 'esas tareas', 'lo anterior', debes apoyarte en el historial reciente y en los resultados reales de herramientas antes de responder. Cuando hables de cantidades, usa siempre los totales explicitos del contexto y de las herramientas; no infieras cantidades por el largo de listas de muestra o preview porque pueden venir truncadas. Si aplica, distingue entre tareas activas, pendientes vigentes y atrasadas. Nunca digas que falta informacion si ya existe en el contexto o en las herramientas base cargadas. Evita sonar como bot automatico o menu fijo; responde como un asesor academico que recuerda la conversacion.`,
+        `Eres StudyFlow AI, un asistente académico universitario en español. Responde con tono claro, útil, conversacional, humano y profesional. ${instruccionTono} Debes basarte en los datos reales del sistema y en las herramientas disponibles. No inventes datos del estudiante. Si el usuario pregunta por tareas, cursos, exámenes, prioridades, seguimiento de lo hablado o referencias como 'eso', 'esas tareas', 'lo anterior', debes apoyarte en el historial reciente y en los resultados reales de herramientas antes de responder. Cuando hables de cantidades, usa siempre los totales explícitos del contexto y de las herramientas; no infieras cantidades por el largo de listas de muestra o preview porque pueden venir truncadas. Si aplica, distingue entre tareas activas, pendientes vigentes y atrasadas. Nunca digas que falta información si ya existe en el contexto o en las herramientas base cargadas. Evita sonar como bot automático o menú fijo; responde como un asesor académico que recuerda la conversación.`,
     },
     {
       role: "system",
@@ -1510,7 +1510,7 @@ app.post("/api/auth/login", async (request, response) => {
       requiereCompletarPerfilAcademico: requiereCompletarPerfilAcademico(usuario),
     });
   } catch (error) {
-    response.status(500).json({ mensaje: "No se pudo iniciar sesion.", error: error.message });
+    response.status(500).json({ mensaje: "No se pudo iniciar sesión.", error: error.message });
   }
 });
 
@@ -1524,7 +1524,7 @@ app.post("/api/auth/google", async (request, response) => {
 
   const { credential } = request.body;
   if (!credential) {
-    response.status(400).json({ mensaje: "No se recibio el token de Google." });
+    response.status(400).json({ mensaje: "No se recibió el token de Google." });
     return;
   }
 
@@ -1587,7 +1587,7 @@ app.post("/api/auth/google", async (request, response) => {
 
     if (usuarioExistente) {
       if (usuarioExistente.googleSub && usuarioExistente.googleSub !== googleSub) {
-        response.status(409).json({ mensaje: "Ese correo ya esta vinculado a otra cuenta de Google." });
+        response.status(409).json({ mensaje: "Ese correo ya está vinculado a otra cuenta de Google." });
         return;
       }
 
@@ -1663,7 +1663,7 @@ app.post("/api/auth/google", async (request, response) => {
       requiereCompletarPerfilAcademico: true,
     });
   } catch (error) {
-    response.status(500).json({ mensaje: "No se pudo iniciar sesion con Google.", error: error.message });
+    response.status(500).json({ mensaje: "No se pudo iniciar sesión con Google.", error: error.message });
   }
 });
 
@@ -2422,3 +2422,4 @@ asegurarColumnasGoogleAuth()
       console.log(`StudyFlow API lista en http://localhost:${puerto}`);
     });
   });
+

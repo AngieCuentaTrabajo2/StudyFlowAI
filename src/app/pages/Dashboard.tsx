@@ -33,7 +33,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Progress } from "../components/ui/progress";
 
-const etiquetasDias = ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"];
+const etiquetasDias = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 const indiceHoy = (new Date().getDay() + 6) % 7;
 
 export default function Dashboard() {
@@ -79,22 +79,22 @@ export default function Dashboard() {
   const resumenRiesgo =
     cursosEnRiesgo.length > 0
       ? `${cursosEnRiesgo.length} curso${cursosEnRiesgo.length === 1 ? "" : "s"} necesitan atencion prioritaria.`
-      : "Tu carga academica se ve estable por ahora.";
+      : "Tu carga académica se ve estable por ahora.";
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="mb-2 text-2xl font-bold leading-tight sm:text-3xl">
-          Hola, {usuarioActual?.nombres}. Este es tu plan academico de hoy.
+          Hola, {usuarioActual?.nombres}. Este es tu plan académico de hoy.
         </h1>
         <p className="max-w-2xl text-sm text-gray-600 sm:text-base">
-          Tus cursos, tareas, examenes y bloques de estudio ya alimentan el panel en tiempo real.
+          Tus cursos, tareas, exámenes y bloques de estudio ya alimentan el panel en tiempo real.
         </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <StatCard icon={CheckSquare} value={`${tareasActivas.length}`} label="Tareas activas" tone="blue" />
-        <StatCard icon={ClipboardList} value={`${examenesProximos.length}`} label="Examenes proximos" tone="orange" />
+        <StatCard icon={ClipboardList} value={`${examenesProximos.length}`} label="Exámenes próximos" tone="orange" />
         <StatCard icon={Clock} value={`${horasSugeridas}h`} label="Horas de estudio sugeridas" tone="purple" />
         <StatCard icon={TrendingUp} value={`${progresoSemanal}%`} label="Avance semanal" tone="green" />
       </div>
@@ -106,10 +106,10 @@ export default function Dashboard() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <ShieldAlert className="h-5 w-5 text-red-500" />
-                  Radar de riesgo academico
+                  Radar de riesgo académico
                 </CardTitle>
                 <p className="mt-2 text-sm text-gray-600">
-                  El semaforo combina tareas vencidas, examenes cercanos, preparacion y bloques reales del planner.
+                  El semáforo combina tareas vencidas, exámenes cercanos, preparación y bloques reales del planner.
                 </p>
               </div>
               <Badge className={cursosEnRiesgo.length > 0 ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}>
@@ -175,7 +175,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-3xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 p-5 text-white shadow-lg">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">Curso mas comprometido</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">Curso más comprometido</p>
               <h3 className="mt-3 text-2xl font-semibold">{cursoMasComprometido?.curso.nombre ?? "Todo bajo control"}</h3>
               <p className="mt-2 text-sm text-white/75">
                 {cursoMasComprometido?.resumen ?? "No hay alertas fuertes ahora mismo. Buen momento para sostener el ritmo."}
@@ -298,7 +298,7 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ClipboardList className="h-5 w-5" />
-              Proximos examenes
+              Próximos exámenes
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -317,11 +317,11 @@ export default function Dashboard() {
                       <p className="text-sm text-gray-600">{curso?.nombre}</p>
                     </div>
                     <Badge className={obtenerDiasRestantes(examen.fecha) <= 3 ? "bg-red-50 text-red-600" : estiloCurso.badge}>
-                      {obtenerDiasRestantes(examen.fecha)} dias
+                      {obtenerDiasRestantes(examen.fecha)} días
                     </Badge>
                   </div>
                   <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Preparacion</span>
+                    <span className="text-gray-600">Preparación</span>
                     <span className="font-semibold">{examen.preparacion}%</span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-gray-100">
@@ -351,7 +351,7 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <RecommendationCard color={estiloCursoPrincipal} text={`Hoy deberias repasar ${cursoExamenPrincipal?.nombre ?? "tu curso prioritario"} durante 1 hora.`} />
+            <RecommendationCard color={estiloCursoPrincipal} text={`Hoy deberías repasar ${cursoExamenPrincipal?.nombre ?? "tu curso prioritario"} durante 1 hora.`} />
             <RecommendationCard
               color={estiloCursoPrincipal}
               text={
@@ -359,7 +359,7 @@ export default function Dashboard() {
                   ? obtenerEstadoVisualTarea(tareaRecomendada) === "overdue"
                     ? `Tienes atrasada "${tareaRecomendada.titulo}". Conviene retomarla hoy mismo.`
                     : `Te conviene avanzar "${tareaRecomendada.titulo}" antes de ${formatearFechaCorta(tareaRecomendada.fechaEntrega)}.`
-                  : "Tu lista de pendientes esta controlada. Manten el ritmo."
+                  : "Tu lista de pendientes está controlada. Mantén el ritmo."
               }
             />
             <RecommendationCard
@@ -374,10 +374,10 @@ export default function Dashboard() {
               color={estiloCursoPrincipal}
               text={
                 tareasUrgentes > 0
-                  ? `Tienes ${tareasUrgentes} tarea${tareasUrgentes === 1 ? "" : "s"} urgente${tareasUrgentes === 1 ? "" : "s"}: cierra primero lo mas cercano para bajar carga mental.`
+                  ? `Tienes ${tareasUrgentes} tarea${tareasUrgentes === 1 ? "" : "s"} urgente${tareasUrgentes === 1 ? "" : "s"}: cierra primero lo más cercano para bajar carga mental.`
                   : examenesConBajaPreparacion > 0
-                    ? `Hay ${examenesConBajaPreparacion} examen${examenesConBajaPreparacion === 1 ? "" : "es"} con preparacion menor a 60%. Conviene reforzarlos con bloques cortos esta semana.`
-                    : "Tu semana esta equilibrada. Mantener bloques pequenos de cierre diario te ayudara a sostener el progreso."
+                    ? `Hay ${examenesConBajaPreparacion} examen${examenesConBajaPreparacion === 1 ? "" : "es"} con preparación menor a 60%. Conviene reforzarlos con bloques cortos esta semana.`
+                    : "Tu semana está equilibrada. Mantener bloques pequeños de cierre diario te ayudará a sostener el progreso."
               }
             />
           </CardContent>
@@ -444,10 +444,10 @@ function construirRadarRiesgoCurso(
 
   if (diasExamen !== null && diasExamen <= 3 && promedioPreparacion < 65) {
     puntaje += 34;
-    claves.push(`Examen cerca con ${promedioPreparacion}% de preparacion`);
+    claves.push(`Examen cerca con ${promedioPreparacion}% de preparación`);
   } else if (diasExamen !== null && diasExamen <= 7 && promedioPreparacion < 75) {
     puntaje += 18;
-    claves.push(`Preparacion todavia baja para el proximo examen`);
+    claves.push(`Preparación todavía baja para el próximo examen`);
   }
 
   if (tareasVigentesCurso.length > 0 && horasEstudioCurso === 0) {
@@ -488,21 +488,21 @@ function construirRadarRiesgoCurso(
 
   const resumen =
     nivel === "critico"
-      ? "Necesita intervencion inmediata para bajar carga y evitar atrasos."
+      ? "Necesita intervención inmediata para bajar carga y evitar atrasos."
       : nivel === "alto"
-        ? "Conviene actuar esta semana antes de que suba la presion."
+        ? "Conviene actuar esta semana antes de que suba la presión."
         : nivel === "medio"
           ? "Va bien, pero pide seguimiento para no enfriarse."
           : "Se ve estable y con margen para sostener el ritmo.";
 
   const accion =
     tareasAtrasadasCurso.length > 0
-      ? "Cierra primero la tarea mas atrasada y luego reserva un bloque corto de repaso."
+      ? "Cierra primero la tarea más atrasada y luego reserva un bloque corto de repaso."
       : diasExamen !== null && diasExamen <= 7 && promedioPreparacion < 75
-        ? "Prioriza repaso para el examen mas cercano y sube la preparacion esta semana."
+        ? "Prioriza repaso para el examen más cercano y sube la preparación esta semana."
         : horasEstudioCurso === 0
           ? "Agrega al menos un bloque de estudio en el planner para no dejar este curso sin espacio."
-          : "Manten un bloque de continuidad para que el avance no se enfrie.";
+          : "Mantén un bloque de continuidad para que el avance no se enfríe.";
 
   return {
     curso,

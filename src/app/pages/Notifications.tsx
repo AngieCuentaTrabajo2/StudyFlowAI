@@ -69,17 +69,17 @@ export default function Notifications() {
         <div>
           <h1 className="mb-2 text-3xl font-bold tracking-tight">Notificaciones y recordatorios</h1>
           <p className="max-w-3xl text-gray-600">
-            Todo lo importante del sistema se concentra aqui, ordenado por urgencia, contexto y accion recomendada.
+            Todo lo importante del sistema se concentra aquí, ordenado por urgencia, contexto y acción recomendada.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={marcarTodasNotificacionesLeidas}>
             <CheckCircle className="mr-2 h-4 w-4" />
-            Marcar todas como leidas
+            Marcar todas como leídas
           </Button>
           <Button variant="outline" onClick={limpiarNotificacionesLeidas}>
             <Trash2 className="mr-2 h-4 w-4" />
-            Limpiar leidas
+            Limpiar leídas
           </Button>
         </div>
       </div>
@@ -87,7 +87,7 @@ export default function Notifications() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricaNotificacion
           icon={AlertCircle}
-          titulo="Alertas criticas"
+          titulo="Alertas críticas"
           valor={`${totalCriticas}`}
           detalle="Lo mas urgente del dia"
           tone="red"
@@ -96,7 +96,7 @@ export default function Notifications() {
           icon={Sparkles}
           titulo="En seguimiento"
           valor={`${totalSeguimiento}`}
-          detalle="Todavia conviene abrirlas"
+          detalle="Todavía conviene abrirlas"
           tone="blue"
         />
         <MetricaNotificacion
@@ -125,7 +125,7 @@ export default function Notifications() {
                   Alertas inteligentes de hoy
                 </CardTitle>
                 <CardDescription className="mt-2 max-w-2xl text-sm leading-6">
-                  StudyFlow combina tareas, examenes y progreso para mostrar primero lo que puede desordenarte la semana.
+                  StudyFlow combina tareas, exámenes y progreso para mostrar primero lo que puede desordenarte la semana.
                 </CardDescription>
               </div>
               <Badge className="bg-slate-100 text-slate-700">
@@ -136,7 +136,7 @@ export default function Notifications() {
           <CardContent className="pt-6">
             {alertasInteligentes.length === 0 ? (
               <div className="rounded-[28px] border border-dashed border-slate-200 bg-slate-50 p-10 text-center text-sm text-slate-500">
-                No vemos urgencias fuertes por ahora. Cuando algo empiece a apretar, aparecera aqui.
+                No vemos urgencias fuertes por ahora. Cuando algo empiece a apretar, aparecerá aquí.
               </div>
             ) : (
               <ScrollArea className="h-[380px] pr-4 lg:h-[460px]">
@@ -159,7 +159,7 @@ export default function Notifications() {
             <CardHeader className="border-b border-slate-100 pb-6">
               <CardTitle className="text-lg font-semibold">Resumen rapido</CardTitle>
               <CardDescription>
-                Una vista corta para saber donde conviene enfocar primero tu atencion.
+                Una vista corta para saber dónde conviene enfocar primero tu atención.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 pt-6">
@@ -168,8 +168,8 @@ export default function Notifications() {
                 titulo="Prioridad del dia"
                 descripcion={
                   totalCriticas > 0
-                    ? `Tienes ${totalCriticas} alerta${totalCriticas === 1 ? "" : "s"} critica${totalCriticas === 1 ? "" : "s"} que conviene abrir primero.`
-                    : "No hay alertas criticas activas en este momento."
+                    ? `Tienes ${totalCriticas} alerta${totalCriticas === 1 ? "" : "s"} crítica${totalCriticas === 1 ? "" : "s"} que conviene abrir primero.`
+                    : "No hay alertas críticas activas en este momento."
                 }
                 tone="red"
               />
@@ -178,15 +178,15 @@ export default function Notifications() {
                 titulo="Recordatorios pendientes"
                 descripcion={
                   notificacionesNoLeidas.length > 0
-                    ? `Aun tienes ${notificacionesNoLeidas.length} notificacion${notificacionesNoLeidas.length === 1 ? "" : "es"} sin leer.`
-                    : "Todo el centro de recordatorios esta al dia."
+                    ? `Aún tienes ${notificacionesNoLeidas.length} notificación${notificacionesNoLeidas.length === 1 ? "" : "es"} sin leer.`
+                    : "Todo el centro de recordatorios está al día."
                 }
                 tone="blue"
               />
               <FilaResumen
                 icon={CheckCircle2}
                 titulo="Como usar este panel"
-                descripcion="Abre primero las alertas criticas y luego limpia los recordatorios del sistema para quedarte con un panel mas limpio."
+                descripcion="Abre primero las alertas críticas y luego limpia los recordatorios del sistema para quedarte con un panel más limpio."
                 tone="emerald"
               />
             </CardContent>
@@ -201,7 +201,7 @@ export default function Notifications() {
                     Recordatorios recientes
                   </CardTitle>
                   <CardDescription className="mt-2">
-                    Lo mas nuevo que genero el sistema para que no se pierda entre el historial completo.
+                    Lo más nuevo que generó el sistema para que no se pierda entre el historial completo.
                   </CardDescription>
                 </div>
                 <Badge className="bg-slate-100 text-slate-700">{recordatoriosVisibles.length} visibles</Badge>
@@ -233,7 +233,7 @@ export default function Notifications() {
                 Historial del sistema
               </CardTitle>
               <CardDescription className="mt-2 max-w-3xl">
-                Aqui queda todo lo que StudyFlow ha ido registrando. Las no leidas aparecen arriba y puedes marcarlas una por una.
+                Aquí queda todo lo que StudyFlow ha ido registrando. Las no leídas aparecen arriba y puedes marcarlas una por una.
               </CardDescription>
             </div>
             <Badge className="bg-slate-100 text-slate-700">
@@ -244,7 +244,7 @@ export default function Notifications() {
         <CardContent className="pt-2">
           {notificacionesOrdenadas.length === 0 ? (
             <div className="rounded-[28px] border border-dashed border-slate-200 bg-slate-50 p-10 text-center text-sm text-slate-500">
-              No hay notificaciones por ahora. Cuando StudyFlow detecte algo importante, aparecera aqui.
+              No hay notificaciones por ahora. Cuando StudyFlow detecte algo importante, aparecerá aquí.
             </div>
           ) : (
             <ScrollArea className="h-[360px] pr-4 lg:h-[420px]">

@@ -52,7 +52,7 @@ export default function RegisterPage() {
     }
 
     if (!success) {
-      setError("No pudimos crear la cuenta. Revisa si ese correo ya esta registrado o intenta de nuevo.");
+      setError("No pudimos crear la cuenta. Revisa si ese correo ya está registrado o intenta de nuevo.");
       return;
     }
 
@@ -100,7 +100,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <Label htmlFor="email">Correo electronico</Label>
+              <Label htmlFor="email">Correo electrónico</Label>
               <div className="relative mt-2">
                 <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                 <Input
@@ -116,7 +116,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <Label htmlFor="password">Contrasena</Label>
+              <Label htmlFor="password">Contraseña</Label>
               <div className="relative mt-2">
                 <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                 <Input
@@ -125,7 +125,7 @@ export default function RegisterPage() {
                   className="pl-10"
                   value={formData.password}
                   onChange={(event) => setFormData({ ...formData, password: event.target.value })}
-                  placeholder="Minimo 6 caracteres"
+                  placeholder="Mínimo 6 caracteres"
                   minLength={6}
                   required
                 />
@@ -153,7 +153,7 @@ export default function RegisterPage() {
                 id="career"
                 value={formData.career}
                 onChange={(event) => setFormData({ ...formData, career: event.target.value })}
-                placeholder="Ingenieria de Sistemas"
+                placeholder="Ingeniería de Sistemas"
                 required
               />
             </div>
@@ -195,7 +195,7 @@ export default function RegisterPage() {
           <p className="mt-8 text-center text-gray-600">
             Ya tienes una cuenta?{" "}
             <Link to="/login" className="font-semibold text-blue-600 hover:underline">
-              Inicia sesion
+              Inicia sesión
             </Link>
           </p>
         </div>
@@ -206,9 +206,9 @@ export default function RegisterPage() {
           <h2 className="mb-6 text-4xl font-bold">Convierte el caos del semestre en un plan claro</h2>
           <div className="grid gap-4">
             {[
-              "Dashboard con prioridades del dia",
-              "Cursos conectados con tareas y examenes",
-              "Planificador automatico listo para IA",
+              "Dashboard con prioridades del día",
+              "Cursos conectados con tareas y exámenes",
+              "Planificador automático listo para IA",
             ].map((item) => (
               <div key={item} className="rounded-2xl bg-white/15 p-5 backdrop-blur">
                 {item}

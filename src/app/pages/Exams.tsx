@@ -41,9 +41,9 @@ export default function Exams() {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="mb-2 text-2xl font-bold sm:text-3xl">Examenes</h1>
+          <h1 className="mb-2 text-2xl font-bold sm:text-3xl">Exámenes</h1>
           <p className="text-gray-600">
-            Preparate con anticipacion y enfoca tus bloques de estudio donde mas importa.
+            Prepárate con anticipación y enfoca tus bloques de estudio donde más importa.
           </p>
         </div>
 
@@ -93,9 +93,9 @@ export default function Exams() {
               <AlertCircle className="h-6 w-6 text-red-600" />
             </div>
             <div>
-              <h2 className="font-semibold">Tienes {examenesUrgentes.length} examenes esta semana</h2>
+              <h2 className="font-semibold">Tienes {examenesUrgentes.length} exámenes esta semana</h2>
               <p className="text-sm text-gray-600">
-                Conviene reforzar preparacion y generar tu siguiente horario inteligente.
+                Conviene reforzar preparación y generar tu siguiente horario inteligente.
               </p>
             </div>
           </CardContent>
@@ -164,7 +164,7 @@ export default function Exams() {
                               : estiloCurso.badge
                         }
                       >
-                        {diasRestantes} dias restantes
+                        {diasRestantes} días restantes
                       </Badge>
                     </div>
 
@@ -186,7 +186,7 @@ export default function Exams() {
 
                     <div>
                       <div className="mb-2 flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Progreso de preparacion</span>
+                        <span className="text-gray-600">Progreso de preparación</span>
                         <span className="font-semibold">{examen.preparacion}%</span>
                       </div>
                       <div className="h-2 overflow-hidden rounded-full bg-gray-100">

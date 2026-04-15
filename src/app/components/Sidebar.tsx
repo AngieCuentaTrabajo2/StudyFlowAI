@@ -20,12 +20,12 @@ const menuItems = [
   { path: "/app", label: "Dashboard", icon: LayoutDashboard },
   { path: "/app/courses", label: "Mis cursos", icon: BookOpen },
   { path: "/app/tasks", label: "Tareas", icon: CheckSquare },
-  { path: "/app/exams", label: "Examenes", icon: ClipboardList },
+  { path: "/app/exams", label: "Exámenes", icon: ClipboardList },
   { path: "/app/planner", label: "Planificador", icon: Calendar },
   { path: "/app/assistant", label: "Asistente IA", icon: Sparkles },
   { path: "/app/progress", label: "Progreso", icon: TrendingUp },
   { path: "/app/notifications", label: "Notificaciones", icon: Bell },
-  { path: "/app/settings", label: "Configuracion", icon: Settings },
+  { path: "/app/settings", label: "Configuración", icon: Settings },
 ];
 
 export default function Sidebar({ mobile = false }: { mobile?: boolean }) {
@@ -42,7 +42,9 @@ export default function Sidebar({ mobile = false }: { mobile?: boolean }) {
   return (
     <aside
       className={
-        mobile ? "w-full bg-white" : "fixed inset-y-0 left-0 z-40 w-64 border-r border-gray-200 bg-white"
+        mobile
+          ? "w-full bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100"
+          : "fixed inset-y-0 left-0 z-40 w-64 border-r border-gray-200 bg-white text-slate-900 transition-colors dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
       }
     >
       <div className="p-6">
@@ -67,8 +69,8 @@ export default function Sidebar({ mobile = false }: { mobile?: boolean }) {
               to={item.path}
               className={`flex items-center gap-3 rounded-lg px-4 py-3 transition-all ${
                 isActive
-                  ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  ? "bg-gradient-to-r from-blue-50 to-purple-50 text-blue-600 dark:from-blue-950/60 dark:to-purple-950/60 dark:text-blue-300"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-100"
               }`}
             >
               <Icon className="h-5 w-5" />
@@ -85,7 +87,7 @@ export default function Sidebar({ mobile = false }: { mobile?: boolean }) {
 
       <div className="mt-8 px-6 pb-6">
         <div className="rounded-2xl bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900 p-4 text-white">
-          <p className="text-sm text-white/70">Sesion activa</p>
+          <p className="text-sm text-white/70">Sesión activa</p>
           <p className="mt-1 font-semibold">
             {usuarioActual ? `${usuarioActual.nombres} ${usuarioActual.apellidos}` : "Invitado"}
           </p>
@@ -96,7 +98,7 @@ export default function Sidebar({ mobile = false }: { mobile?: boolean }) {
             onClick={cerrarSesion}
           >
             <LogOut className="mr-2 h-4 w-4" />
-            Cerrar sesion
+            Cerrar sesión
           </Button>
         </div>
       </div>

@@ -520,7 +520,7 @@ export default function Tasks() {
               <div>
                 <h2 className="text-lg font-semibold text-slate-900">Tareas completadas</h2>
                 <p className="text-sm text-slate-500">
-                  Las dejamos abajo para que primero se vean las que todavia requieren accion.
+                  Las dejamos abajo para que primero se vean las que todavía requieren acción.
                 </p>
               </div>
               <Badge className="bg-green-50 text-green-700">
@@ -803,7 +803,7 @@ function ChecklistTarea({
           <p className="text-xs text-slate-500">
             {tarea.subtareas.length > 0
               ? `${totalCompletadas} de ${tarea.subtareas.length} subtareas completas`
-              : "Todavia no agregaste subtareas para esta entrega."}
+              : "Todavía no agregaste subtareas para esta entrega."}
           </p>
         </div>
         {tarea.subtareas.length > 0 ? (

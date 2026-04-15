@@ -6,7 +6,7 @@ import { Button } from "./ui/button";
 const franjas = [
   {
     clave: "manana" as const,
-    etiqueta: "Manana",
+    etiqueta: "Mañana",
     detalle: "7:00 - 11:59",
     Icono: Sun,
     tonos: {
@@ -93,7 +93,7 @@ export default function WeeklyAvailabilityEditor({
             Disponibilidad semanal real
           </div>
           <p className="mt-1 text-sm text-slate-500">
-            Marca en que franjas si te dejas estudiar. El planner y el chat las van a respetar.
+            Marca en qué franjas sí te dejas estudiar. El planner y el chat las van a respetar.
           </p>
         </div>
         <Badge className="bg-slate-100 text-slate-700">
@@ -134,7 +134,7 @@ export default function WeeklyAvailabilityEditor({
                   {obtenerEtiquetaDiaPlanificador(dia.dia)}
                 </div>
                 <div className="mt-1 text-xs text-slate-500">
-                  {dia.manana || dia.tarde || dia.noche ? "Se puede planificar" : "Dia reservado para ti"}
+                  {dia.manana || dia.tarde || dia.noche ? "Se puede planificar" : "Día reservado para ti"}
                 </div>
               </div>
 

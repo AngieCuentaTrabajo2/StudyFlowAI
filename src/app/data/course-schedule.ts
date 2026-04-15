@@ -23,7 +23,7 @@ export type BloqueClaseDerivado = {
   tipo: "class";
 };
 
-export const etiquetasDiaCortas = ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"];
+export const etiquetasDiaCortas = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 export const opcionesHoraCurso = Array.from({ length: 17 }, (_, index) => {
   const hora = index + 7;
   return `${String(hora).padStart(2, "0")}:00`;

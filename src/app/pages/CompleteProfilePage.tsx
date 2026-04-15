@@ -62,7 +62,7 @@ export default function CompleteProfilePage() {
     }
 
     if (!success) {
-      setError("No pudimos guardar tus datos academicos. Intenta otra vez en un momento.");
+      setError("No pudimos guardar tus datos académicos. Intenta otra vez en un momento.");
       return;
     }
 
@@ -82,13 +82,13 @@ export default function CompleteProfilePage() {
             </span>
           </div>
 
-          <h1 className="mb-2 text-3xl font-bold">Completa tu perfil academico</h1>
+          <h1 className="mb-2 text-3xl font-bold">Completa tu perfil académico</h1>
           <p className="mb-3 text-gray-600">
-            Tu cuenta de Google ya quedo conectada. Solo nos faltan estos datos para personalizar tu panel.
+            Tu cuenta de Google ya quedó conectada. Solo nos faltan estos datos para personalizar tu panel.
           </p>
           <p className="mb-8 text-sm text-gray-500">{usuarioActual.correo}</p>
           <p className="mb-6 text-xs text-gray-400">
-            Si el backend esta despertando en Render, este paso puede tardar cerca de 1 minuto.
+            Si el backend está despertando en Render, este paso puede tardar cerca de 1 minuto.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -113,7 +113,7 @@ export default function CompleteProfilePage() {
                 id="career"
                 value={formData.career}
                 onChange={(event) => setFormData({ ...formData, career: event.target.value })}
-                placeholder="Ingenieria de Sistemas"
+                placeholder="Ingeniería de Sistemas"
                 required
               />
             </div>
@@ -172,8 +172,8 @@ export default function CompleteProfilePage() {
           <div className="grid gap-4">
             {[
               "Cursos y recomendaciones adaptadas a tu ciclo",
-              "Sugerencias mas utiles segun tu contexto academico",
-              "Un espacio listo para organizar tu semestre desde el primer dia",
+              "Sugerencias más útiles según tu contexto académico",
+              "Un espacio listo para organizar tu semestre desde el primer día",
             ].map((item) => (
               <div key={item} className="rounded-2xl bg-white/12 p-5 backdrop-blur">
                 {item}

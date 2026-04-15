@@ -29,7 +29,7 @@ export default function MobileBottomNav() {
   const totalNotificacionesVisibles = Math.max(cantidadNoLeidas, alertasInteligentes.length);
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 pb-[max(env(safe-area-inset-bottom),0px)] backdrop-blur lg:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 pb-[max(env(safe-area-inset-bottom),0px)] backdrop-blur transition-colors dark:border-slate-800 dark:bg-slate-950/95 lg:hidden">
       <div className="grid grid-cols-5">
         {items.map((item) => {
           const Icon = item.icon;
@@ -42,11 +42,11 @@ export default function MobileBottomNav() {
               key={item.path}
               to={item.path}
               className={`relative flex min-h-[64px] flex-col items-center justify-center gap-1 px-1 py-3 text-[11px] transition sm:px-2 sm:text-xs ${
-                isActive ? "text-blue-600" : "text-gray-500"
+                isActive ? "text-blue-600 dark:text-blue-300" : "text-gray-500 dark:text-slate-500"
               }`}
             >
               <div className="relative">
-                <Icon className={`h-5 w-5 ${isActive ? "text-blue-600" : "text-gray-500"}`} />
+                <Icon className={`h-5 w-5 ${isActive ? "text-blue-600 dark:text-blue-300" : "text-gray-500 dark:text-slate-500"}`} />
                 {item.path === "/app/settings" && totalNotificacionesVisibles > 0 ? (
                   <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] text-white">
                     {totalNotificacionesVisibles}
@@ -62,7 +62,7 @@ export default function MobileBottomNav() {
       {totalNotificacionesVisibles > 0 ? (
         <Link
           to="/app/notifications"
-          className="flex items-center justify-center gap-2 border-t border-gray-100 bg-blue-50 px-4 py-2 text-xs font-medium text-blue-700"
+          className="flex items-center justify-center gap-2 border-t border-gray-100 bg-blue-50 px-4 py-2 text-xs font-medium text-blue-700 dark:border-slate-800 dark:bg-blue-950/50 dark:text-blue-300"
         >
           <Bell className="h-4 w-4" />
           {totalNotificacionesVisibles} notificacion

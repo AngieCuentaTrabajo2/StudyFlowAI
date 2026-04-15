@@ -20,7 +20,7 @@ export default function Navbar() {
             Inicio
           </a>
           <a href="#caracteristicas" className="text-gray-600 transition-colors hover:text-gray-900">
-            Caracteristicas
+            Características
           </a>
           <a href="#beneficios" className="text-gray-600 transition-colors hover:text-gray-900">
             Beneficios
@@ -33,7 +33,7 @@ export default function Navbar() {
         <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <Link to="/login">
             <Button variant="ghost" className="px-3 text-sm sm:px-4">
-              <span className="hidden sm:inline">Iniciar sesion</span>
+              <span className="hidden sm:inline">Iniciar sesión</span>
               <span className="sm:hidden">Entrar</span>
             </Button>
           </Link>

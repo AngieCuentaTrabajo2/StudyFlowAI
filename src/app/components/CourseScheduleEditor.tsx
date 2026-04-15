@@ -76,7 +76,7 @@ export default function CourseScheduleEditor({ filas, onChange, error }: Props) 
               </Label>
               <Select value={String(fila.dia)} onValueChange={(valor) => actualizarFila(fila.id, "dia", Number(valor))}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un dia" />
+                  <SelectValue placeholder="Selecciona un día" />
                 </SelectTrigger>
                 <SelectContent>
                   {etiquetasDiaCortas.map((etiqueta, dia) => (
@@ -136,7 +136,7 @@ export default function CourseScheduleEditor({ filas, onChange, error }: Props) 
       <div className="rounded-2xl border border-slate-200 bg-white p-4">
         <div className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">Vista previa</div>
         <div className="mt-2 text-sm font-medium text-slate-700">
-          {formatearHorarioCurso(filas) || "Todavia no hay un horario configurado."}
+          {formatearHorarioCurso(filas) || "Todavía no hay un horario configurado."}
         </div>
       </div>
 

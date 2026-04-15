@@ -40,7 +40,7 @@ export default function SmartAlertActions({
     });
     acciones.push({
       id: "posponer-tarea",
-      label: compact ? "Posponer" : "Posponer 1 dia",
+      label: compact ? "Posponer" : "Posponer 1 día",
       Icono: Clock3,
       onClick: () => {
         const resultado = posponerTarea(alerta.tareaId!, 1);

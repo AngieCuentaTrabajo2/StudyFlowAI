@@ -351,7 +351,7 @@ export default function CourseDetail() {
                   <span className="text-sm text-gray-600">{formatearFechaCorta(examen.fecha)}</span>
                 </div>
                 <div className="mb-2 flex items-center justify-between text-sm">
-                  <span className="text-gray-600">Preparacion</span>
+                  <span className="text-gray-600">Preparación</span>
                   <span className="font-semibold">{examen.preparacion}%</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-gray-100">
@@ -404,12 +404,12 @@ export default function CourseDetail() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5" style={{ color: estiloCurso.color }} />
-              Recomendacion de estudio hecha por IA
+              Recomendación de estudio hecha por IA
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-2xl bg-white/80 p-4">
-              En este curso te conviene reforzar practica aplicada y cerrar primero los temas del examen mas cercano.
+              En este curso te conviene reforzar práctica aplicada y cerrar primero los temas del examen más cercano.
             </div>
             <div className="rounded-2xl bg-white/80 p-4">
               Sugerencia: 3 sesiones de 50 minutos esta semana, priorizando {examenesCurso[0]?.temas[0] ?? "los temas con menor avance"}.

@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+﻿import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { addDays, differenceInCalendarDays, format, parseISO, startOfToday } from "date-fns";
 import {
@@ -41,8 +41,8 @@ import { ScrollArea } from "../components/ui/scroll-area";
 
 const accionesRapidas = [
   "Planifica mi horario",
-  "Explicame base de datos",
-  "Hazme preguntas de practica",
+  "Explícame base de datos",
+  "Hazme preguntas de práctica",
   "Resume este tema",
 ];
 
@@ -158,76 +158,76 @@ function adaptarMensajePlanificadorAlTono(
 
   if (tono === "frio") {
     return mensaje
-      .replace(/^Buenisimo\.\s*/g, "")
+      .replace(/^Buenísimo\.\s*/g, "")
       .replace(/^Claro,\s*/g, "")
       .replace(/^Claro\.\s*/g, "")
       .replace(/^Perfecto\.\s*/g, "")
       .replace(/^Listo\.\s*/g, "")
       .replace("Si te parece bien, responde `si` para aplicar o `no` para cancelar.", "Responde `si` para aplicar o `no` para cancelar.")
-      .replace("Si te parece bien, responde `si` para aplicar o `no` para cancelar. Tambien puedes usar los botones de abajo.", "Responde `si` para aplicar o `no` para cancelar. Puedes usar los botones de abajo.")
-      .replace("Puedes responder con el numero o con el nombre.", "Responde con numero o nombre.")
-      .replace("Puedes responder con el numero o con algo como `solo calendario`, `tareas`, `repasos` o `todo`.", "Responde con `1`, `2`, `3`, `4` o una opcion equivalente.");
+      .replace("Si te parece bien, responde `si` para aplicar o `no` para cancelar. También puedes usar los botones de abajo.", "Responde `si` para aplicar o `no` para cancelar. Puedes usar los botones de abajo.")
+      .replace("Puedes responder con el número o con el nombre.", "Responde con número o nombre.")
+      .replace("Puedes responder con el número o con algo como `solo calendario`, `tareas`, `repasos` o `todo`.", "Responde con `1`, `2`, `3`, `4` o una opción equivalente.");
   }
 
   return mensaje
     .replace(
-      "Claro. Puedo ayudarte a planificar tu horario y voy a respetar tu limite actual de ",
-      "Claro, te ayudo encantado. Voy a respetar tu limite actual de ",
+      "Claro. Puedo ayudarte a planificar tu horario y voy a respetar tu límite actual de ",
+      "Claro, te ayudo encantado. Voy a respetar tu límite actual de ",
     )
     .replace(
-      "Perfecto. Antes de mover todo, dime con que base quieres trabajar:",
-      "Buenisimo. Antes de mover todo, quiero respetar como ya vienes organizandote:",
+      "Perfecto. Antes de mover todo, dime con qué base quieres trabajar:",
+      "Buenísimo. Antes de mover todo, quiero respetar cómo ya vienes organizándote:",
     )
     .replace(
       "Perfecto. Voy a trabajar con ",
-      "Buenisimo. Voy a trabajar con ",
+      "Buenísimo. Voy a trabajar con ",
     )
     .replace(
       "Perfecto. Elige la tarea que quieres reorganizar:",
-      "Buenisimo. Elige la tarea que quieres reorganizar:",
+      "Buenísimo. Elige la tarea que quieres reorganizar:",
     )
     .replace(
-      "Perfecto. Dime que curso quieres reforzar:",
-      "Buenisimo. Dime que curso quieres reforzar:",
+      "Perfecto. Dime qué curso quieres reforzar:",
+      "Buenísimo. Dime qué curso quieres reforzar:",
     )
     .replace(
       "Perfecto. Voy a reorganizar la tarea",
-      "Buenisimo. Voy a reorganizar la tarea",
+      "Buenísimo. Voy a reorganizar la tarea",
     )
     .replace(
       "Perfecto. Voy a reorganizar el repaso de",
-      "Buenisimo. Voy a reorganizar el repaso de",
+      "Buenísimo. Voy a reorganizar el repaso de",
     )
-    .replace("Perfecto. Ahora dime", "Perfecto. Ahora cuentame")
+    .replace("Perfecto. Ahora dime", "Perfecto. Ahora cuéntame")
     .replace("Ahora mismo no veo tareas activas para reorganizar.", "Por ahora no veo tareas activas para reorganizar.")
     .replace("Ahora mismo no veo cursos cargados para organizar un repaso.", "Por ahora no veo cursos cargados para organizar un repaso.")
-    .replace("No identifique esa tarea.", "No logre ubicar esa tarea.")
-    .replace("No identifique ese curso.", "No logre ubicar ese curso.")
-    .replace("No pude detectar los dias.", "No llegue a detectar los dias.")
+    .replace("No identifiqué esa tarea.", "No logré ubicar esa tarea.")
+    .replace("No identifiqué ese curso.", "No logré ubicar ese curso.")
+    .replace("No pude detectar los días.", "No llegué a detectar los días.")
     .replace(
       "Listo. Voy a reorganizar ",
-      "Buenisimo. Quedaria asi para reorganizar ",
+      "Buenísimo. Quedaría así para reorganizar ",
     )
     .replace(
       "Si te parece bien, responde `si` para aplicar o `no` para cancelar.",
-      "Si te cuadra, responde `si` y la aplico. Si no, dime `no` y la dejamos ahi.",
+      "Si te cuadra, responde `si` y la aplico. Si no, dime `no` y la dejamos ahí.",
     )
     .replace(
       "Si te parece bien, responde `si` para aplicar o `no` para cancelar. Tambien puedes usar los botones de abajo.",
-      "Si te cuadra, responde `si` y la aplico. Si no, dime `no` y la dejamos ahi. Tambien puedes usar los botones de abajo.",
+      "Si te cuadra, responde `si` y la aplico. Si no, dime `no` y la dejamos ahí. También puedes usar los botones de abajo.",
     )
     .replace(
       "Para seguir necesito que me respondas `si` para aplicar o `no` para cancelar.",
       "Para seguir necesito que me respondas `si` para aplicarlo o `no` para dejarlo en pausa.",
     )
     .replace(
-      "Listo, cancele esta planificacion. Si quieres, luego volvemos a empezar con otra configuracion.",
+      "Listo, cancele esta planificación. Si quieres, luego volvemos a empezar con otra configuración.",
       "Listo, lo dejo en pausa por ahora. Si luego quieres retomarlo, lo armamos otra vez sin problema.",
     )
-    .replace(/^Listo\.\s*/, "Listo, ya te lo deje organizado. ")
+    .replace(/^Listo\.\s*/, "Listo, ya te lo dejé organizado. ")
     .replace(
-      /^Aplique la planificacion,\s*/i,
-      "Ya aplique la planificacion. ",
+      /^Aplique la planificación,\s*/i,
+      "Ya apliqué la planificación. ",
     );
 }
 
@@ -396,7 +396,7 @@ function obtenerResumenModoTodo(modoTodo: ModoPlanificacionTodo) {
 
 function obtenerResumenDiasBloqueados(diasBloqueados: number[]) {
   if (!diasBloqueados.length) {
-    return "sin dias bloqueados";
+    return "sin días bloqueados";
   }
 
   return diasBloqueados.map((dia) => obtenerEtiquetaDiaPlanificador(dia)).join(", ");
@@ -441,7 +441,7 @@ function describirListaDiasPlanificables(diasDisponibles: DiaPlanificableVisual[
   const etiquetas = diasDisponibles.map((dia) => dia.etiquetaDia);
 
   if (etiquetas.length === 0) {
-    return "ningun dia";
+    return "ningún día";
   }
 
   if (etiquetas.length === 1) {
@@ -490,7 +490,7 @@ function obtenerDiasCandidatosConFechas(fechaObjetivo: string) {
       etiquetaDia: obtenerEtiquetaDiaPlanificador(obtenerDiaPlanificadorDesdeFechaLocal(fecha)),
       etiquetaFecha: formatearFechaCortaPlanificacion(fecha),
       destacado:
-        diferenciaRelativa === 0 ? "Hoy" : diferenciaRelativa === 1 ? "Manana" : undefined,
+        diferenciaRelativa === 0 ? "Hoy" : diferenciaRelativa === 1 ? "Mañana" : undefined,
     };
   });
 }
@@ -544,7 +544,7 @@ function construirMetadatosDiasPlanificacion({
         etiquetaDia: obtenerEtiquetaDiaPlanificador(dia),
         etiquetaFecha: formatearFechaCortaPlanificacion(fecha),
         destacado:
-          diferenciaRelativa === 0 ? "Hoy" : diferenciaRelativa === 1 ? "Manana" : undefined,
+          diferenciaRelativa === 0 ? "Hoy" : diferenciaRelativa === 1 ? "Mañana" : undefined,
       };
     });
 
@@ -552,10 +552,10 @@ function construirMetadatosDiasPlanificacion({
       diasPermitidos: diasDisponibles.map((dia) => dia.dia),
       diasDisponibles,
       detalle:
-        `Para reorganizar todo voy a mirar los proximos 7 dias, desde ${formatearFechaExactaPlanificacion(hoy)} ` +
+        `Para reorganizar todo voy a mirar los próximos 7 días, desde ${formatearFechaExactaPlanificacion(hoy)} ` +
         `hasta ${formatearFechaExactaPlanificacion(addDays(hoy, 6))}.`,
       ayuda:
-        "Marca solo los dias que quieres reservar para ti. El resto quedara disponible para estudio.",
+        "Marca solo los días que quieres reservar para ti. El resto quedará disponible para estudio.",
     };
   }
 
@@ -574,14 +574,14 @@ function construirMetadatosDiasPlanificacion({
       diasDisponibles,
       detalle:
         diferencia === 0
-          ? `Esta tarea vence hoy, ${formatearFechaExactaPlanificacion(tareaObjetivo.fechaEntrega)}, asi que solo puedo usar ${diasTexto}.`
+          ? `Esta tarea vence hoy, ${formatearFechaExactaPlanificacion(tareaObjetivo.fechaEntrega)}, así que solo puedo usar ${diasTexto}.`
           : diferencia > 0
-            ? `Esta tarea vence el ${formatearFechaExactaPlanificacion(tareaObjetivo.fechaEntrega)}, asi que puedo moverla entre ${diasTexto}.`
-            : `Esta tarea ya esta atrasada desde ${formatearFechaExactaPlanificacion(tareaObjetivo.fechaEntrega)}. La voy a reacomodar usando los proximos 7 dias desde hoy.`,
+            ? `Esta tarea vence el ${formatearFechaExactaPlanificacion(tareaObjetivo.fechaEntrega)}, así que puedo moverla entre ${diasTexto}.`
+            : `Esta tarea ya está atrasada desde ${formatearFechaExactaPlanificacion(tareaObjetivo.fechaEntrega)}. La voy a reacomodar usando los próximos 7 días desde hoy.`,
       ayuda:
         diasDisponibles.length === 1
           ? `Si reservas ${diasTexto}, me quedo sin margen para programarla antes de la entrega.`
-          : "Marca solo los dias que quieres reservar para ti dentro de este rango.",
+          : "Marca solo los días que quieres reservar para ti dentro de este rango.",
     };
   }
 
@@ -600,14 +600,14 @@ function construirMetadatosDiasPlanificacion({
     diasDisponibles,
     detalle:
       diferencia === 0
-        ? `Tu siguiente hito de ${cursoObjetivo.nombre} cae hoy, ${formatearFechaExactaPlanificacion(fechaObjetivo)}, asi que solo puedo usar ${diasTexto}.`
+        ? `Tu siguiente hito de ${cursoObjetivo.nombre} cae hoy, ${formatearFechaExactaPlanificacion(fechaObjetivo)}, así que solo puedo usar ${diasTexto}.`
         : diferencia > 0
           ? `Voy a tomar como referencia ${formatearFechaExactaPlanificacion(fechaObjetivo)} para ${cursoObjetivo.nombre}. Con eso puedo usar ${diasTexto}.`
-          : `No veo un hito futuro para ${cursoObjetivo.nombre}, asi que usare los proximos 7 dias desde hoy para ordenar el repaso.`,
+          : `No veo un hito futuro para ${cursoObjetivo.nombre}, así que usaré los próximos 7 días desde hoy para ordenar el repaso.`,
     ayuda:
       diasDisponibles.length === 1
-        ? `Si reservas ${diasTexto}, me quedo sin huecos utiles para ese repaso.`
-        : "Marca solo los dias que quieres reservar para ti dentro de este rango.",
+        ? `Si reservas ${diasTexto}, me quedo sin huecos útiles para ese repaso.`
+        : "Marca solo los días que quieres reservar para ti dentro de este rango.",
   };
 }
 
@@ -750,19 +750,19 @@ export default function AIAssistant() {
   const sugerenciasContextuales = useMemo(
     () => [
       {
-        titulo: "Planificacion guiada",
-        descripcion: `${tareasActivas.length} tareas activas y ${examenesProximos.length} examenes para reorganizar.`,
+        titulo: "Planificación guiada",
+        descripcion: `${tareasActivas.length} tareas activas y ${examenesProximos.length} exámenes para reorganizar.`,
         icono: CalendarClock,
         accion: "Planifica mi horario",
       },
       {
-        titulo: "Practica guiada",
+        titulo: "Práctica guiada",
         descripcion: "Convierte tus temas pendientes en preguntas de repaso.",
         icono: BrainCircuit,
-        accion: "Hazme preguntas de practica",
+        accion: "Hazme preguntas de práctica",
       },
       {
-        titulo: "Resumen rapido",
+        titulo: "Resumen rápido",
         descripcion: "Pide un resumen breve para estudiar antes de tu siguiente bloque.",
         icono: BookOpen,
         accion: "Resume este tema",
@@ -780,12 +780,12 @@ export default function AIAssistant() {
       return {
         titulo:
           tonoPlanificador === "amigable"
-            ? "Elige como quieres que organicemos esto"
-            : "Selecciona el tipo de planificacion",
+            ? "Elige cómo quieres que organicemos esto"
+            : "Selecciona el tipo de planificación",
         descripcion:
           tonoPlanificador === "frio"
-            ? "Puedes tocar una opcion para continuar."
-            : "No hace falta escribir si no quieres. Toca una opcion y seguimos.",
+            ? "Puedes tocar una opción para continuar."
+            : "No hace falta escribir si no quieres. Toca una opción y seguimos.",
         pasoEtiqueta: "Paso 1",
         layout: "triple",
         opciones: [
@@ -793,7 +793,7 @@ export default function AIAssistant() {
             id: "modo-todo",
             valor: "todo",
             titulo: "Todo mi horario",
-            descripcion: "Reorganizo tareas y repasos de forma global segun tus reglas.",
+            descripcion: "Reorganizo tareas y repasos de forma global según tus reglas.",
             badge: "Semana completa",
             Icono: CalendarClock,
             tono: "blue",
@@ -802,7 +802,7 @@ export default function AIAssistant() {
             id: "modo-tarea",
             valor: "una tarea",
             titulo: "Solo una tarea",
-            descripcion: "Trabajamos una entrega puntual sin tocar lo demas.",
+            descripcion: "Trabajamos una entrega puntual sin tocar lo demás.",
             badge: "Puntual",
             Icono: ClipboardList,
             tono: "violet",
@@ -811,7 +811,7 @@ export default function AIAssistant() {
             id: "modo-curso",
             valor: "un curso",
             titulo: "Repaso de un curso",
-            descripcion: "Organizo bloques de repaso general para un curso especifico.",
+            descripcion: "Organizo bloques de repaso general para un curso específico.",
             badge: "Curso",
             Icono: BookOpen,
             tono: "emerald",
@@ -824,9 +824,9 @@ export default function AIAssistant() {
       return {
         titulo:
           tonoPlanificador === "amigable"
-            ? "Dime con que base quieres que trabaje"
-            : "Selecciona la base de planificacion",
-        descripcion: "Asi respetamos lo que ya calendarizaste y solo agregamos lo que tu decidas.",
+            ? "Dime con qué base quieres que trabaje"
+            : "Selecciona la base de planificación",
+        descripcion: "Así respetamos lo que ya calendarizaste y solo agregamos lo que tú decidas.",
         pasoEtiqueta: "Paso 2",
         layout: "doble",
         opciones: [
@@ -843,7 +843,7 @@ export default function AIAssistant() {
             id: "todo-tareas",
             valor: "tareas",
             titulo: "Agregar tareas pendientes",
-            descripcion: "Mantengo lo que ya esta y sumo tareas activas todavia no agendadas.",
+            descripcion: "Mantengo lo que ya está y sumo tareas activas todavía no agendadas.",
             badge: `${tareasPendientesVigentes.length} tareas`,
             Icono: ClipboardList,
             tono: "violet",
@@ -861,8 +861,8 @@ export default function AIAssistant() {
             id: "todo-completo",
             valor: "todo",
             titulo: "Agregar todo lo nuevo",
-            descripcion: "Incluyo tareas pendientes y repasos ademas de lo ya calendarizado.",
-            badge: "Mas completo",
+            descripcion: "Incluyo tareas pendientes y repasos además de lo ya calendarizado.",
+            badge: "Más completo",
             Icono: Sparkles,
             tono: "amber",
           },
@@ -876,7 +876,7 @@ export default function AIAssistant() {
           tonoPlanificador === "amigable"
             ? "Escoge la tarea que quieres acomodar primero"
             : "Selecciona una tarea",
-        descripcion: "Te muestro las mas urgentes y activas para avanzar rapido.",
+        descripcion: "Te muestro las más urgentes y activas para avanzar rápido.",
         pasoEtiqueta: "Paso 2",
         layout: "lista",
         opciones: tareasPlanificables.map((tarea) => {
@@ -928,15 +928,15 @@ export default function AIAssistant() {
           tonoPlanificador === "amigable"
             ? "Ahora elige la franja que mejor te acomoda"
             : "Selecciona tu franja preferida",
-        descripcion: "Solo la usare como preferencia. Si no encuentro espacio suficiente, luego podemos ajustarla.",
+        descripcion: "Solo la usaré como preferencia. Si no encuentro espacio suficiente, luego podemos ajustarla.",
         pasoEtiqueta: "Paso 4",
         layout: "cuadruple",
         opciones: [
           {
             id: "jornada-manana",
             valor: "manana",
-            titulo: "Manana",
-            descripcion: "Prioriza primeras horas libres del dia.",
+            titulo: "Mañana",
+            descripcion: "Prioriza primeras horas libres del día.",
             badge: "AM",
             Icono: Sun,
             tono: "amber",
@@ -945,7 +945,7 @@ export default function AIAssistant() {
             id: "jornada-tarde",
             valor: "tarde",
             titulo: "Tarde",
-            descripcion: "Busca espacios despues del mediodia.",
+            descripcion: "Busca espacios después del mediodía.",
             badge: "PM",
             Icono: Sunset,
             tono: "violet",
@@ -954,7 +954,7 @@ export default function AIAssistant() {
             id: "jornada-noche",
             valor: "noche",
             titulo: "Noche",
-            descripcion: "Reserva horas al final del dia cuando esten libres.",
+            descripcion: "Reserva horas al final del día cuando estén libres.",
             badge: "Tarde-noche",
             Icono: Moon,
             tono: "blue",
@@ -964,7 +964,7 @@ export default function AIAssistant() {
             valor: "flexible",
             titulo: "Flexible",
             descripcion: "Aprovecha los mejores huecos sin casarse con una sola franja.",
-            badge: "Mas huecos",
+            badge: "Más huecos",
             Icono: Sparkles,
             tono: "emerald",
           },
@@ -1079,14 +1079,14 @@ export default function AIAssistant() {
           mensaje:
             mensajeSegunTonoPlanificador(tonoPlanificador, {
               amigable:
-                `Buenisimo. Vamos a ordenar tu horario contigo. Tu limite actual es de ${limite}h de estudio por dia.\n\n` +
-                "Puedo reorganizar `todo`, `una tarea` o `un curso`. Si quieres, te dejo opciones visuales abajo para elegir mas rapido.",
+                `Buenísimo. Vamos a ordenar tu horario contigo. Tu límite actual es de ${limite}h de estudio por día.\n\n` +
+                "Puedo reorganizar `todo`, `una tarea` o `un curso`. Si quieres, te dejo opciones visuales abajo para elegir más rápido.",
               responsable:
-                `Vamos a planificar tu horario con IA. Tu limite actual es de ${limite}h de estudio por dia.\n\n` +
-                "Puedo reorganizar `todo`, `una tarea` o `un curso`. Puedes escribirlo o elegir una opcion visual abajo.",
+                `Vamos a planificar tu horario con IA. Tu límite actual es de ${limite}h de estudio por día.\n\n` +
+                "Puedo reorganizar `todo`, `una tarea` o `un curso`. Puedes escribirlo o elegir una opción visual abajo.",
               frio:
-                `Planificacion activa. Limite actual: ${limite}h de estudio por dia.\n\n` +
-                "Elige `todo`, `una tarea` o `un curso`, o usa una opcion visual abajo.",
+                `Planificación activa. Límite actual: ${limite}h de estudio por día.\n\n` +
+                "Elige `todo`, `una tarea` o `un curso`, o usa una opción visual abajo.",
             }),
         },
       ]);
@@ -1124,14 +1124,14 @@ export default function AIAssistant() {
         mensaje:
           mensajeSegunTonoPlanificador(tonoPlanificador, {
             amigable:
-              `Claro, te ayudo encantado. Voy a respetar tu limite actual de ${limite}h por dia para que el horario te quede manejable.\n\n` +
+              `Claro, te ayudo encantado. Voy a respetar tu límite actual de ${limite}h por día para que el horario te quede manejable.\n\n` +
               "Dime si quieres reorganizar `todo`, `una tarea` o `un curso`. Si prefieres, puedes tocar una de las tarjetas de abajo.",
             responsable:
-              `Claro. Puedo ayudarte a planificar tu horario y voy a respetar tu limite actual de ${limite}h por dia.\n\n` +
-              "Dime si quieres reorganizar `todo`, `una tarea` o `un curso`, o elige una opcion visual abajo.",
+              `Claro. Puedo ayudarte a planificar tu horario y voy a respetar tu límite actual de ${limite}h por día.\n\n` +
+              "Dime si quieres reorganizar `todo`, `una tarea` o `un curso`, o elige una opción visual abajo.",
             frio:
-              `Puedo reorganizar tu horario con un limite de ${limite}h por dia.\n\n` +
-              "Indica `todo`, `una tarea` o `un curso`, o toca una opcion abajo.",
+              `Puedo reorganizar tu horario con un límite de ${limite}h por día.\n\n` +
+              "Indica `todo`, `una tarea` o `un curso`, o toca una opción abajo.",
           }),
       },
     ]);
@@ -1151,7 +1151,7 @@ export default function AIAssistant() {
         { tipo: "user", mensaje: texto },
         {
           tipo: "ai",
-          mensaje: "Listo, cancelé esta planificacion. Si quieres, luego volvemos a empezar con otra configuracion.",
+          mensaje: "Listo, cancelé esta planificación. Si quieres, luego volvemos a empezar con otra configuración.",
         },
       ]);
       setPrevisualizacionPlanificacion(null);
@@ -1173,10 +1173,10 @@ export default function AIAssistant() {
             mensaje:
               "Perfecto. Antes de mover todo, dime con que base quieres trabajar:\n\n" +
               "1. Solo lo que ya esta en tu calendario\n" +
-              "2. Lo que ya esta y ademas agregar tareas pendientes\n" +
-              "3. Lo que ya esta y ademas agregar repasos de cursos\n" +
+              "2. Lo que ya está y además agregar tareas pendientes\n" +
+              "3. Lo que ya está y además agregar repasos de cursos\n" +
               "4. Agregar tareas y repasos nuevos tambien\n\n" +
-              "Puedes responder con el numero o con algo como `solo calendario`, `tareas`, `repasos` o `todo`. Si quieres, toca una tarjeta abajo.",
+              "Puedes responder con el número o con algo como `solo calendario`, `tareas`, `repasos` o `todo`. Si quieres, toca una tarjeta abajo.",
           },
         ]);
         setFlujoPlanificacion((actual) => ({
@@ -1206,7 +1206,7 @@ export default function AIAssistant() {
             mensaje:
               `Perfecto. Elige la tarea que quieres reorganizar:\n\n${tareasPlanificables
                 .map((tarea, indice) => `${indice + 1}. ${tarea.titulo} (${formatearFechaCorta(tarea.fechaEntrega)})`)
-                .join("\n")}\n\nPuedes responder con el numero o con el nombre. Tambien te deje opciones abajo.`,
+                .join("\n")}\n\nPuedes responder con el número o con el nombre. También te dejé opciones abajo.`,
           },
         ]);
         setFlujoPlanificacion((actual) => ({
@@ -1234,9 +1234,9 @@ export default function AIAssistant() {
           {
             tipo: "ai",
             mensaje:
-              `Perfecto. Dime que curso quieres reforzar:\n\n${cursosPlanificables
+              `Perfecto. Dime qué curso quieres reforzar:\n\n${cursosPlanificables
                 .map((curso, indice) => `${indice + 1}. ${curso.nombre}`)
-                .join("\n")}\n\nPuedes responder con el numero o con el nombre. Tambien te deje opciones abajo.`,
+                .join("\n")}\n\nPuedes responder con el número o con el nombre. También te dejé opciones abajo.`,
           },
         ]);
         setFlujoPlanificacion((actual) => ({
@@ -1251,7 +1251,7 @@ export default function AIAssistant() {
         { tipo: "user", mensaje: texto },
         {
           tipo: "ai",
-          mensaje: "Todavia necesito una de estas tres opciones: `todo`, `una tarea` o `un curso`.",
+          mensaje: "Todavía necesito una de estas tres opciones: `todo`, `una tarea` o `un curso`.",
         },
       ]);
       return;
@@ -1266,7 +1266,7 @@ export default function AIAssistant() {
           {
             tipo: "ai",
             mensaje:
-              "Todavia necesito una de estas opciones: `1`, `2`, `3` o `4`. Si prefieres, tambien puedes responder `solo calendario`, `tareas`, `repasos` o `todo`.",
+              "Todavía necesito una de estas opciones: `1`, `2`, `3` o `4`. Si prefieres, también puedes responder `solo calendario`, `tareas`, `repasos` o `todo`.",
           },
         ]);
         return;
@@ -1286,7 +1286,7 @@ export default function AIAssistant() {
           mensaje:
             `Perfecto. Voy a trabajar con ${obtenerResumenModoTodo(modoTodo)}.\n\n` +
             `${metadatosDias?.detalle ?? "Voy a revisar primero tu ventana disponible."}\n\n` +
-            `${metadatosDias?.ayuda ?? "Marca solo los dias que quieres reservar para ti."}\n\n` +
+            `${metadatosDias?.ayuda ?? "Marca solo los días que quieres reservar para ti."}\n\n` +
             "Si prefieres, puedes escribir algo como `martes y domingo`, elegirlo abajo o tocar `Todos disponibles`.",
         },
       ]);
@@ -1306,7 +1306,7 @@ export default function AIAssistant() {
           { tipo: "user", mensaje: texto },
           {
             tipo: "ai",
-            mensaje: "No identifiqué esa tarea. Responde con el numero de la lista o con el nombre exacto.",
+            mensaje: "No identifiqué esa tarea. Responde con el número de la lista o con el nombre exacto.",
           },
         ]);
         return;
@@ -1326,9 +1326,9 @@ export default function AIAssistant() {
           tipo: "ai",
           mensaje:
             `Perfecto. Voy a reorganizar la tarea **${tareaSeleccionada.titulo}**.\n\n` +
-            `${metadatosDias?.detalle ?? "Voy a revisar primero en que dias todavia la puedo mover."}\n\n` +
-            `${metadatosDias?.ayuda ?? "Marca solo los dias que quieres reservar para ti dentro de esta tarea."}\n\n` +
-            "Abajo te dejo solo los dias que de verdad puedo tocar en este caso.",
+            `${metadatosDias?.detalle ?? "Voy a revisar primero en qué días todavía la puedo mover."}\n\n` +
+            `${metadatosDias?.ayuda ?? "Marca solo los días que quieres reservar para ti dentro de esta tarea."}\n\n` +
+            "Abajo te dejo solo los días que de verdad puedo tocar en este caso.",
         },
       ]);
       setFlujoPlanificacion((actual) => ({
@@ -1347,7 +1347,7 @@ export default function AIAssistant() {
           { tipo: "user", mensaje: texto },
           {
             tipo: "ai",
-            mensaje: "No identifiqué ese curso. Responde con el numero de la lista o con el nombre del curso.",
+            mensaje: "No identifiqué ese curso. Responde con el número de la lista o con el nombre del curso.",
           },
         ]);
         return;
@@ -1367,9 +1367,9 @@ export default function AIAssistant() {
           tipo: "ai",
           mensaje:
             `Perfecto. Voy a reorganizar el repaso de **${cursoSeleccionado.nombre}**.\n\n` +
-            `${metadatosDias?.detalle ?? "Voy a revisar primero el rango util para este repaso."}\n\n` +
-            `${metadatosDias?.ayuda ?? "Marca solo los dias que quieres reservar para ti dentro de este rango."}\n\n` +
-            "Abajo te dejo solo los dias que de verdad puedo usar para este repaso.",
+            `${metadatosDias?.detalle ?? "Voy a revisar primero el rango útil para este repaso."}\n\n` +
+            `${metadatosDias?.ayuda ?? "Marca solo los días que quieres reservar para ti dentro de este rango."}\n\n` +
+            "Abajo te dejo solo los días que de verdad puedo usar para este repaso.",
         },
       ]);
       setFlujoPlanificacion((actual) => ({
@@ -1404,7 +1404,7 @@ export default function AIAssistant() {
           {
             tipo: "ai",
             mensaje:
-              "No logre leer bien los dias. Si quieres, usa los botones de abajo o escribe algo como `martes y domingo`. Si todos te sirven, responde `ninguno`.",
+              "No logré leer bien los días. Si quieres, usa los botones de abajo o escribe algo como `martes y domingo`. Si todos te sirven, responde `ninguno`.",
           },
         ]);
         return;
@@ -1416,8 +1416,8 @@ export default function AIAssistant() {
           {
             tipo: "ai",
             mensaje:
-              `${metadatosDias?.detalle ?? "En este caso tengo un rango util bastante corto."}\n\n` +
-              "Con esa seleccion me quedo sin ningun dia util para programar el bloque. " +
+              `${metadatosDias?.detalle ?? "En este caso tengo un rango útil bastante corto."}\n\n` +
+              "Con esa selección me quedo sin ningún día útil para programar el bloque. " +
               `Deja al menos ${obtenerResumenDiasBloqueados(diasPermitidos)} disponible o toca \`Todos disponibles\` y seguimos.`,
           },
         ]);
@@ -1426,10 +1426,10 @@ export default function AIAssistant() {
 
       const resumenDias =
         diasBloqueados.length > 0
-          ? `Perfecto. Voy a reservar ${obtenerResumenDiasBloqueados(diasBloqueados)} dentro de esta planificacion.`
-          : "Perfecto. Dentro de este rango no vas a bloquear ningun dia util.";
+          ? `Perfecto. Voy a reservar ${obtenerResumenDiasBloqueados(diasBloqueados)} dentro de esta planificación.`
+          : "Perfecto. Dentro de este rango no vas a bloquear ningún día útil.";
       const notaFueraDeRango = diasFueraDeRango.length
-        ? `\n\nOjo: ${obtenerResumenDiasBloqueados(diasFueraDeRango)} no afecta este caso porque queda fuera del rango real que puedo usar aqui.`
+        ? `\n\nOjo: ${obtenerResumenDiasBloqueados(diasFueraDeRango)} no afecta este caso porque queda fuera del rango real que puedo usar aquí.`
         : "";
 
       anexarMensajesAsistenteLocales([
@@ -1444,7 +1444,7 @@ export default function AIAssistant() {
         {
           tipo: "ai",
           mensaje:
-            "Perfecto. Ahora dime en que franja prefieres estudiar: `mañana`, `tarde`, `noche` o `flexible`. Si quieres, elige una opcion abajo.",
+            "Perfecto. Ahora dime en qué franja prefieres estudiar: `mañana`, `tarde`, `noche` o `flexible`. Si quieres, elige una opción abajo.",
         },
       ]);
       setFlujoPlanificacion((actual) => ({
@@ -1464,7 +1464,7 @@ export default function AIAssistant() {
           { tipo: "user", mensaje: texto },
           {
             tipo: "ai",
-            mensaje: "Todavia necesito una franja valida: `mañana`, `tarde`, `noche` o `flexible`.",
+            mensaje: "Todavía necesito una franja válida: `mañana`, `tarde`, `noche` o `flexible`.",
           },
         ]);
         return;
@@ -1484,10 +1484,10 @@ export default function AIAssistant() {
             : `el repaso de ${cursoObjetivo?.nombre ?? "ese curso"}`;
       const detalleModoTodo =
         flujoPlanificacion.alcance === "todo"
-          ? `- Base de planificacion: ${obtenerResumenModoTodo(flujoPlanificacion.modoTodo)}\n`
+          ? `- Base de planificación: ${obtenerResumenModoTodo(flujoPlanificacion.modoTodo)}\n`
           : "";
       const detalleDuda = expresaDuda
-        ? `- Nota: te lei inclinandote por ${jornada}. Si no te convence, todavia la cambiamos antes de aplicarla.\n`
+        ? `- Nota: te leí inclinándote por ${jornada}. Si no te convence, todavía la cambiamos antes de aplicarla.\n`
         : "";
       const preview = previsualizarReplanificacionHorario({
         alcance: flujoPlanificacion.alcance ?? "todo",
@@ -1505,7 +1505,7 @@ export default function AIAssistant() {
             tipo: "ai",
             mensaje:
               `${preview.mensaje}\n\n` +
-              `${preview.resumen.length ? preview.resumen.join("\n") : "Si quieres, prueba liberando algun dia o usando una franja mas flexible para volver a intentarlo."}`,
+              `${preview.resumen.length ? preview.resumen.join("\n") : "Si quieres, prueba liberando algún día o usando una franja más flexible para volver a intentarlo."}`,
           },
         ]);
         return;
@@ -1519,12 +1519,12 @@ export default function AIAssistant() {
         {
           tipo: "ai",
           mensaje:
-            `Listo. Esta seria la vista previa para reorganizar ${resumenObjetivo} con estas reglas:\n\n` +
+            `Listo. Esta sería la vista previa para reorganizar ${resumenObjetivo} con estas reglas:\n\n` +
             detalleModoTodo +
             detalleDuda +
-            `- Dias libres: ${obtenerResumenDiasBloqueados(flujoPlanificacion.diasBloqueados)}\n` +
+            `- Días libres: ${obtenerResumenDiasBloqueados(flujoPlanificacion.diasBloqueados)}\n` +
             `- Franja preferida: ${jornada}\n` +
-            `- Limite diario actual: ${usuarioActual?.horasEstudioDiarias ?? 2}h\n` +
+            `- Límite diario actual: ${usuarioActual?.horasEstudioDiarias ?? 2}h\n` +
             `- Horas ubicadas en la vista previa: ${preview.horasProgramadas}h de ${preview.totalHorasSolicitadas ?? preview.horasProgramadas}h\n\n` +
             `${lineasPreview.length ? `${lineasPreview.join("\n")}\n\n` : ""}` +
             "Abajo te dejo la vista previa visual. Si te convence, responde `si` para aplicarla; si no, dime `no` y la dejamos en pausa.",
@@ -1639,7 +1639,7 @@ export default function AIAssistant() {
         <div>
           <h1 className="mb-2 text-2xl font-bold sm:text-3xl">Asistente IA</h1>
           <p className="max-w-2xl text-sm text-gray-600 sm:text-base">
-            Usa tu contexto academico real para responder, priorizar y sugerir el siguiente paso.
+            Usa tu contexto académico real para responder, priorizar y sugerir el siguiente paso.
           </p>
         </div>
         <Badge
@@ -1660,7 +1660,7 @@ export default function AIAssistant() {
             : fuenteVisible === "sistema"
               ? "Respuesta directa del sistema"
             : fuenteVisible === "error"
-              ? "Groq no respondio"
+              ? "Groq no respondió"
               : "Esperando respuesta del asistente"}
         </Badge>
       </div>
@@ -1674,9 +1674,9 @@ export default function AIAssistant() {
                   <Sparkles className="h-6 w-6 text-white" />
                 </div>
                 <div className="min-w-0">
-                  <CardTitle className="text-lg sm:text-xl">Asistente academico inteligente</CardTitle>
+                  <CardTitle className="text-lg sm:text-xl">Asistente académico inteligente</CardTitle>
                   <p className="text-xs text-gray-600 sm:text-sm">
-                    Usa tu contexto academico real, consulta Groq y ahora tambien puede replanificar tu horario.
+                    Usa tu contexto académico real, consulta Groq y ahora también puede replanificar tu horario.
                   </p>
                 </div>
               </div>
@@ -1738,7 +1738,7 @@ export default function AIAssistant() {
                         <div className="min-w-0 flex-1 overflow-hidden rounded-[24px] border border-gray-100 bg-white/95 px-4 py-4 text-gray-900 shadow-md shadow-slate-200/60 sm:rounded-[28px] sm:px-5">
                           <div className="space-y-3">
                             <div className="flex flex-wrap items-center gap-2">
-                              <Badge className="rounded-full bg-blue-50 text-blue-700">Sugerencia academica</Badge>
+                              <Badge className="rounded-full bg-blue-50 text-blue-700">Sugerencia académica</Badge>
                               {indice === mensajesChat.length - 1 ? (
                                 <span className="text-xs text-gray-500">Contexto actualizado</span>
                               ) : null}
@@ -1812,7 +1812,7 @@ export default function AIAssistant() {
                 value={mensaje}
                 onChange={(event) => setMensaje(event.target.value)}
                 disabled={asistentePensando}
-                placeholder="Preguntame sobre tus tareas, horarios o temas de estudio"
+                placeholder="Pregúntame sobre tus tareas, horarios o temas de estudio"
               />
               <Button
                 type="submit"
@@ -1829,7 +1829,7 @@ export default function AIAssistant() {
             ) : null}
             {asistentePensando ? (
               <p className="mt-2 text-xs text-gray-500">
-                StudyFlow AI esta pensando tu respuesta. Espera un momento antes de enviar otro mensaje.
+                StudyFlow AI está pensando tu respuesta. Espera un momento antes de enviar otro mensaje.
               </p>
             ) : null}
           </div>
@@ -1838,7 +1838,7 @@ export default function AIAssistant() {
         <div className="hidden space-y-6 xl:block">
           <Card className="border-none shadow-lg">
             <CardHeader>
-              <CardTitle>Panel rapido</CardTitle>
+              <CardTitle>Panel rápido</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <DatoLateral
@@ -1853,7 +1853,7 @@ export default function AIAssistant() {
               />
               <DatoLateral
                 icon={CalendarClock}
-                titulo="Examenes proximos"
+                titulo="Exámenes próximos"
                 valor={`${examenesProximos.length}`}
                 detalle="Para priorizar respuestas"
               />
@@ -1868,7 +1868,7 @@ export default function AIAssistant() {
 
           <Card className="border-none shadow-lg">
             <CardHeader>
-              <CardTitle>Atajos utiles</CardTitle>
+              <CardTitle>Atajos útiles</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {sugerenciasContextuales.map((sugerencia) => (
@@ -1892,20 +1892,20 @@ export default function AIAssistant() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BookOpen className="h-5 w-5 text-blue-600" />
-                Contexto academico
+                Contexto académico
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm text-gray-700">
               {examenesProximos.length > 0 ? (
                 <p>
-                  Tu proximo examen visible es <strong>{examenesProximos[0].titulo}</strong> el{" "}
+                  Tu próximo examen visible es <strong>{examenesProximos[0].titulo}</strong> el{" "}
                   {formatearFechaCorta(examenesProximos[0].fecha)}.
                 </p>
               ) : (
-                <p>No hay examenes proximos cargados por ahora.</p>
+                <p>No hay exámenes próximos cargados por ahora.</p>
               )}
-              <p>El asistente toma como referencia tareas, examenes, cursos y bloques de estudio ya guardados.</p>
-              <p>Si Groq falla o la clave no es valida, veras un error explicito en lugar de una respuesta simulada.</p>
+              <p>El asistente toma como referencia tareas, exámenes, cursos y bloques de estudio ya guardados.</p>
+              <p>Si Groq falla o la clave no es válida, verás un error explícito en lugar de una respuesta simulada.</p>
             </CardContent>
           </Card>
         </div>
@@ -1943,7 +1943,7 @@ function MensajeAsistente({
             onClick={onToggle}
             className="text-sm font-medium text-blue-600 transition hover:text-blue-700"
           >
-            {expandido ? "Caja mas compacta" : "Hacer caja mas grande"}
+            {expandido ? "Caja más compacta" : "Hacer caja más grande"}
           </button>
           <span className="text-xs text-gray-400">Puedes desplazarte dentro del mensaje para leer todo.</span>
         </div>
@@ -2019,7 +2019,7 @@ function SelectorPlanificacionRapida({
                       </div>
 
                       <div className={`mt-4 inline-flex items-center gap-1 text-xs font-semibold ${clases.flecha}`}>
-                        Elegir esta opcion
+                        Elegir esta opción
                         <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
                       </div>
                     </div>
@@ -2029,7 +2029,7 @@ function SelectorPlanificacionRapida({
             </div>
 
             <p className="mt-4 text-xs text-slate-500">
-              Puedes tocar una opcion para seguir mas rapido o escribir tu respuesta si prefieres.
+              Puedes tocar una opción para seguir más rápido o escribir tu respuesta si prefieres.
             </p>
           </div>
         </div>
@@ -2060,9 +2060,9 @@ function SelectorDiasPlanificacion({
   const resumen =
     diasSeleccionados.length === 0
       ? diasDisponibles.length
-        ? `No vas a bloquear ningun dia util. Voy a poder usar ${describirListaDiasPlanificables(diasDisponibles)} si encuentro huecos libres.`
-        : "No hay dias disponibles para esta planificacion en este momento."
-      : `Voy a reservar ${obtenerResumenDiasBloqueados(diasSeleccionados)} y no los usare para estudio.`;
+        ? `No vas a bloquear ningún día útil. Voy a poder usar ${describirListaDiasPlanificables(diasDisponibles)} si encuentro huecos libres.`
+        : "No hay días disponibles para esta planificación en este momento."
+      : `Voy a reservar ${obtenerResumenDiasBloqueados(diasSeleccionados)} y no los usaré para estudio.`;
 
   return (
     <div className="flex w-full justify-start pr-4 sm:pr-10">
@@ -2075,11 +2075,11 @@ function SelectorDiasPlanificacion({
           <div className="bg-gradient-to-r from-slate-950 via-blue-950 to-indigo-900 px-4 py-4 text-white sm:px-5 sm:py-5">
             <div className="flex flex-wrap items-center gap-2">
               <Badge className="rounded-full border border-white/10 bg-white/10 text-white">Paso 3</Badge>
-              <Badge className="rounded-full border border-cyan-300/20 bg-cyan-300/10 text-cyan-100">Dias reservados</Badge>
+              <Badge className="rounded-full border border-cyan-300/20 bg-cyan-300/10 text-cyan-100">Días reservados</Badge>
             </div>
-            <div className="mt-3 text-base font-semibold sm:text-lg">Marca solo los dias que realmente quieres dejar para ti</div>
+            <div className="mt-3 text-base font-semibold sm:text-lg">Marca solo los días que realmente quieres dejar para ti</div>
             <p className="mt-1 text-sm leading-6 text-white/75">
-              Solo te muestro los dias que de verdad puedo tocar en este caso. Si un dia no aparece aqui, es porque ya paso o queda fuera del rango de esta planificacion.
+              Solo te muestro los días que de verdad puedo tocar en este caso. Si un día no aparece aquí, es porque ya pasó o queda fuera del rango de esta planificación.
             </p>
           </div>
 
@@ -2090,12 +2090,12 @@ function SelectorDiasPlanificacion({
                 {metadatos?.detalle ?? "Voy a usar el rango disponible que tenga este caso."}
               </p>
               <p className="mt-2 text-xs leading-5 text-slate-500">
-                {metadatos?.ayuda ?? "Marca solo los dias que quieres reservar para ti."}
+                {metadatos?.ayuda ?? "Marca solo los días que quieres reservar para ti."}
               </p>
             </div>
 
             <div className="mt-4">
-              <div className="mb-3 text-sm font-semibold text-slate-900">Dias que si puedo usar ahora</div>
+              <div className="mb-3 text-sm font-semibold text-slate-900">Días que sí puedo usar ahora</div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
                 {diasDisponibles.map((diaDisponible) => {
                   const activo = diasSeleccionados.includes(diaDisponible.dia);
@@ -2159,13 +2159,13 @@ function SelectorDiasPlanificacion({
                   className="rounded-full bg-white"
                   onClick={() => onPreset(diasLaborables)}
                 >
-                  Reservar dias laborables
+                  Reservar días laborables
                 </Button>
               ) : null}
             </div>
 
             <div className="mt-4 rounded-2xl border border-blue-100 bg-blue-50 p-4">
-              <div className="text-sm font-semibold text-slate-900">Resumen rapido</div>
+              <div className="text-sm font-semibold text-slate-900">Resumen rápido</div>
               <p className="mt-1 text-sm leading-6 text-slate-600">{resumen}</p>
             </div>
 
@@ -2176,7 +2176,7 @@ function SelectorDiasPlanificacion({
                 className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                 onClick={onConfirm}
               >
-                Continuar con esta seleccion
+                Continuar con esta selección
               </Button>
               <Button
                 type="button"
@@ -2185,12 +2185,12 @@ function SelectorDiasPlanificacion({
                 className="bg-white"
                 onClick={() => onPreset([])}
               >
-                Limpiar seleccion
+                Limpiar selección
               </Button>
             </div>
 
             <p className="mt-3 text-xs text-slate-500">
-              Si prefieres, todavia puedes escribir los dias manualmente en el chat.
+              Si prefieres, todavía puedes escribir los días manualmente en el chat.
             </p>
           </div>
         </div>
@@ -2226,9 +2226,9 @@ function VistaPreviaPlanificacionCard({
                 {bloques.length} bloque{bloques.length === 1 ? "" : "s"}
               </Badge>
             </div>
-            <div className="mt-3 text-base font-semibold sm:text-lg">Asi quedaria {objetivoTexto}</div>
+            <div className="mt-3 text-base font-semibold sm:text-lg">Así quedaría {objetivoTexto}</div>
             <p className="mt-1 text-sm leading-6 text-white/80">
-              Todavia no guardo nada. Esto es solo una vista previa para que decidas con calma.
+              Todavía no guardo nada. Esto es solo una vista previa para que decidas con calma.
             </p>
           </div>
 
@@ -2247,7 +2247,7 @@ function VistaPreviaPlanificacionCard({
               <ResumenVistaPrevia
                 etiqueta="Estado"
                 valor={esParcial ? "Parcial" : "Completo"}
-                detalle={esParcial ? "faltaria liberar mas huecos" : "todo entra con estas reglas"}
+                detalle={esParcial ? "faltaría liberar más huecos" : "todo entra con estas reglas"}
               />
             </div>
 
@@ -2260,13 +2260,13 @@ function VistaPreviaPlanificacionCard({
                   ))}
                   {bloques.length > bloquesVisibles.length ? (
                     <p className="pt-1 text-xs text-slate-500">
-                      Y {bloques.length - bloquesVisibles.length} bloque{bloques.length - bloquesVisibles.length === 1 ? "" : "s"} mas en la misma propuesta.
+                      Y {bloques.length - bloquesVisibles.length} bloque{bloques.length - bloquesVisibles.length === 1 ? "" : "s"} más en la misma propuesta.
                     </p>
                   ) : null}
                 </div>
               ) : (
                 <p className="mt-2 text-sm text-slate-500">
-                  No hay bloques visibles en esta propuesta todavia.
+                  No hay bloques visibles en esta propuesta todavía.
                 </p>
               )}
             </div>
@@ -2380,10 +2380,10 @@ function EstadoVacio({ onAction }: { onAction: (texto: string) => void }) {
       <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600">
         <Sparkles className="h-8 w-8 text-white" />
       </div>
-      <h3 className="text-xl font-semibold">Empieza una conversacion academica</h3>
+      <h3 className="text-xl font-semibold">Empieza una conversación académica</h3>
       <p className="mt-2 max-w-md text-sm text-gray-600">
         Puedes pedirme que organice tu semana, resuma un tema o convierta tu contexto actual en un plan
-        de accion.
+        de acción.
       </p>
       <div className="mt-6 flex flex-wrap justify-center gap-2">
         {accionesRapidas.map((accion) => (
@@ -2418,3 +2418,4 @@ function DatoLateral({
     </div>
   );
 }
+
