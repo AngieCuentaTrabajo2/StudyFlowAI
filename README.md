@@ -1,115 +1,119 @@
-# 🚀 StudyFlowAI
+# StudyFlow AI
 
-Aplicación web enfocada en mejorar la productividad académica y personal mediante organización inteligente, gestión de tareas y apoyo con inteligencia artificial.
+StudyFlow AI es una aplicacion web para organizar el estudio universitario en un solo lugar. El proyecto centraliza cursos, tareas, examenes, calendario, progreso, notificaciones y un asistente con IA que ayuda a priorizar actividades y planificar sesiones de estudio.
 
-<p align="left">
-  <img src="https://img.shields.io/badge/Estado-En%20desarrollo-blue?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Tipo-Web%20App-6C63FF?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/Enfoque-Productividad%20%2B%20IA-111827?style=for-the-badge" />
-</p>
+## En Que Consiste
 
----
+La app esta pensada para estudiantes que necesitan convertir sus pendientes academicos en un flujo de trabajo mas claro. Desde el panel principal se puede revisar la carga de la semana, registrar tareas, preparar examenes, consultar recomendaciones y reorganizar bloques de estudio segun disponibilidad.
 
-## 📌 Descripción
+El asistente de IA usa el contexto real del estudiante: cursos, tareas activas, examenes, bloques del planificador y mensajes recientes. Con esa informacion puede responder preguntas, sugerir prioridades, generar planes de estudio y ayudar a distribuir actividades sin inventar datos.
 
-**StudyFlowAI** es una plataforma web diseñada para centralizar tareas, recordatorios, organización académica y asistencia inteligente en un solo entorno.
+## Funcionalidades Principales
 
-La idea del proyecto es mejorar la forma en que los estudiantes o usuarios organizan su flujo de estudio y productividad, integrando herramientas modernas de desarrollo web con componentes de inteligencia artificial.
+- Panel academico con resumen de tareas, examenes, progreso y alertas.
+- Gestion de cursos, horarios, materiales y detalles por asignatura.
+- Registro de tareas con prioridad, progreso, subtareas y fechas de entrega.
+- Calendario/planificador semanal con bloques de clase, estudio, repaso y examenes.
+- Modulo de examenes con temas y porcentaje de preparacion.
+- Asistente IA conversacional conectado al contexto del usuario.
+- Notificaciones internas para pendientes, urgencias y recordatorios.
+- Configuracion de perfil, tono del asistente, preferencias y disponibilidad semanal.
+- Inicio de sesion tradicional y soporte para Google OAuth.
 
----
+## Stack Utilizado
 
-## 🎯 Objetivo del proyecto
+### Frontend
 
-Brindar una solución digital que permita:
+- React
+- TypeScript
+- Vite
+- React Router
+- Tailwind CSS
+- Radix UI
+- MUI
+- Lucide React
+- Recharts
 
-- organizar tareas y pendientes
-- centralizar información importante
-- mejorar la productividad
-- reducir el desorden entre múltiples herramientas
-- incorporar asistencia inteligente en el flujo de estudio
+### Backend
 
----
+- Node.js
+- Express
+- PostgreSQL
+- `pg`
+- SQL propio en `backend/db/schema.sql` y `backend/db/seed.sql`
 
-## ❗ Problema que resuelve
+### Inteligencia Artificial
 
-Muchas personas gestionan sus estudios o proyectos en varias plataformas al mismo tiempo: notas por un lado, tareas por otro, recordatorios en otra app y recursos desordenados.
+- Groq mediante API compatible con OpenAI
+- SDK `openai`
+- Modelo configurable con `GROQ_MODEL`
 
-**StudyFlowAI** busca resolver ese problema ofreciendo una experiencia más integrada, clara y orientada a productividad.
+### Autenticacion e Integraciones
 
----
+- Login con correo y contrasena
+- Google OAuth con `google-auth-library`
+- Variables de entorno para credenciales y conexion a base de datos
 
-## ✨ Funcionalidades principales
+### Calidad y Build
 
-- 🧠 Gestión de tareas y actividades
-- 📝 Organización de notas e información
-- 🏷️ Clasificación por etiquetas o categorías
-- 🔔 Seguimiento de pendientes y recordatorios
-- 📊 Visualización clara del progreso
-- 🤖 Integración con inteligencia artificial para asistencia
-- 🧩 Estructura escalable para nuevas funcionalidades
+- Vite para desarrollo y compilacion
+- TypeScript para chequeo estatico
+- ESLint para revision basica del codigo
 
----
-
-## 🛠️ Tecnologías utilizadas
-
-### 🎨 Frontend
-<p>
-  <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white" />
-  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" />
-  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" />
-</p>
-
-### ⚙️ Backend
-<p>
-  <img src="https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white" />
-  <img src="https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white" />
-  <img src="https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white" />
-</p>
-
-### 🗄️ Base de datos
-<p>
-  <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" />
-  <img src="https://img.shields.io/badge/Neon-00E599?style=for-the-badge&logoColor=black" />
-</p>
-
-### 🤖 IA
-<p>
-  <img src="https://img.shields.io/badge/Groq-111827?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/OpenAI%20Compatible%20API-412991?style=for-the-badge" />
-</p>
-
-### 🚀 Deploy y herramientas
-<p>
-  <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" />
-  <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" />
-  <img src="https://img.shields.io/badge/Postman-FF6C37?style=for-the-badge&logo=postman&logoColor=white" />
-</p>
-
----
-
-## 🧱 Arquitectura general
-
-El proyecto sigue una arquitectura fullstack moderna:
-
-- **Frontend:** interfaz de usuario dinámica y responsive
-- **Backend:** manejo de lógica de negocio y endpoints
-- **ORM:** Prisma para acceso estructurado a datos
-- **Base de datos:** PostgreSQL desplegada en Neon
-- **IA:** integración mediante API para funciones inteligentes
-- **Deploy:** despliegue web en Vercel
-
----
-
-## 📂 Estructura general del proyecto
+## Estructura Del Proyecto
 
 ```bash
-StudyFlowAI/
-├── backend/          # lógica de servidor y APIs
-├── src/              # frontend principal
-├── public/           # recursos estáticos
-├── prisma/           # esquema y configuración de base de datos
+StudyFlow AI/
+├── backend/
+│   ├── db/
+│   │   ├── schema.sql
+│   │   └── seed.sql
+│   ├── server.js
+│   ├── auth-utils.js
+│   └── mappers.js
+├── public/
+├── src/
+│   ├── app/
+│   │   ├── components/
+│   │   ├── data/
+│   │   └── pages/
+│   ├── styles/
+│   └── main.tsx
 ├── package.json
 ├── vite.config.ts
-├── vercel.json
-└── README.md
+└── vercel.json
+```
+
+## Scripts
+
+```bash
+npm run dev
+npm run dev:server
+npm run build
+npm run typecheck
+npm run lint
+npm run test
+```
+
+## Variables De Entorno
+
+Usa `.env.example` como base:
+
+```bash
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/studyflow_ai
+PORT=4000
+GROQ_API_KEY=pega_aqui_tu_groq_api_key
+GROQ_MODEL=llama-3.1-8b-instant
+GOOGLE_CLIENT_ID=pega_aqui_tu_google_client_id_web
+VITE_GOOGLE_CLIENT_ID=pega_aqui_tu_google_client_id_web
+```
+
+## Ejecucion Local
+
+1. Instala dependencias con `npm install`.
+2. Copia `.env.example` como `.env`.
+3. Crea una base PostgreSQL llamada `studyflow_ai`.
+4. Ejecuta `backend/db/schema.sql`.
+5. Ejecuta `backend/db/seed.sql` si quieres datos de prueba.
+6. Inicia el backend con `npm run dev:server`.
+7. Inicia el frontend con `npm run dev`.
