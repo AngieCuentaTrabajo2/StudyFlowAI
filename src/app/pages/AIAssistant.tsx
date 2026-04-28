@@ -15,7 +15,6 @@ import {
   Sunset,
   Sparkles,
   Trash2,
-  type LucideIcon,
 } from "lucide-react";
 import {
   esTareaActiva,
@@ -38,86 +37,17 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Input } from "../components/ui/input";
 import { ScrollArea } from "../components/ui/scroll-area";
-
-const accionesRapidas = [
-  "Planifica mi horario",
-  "Explícame base de datos",
-  "Hazme preguntas de práctica",
-  "Resume este tema",
-];
-
-const aliasDiasPlanificacion: Array<{ indice: number; terminos: string[] }> = [
-  { indice: 0, terminos: ["lunes", "lun"] },
-  { indice: 1, terminos: ["martes", "mar"] },
-  { indice: 2, terminos: ["miercoles", "miércoles", "mie", "mier"] },
-  { indice: 3, terminos: ["jueves", "jue"] },
-  { indice: 4, terminos: ["viernes", "vie"] },
-  { indice: 5, terminos: ["sabado", "sábado", "sab"] },
-  { indice: 6, terminos: ["domingo", "dom"] },
-];
-
-type FlujoPlanificacionChat = {
-  activo: boolean;
-  paso:
-    | "modo"
-    | "modo-todo"
-    | "objetivo-tarea"
-    | "objetivo-curso"
-    | "dias"
-    | "jornada"
-    | "confirmacion";
-  alcance: AlcancePlanificacion | null;
-  objetivoId?: string;
-  diasBloqueados: number[];
-  jornada: JornadaPlanificacion;
-  modoTodo: ModoPlanificacionTodo;
-};
-
-type TonoPlanificadorLocal = "amigable" | "responsable" | "frio";
-
-type OpcionVisualPlanificacion = {
-  id: string;
-  valor: string;
-  titulo: string;
-  descripcion: string;
-  detalle?: string;
-  badge?: string;
-  Icono: LucideIcon;
-  tono: "blue" | "violet" | "emerald" | "amber" | "rose" | "slate";
-};
-
-type PanelVisualPlanificacion = {
-  titulo: string;
-  descripcion: string;
-  pasoEtiqueta: string;
-  layout: "triple" | "doble" | "cuadruple" | "lista";
-  opciones: OpcionVisualPlanificacion[];
-};
-
-type DiaPlanificableVisual = {
-  dia: number;
-  fecha: Date;
-  etiquetaDia: string;
-  etiquetaFecha: string;
-  destacado?: string;
-};
-
-type MetadatosDiasPlanificacion = {
-  diasPermitidos: number[];
-  detalle: string;
-  ayuda: string;
-  diasDisponibles: DiaPlanificableVisual[];
-};
-
-const flujoPlanificacionInicial: FlujoPlanificacionChat = {
-  activo: false,
-  paso: "modo",
-  alcance: null,
-  objetivoId: undefined,
-  diasBloqueados: [],
-  jornada: "flexible",
-  modoTodo: "solo-calendarizado",
-};
+import {
+  accionesRapidas,
+  aliasDiasPlanificacion,
+  flujoPlanificacionInicial,
+  type DiaPlanificableVisual,
+  type FlujoPlanificacionChat,
+  type MetadatosDiasPlanificacion,
+  type OpcionVisualPlanificacion,
+  type PanelVisualPlanificacion,
+  type TonoPlanificadorLocal,
+} from "./ai-assistant-planning-types";
 
 function resolverTonoPlanificadorLocal(
   tono: "frio" | "amigable" | "responsable" | null | undefined,

@@ -1,10 +1,26 @@
 ﻿import "dotenv/config";
 import cors from "cors";
 import express from "express";
-import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { OAuth2Client } from "google-auth-library";
 import OpenAI from "openai";
 import pkg from "pg";
+import {
+  crearHashContrasena,
+  crearHashTemporalGoogle,
+  esHashSeguroContrasena,
+  obtenerNombreYApellidosGoogle,
+  requiereCompletarPerfilAcademico,
+  verificarContrasena,
+} from "./auth-utils.js";
+import {
+  mapearBloque,
+  mapearCurso,
+  mapearExamen,
+  mapearMensajeChat,
+  mapearNotificacion,
+  mapearTarea,
+  mapearUsuario,
+} from "./mappers.js";
 
 const { Pool } = pkg;
 
@@ -27,102 +43,8 @@ const clienteGroq = groqApiKey
   : null;
 const clienteGoogle = googleClientId ? new OAuth2Client(googleClientId) : null;
 
-function crearHashContrasena(contrasena) {
-  const salt = randomBytes(16).toString("hex");
-  const hash = scryptSync(contrasena, salt, 64).toString("hex");
-  return `scrypt$${salt}$${hash}`;
-}
-
-function esHashSeguroContrasena(valor) {
-  return typeof valor === "string" && valor.startsWith("scrypt$");
-}
-
-function verificarContrasena(contrasena, hashGuardado) {
-  if (!esHashSeguroContrasena(hashGuardado)) {
-    return false;
-  }
-
-  const [, salt, hashHex] = hashGuardado.split("$");
-  const hashCalculado = scryptSync(contrasena, salt, 64);
-  const hashOriginal = Buffer.from(hashHex, "hex");
-
-  if (hashOriginal.length !== hashCalculado.length) {
-    return false;
-  }
-
-  return timingSafeEqual(hashOriginal, hashCalculado);
-}
-
-function obtenerNombreYApellidosGoogle(payload) {
-  const nombreCompleto = String(payload?.name || "").trim();
-  const nombres = String(payload?.given_name || "").trim();
-  const apellidos = String(payload?.family_name || "").trim();
-
-  if (nombres || apellidos) {
-    return {
-      nombres: nombres || nombreCompleto || "Estudiante",
-      apellidos,
-    };
-  }
-
-  const [primerNombre = "Estudiante", ...resto] = nombreCompleto.split(" ").filter(Boolean);
-  return {
-    nombres: primerNombre,
-    apellidos: resto.join(" "),
-  };
-}
-
-function crearHashTemporalGoogle() {
-  return crearHashContrasena(randomBytes(24).toString("hex"));
-}
-
-function tieneTextoPerfilValido(valor) {
-  return typeof valor === "string" && valor.trim() && valor.trim().toLowerCase() !== "por definir";
-}
-
-function requiereCompletarPerfilAcademico(usuario) {
-  return !(
-    tieneTextoPerfilValido(usuario?.universidad) &&
-    tieneTextoPerfilValido(usuario?.carrera) &&
-    tieneTextoPerfilValido(usuario?.semestre)
-  );
-}
-
 function responderSinBase(response) {
   response.status(500).json({ mensaje: "DATABASE_URL no configurada." });
-}
-
-function mapearUsuario(row) {
-  if (!row) return null;
-
-  return {
-    id: row.id,
-    nombres: row.nombres,
-    apellidos: row.apellidos,
-    correo: row.correo,
-    universidad: row.universidad,
-    carrera: row.carrera,
-    semestre: row.semestre,
-    plan: row.plan ?? "gratis",
-    horasDisponibles: row.horasDisponibles ?? null,
-    metodoEstudio: row.metodoEstudio ?? null,
-    tonoAsistente: row.tonoAsistente ?? "responsable",
-    metas: row.metas ?? null,
-    horasEstudioDiarias: row.horasEstudioDiarias ?? null,
-    horasSueno: row.horasSueno ?? null,
-    notificaciones: {
-      tareas: row.notificacionesTareas ?? true,
-      examenes: row.notificacionesExamenes ?? true,
-      ia: row.notificacionesIa ?? true,
-      semanal: row.notificacionesSemanal ?? true,
-      correo: row.notificacionesCorreo ?? false,
-    },
-    aplicacion: {
-      modoOscuro: row.aplicacionModoOscuro ?? false,
-      googleCalendar: row.aplicacionGoogleCalendar ?? false,
-      sugerenciasAutomaticas: row.aplicacionSugerenciasAutomaticas ?? true,
-    },
-  };
 }
 
 function construirInstruccionTono(tonoAsistente) {
@@ -135,78 +57,6 @@ function construirInstruccionTono(tonoAsistente) {
   }
 
   return "Adopta un tono responsable, claro y sereno. Organiza bien las ideas, prioriza utilidad practica y evita el exceso de emojis o informalidad.";
-}
-
-function mapearCurso(row) {
-  return {
-    id: row.id,
-    nombre: row.nombre,
-    docente: row.docente,
-    horario: row.horario,
-    semestre: row.semestre,
-    color: row.color,
-    descripcion: row.descripcion,
-  };
-}
-
-function mapearTarea(row) {
-  return {
-    id: row.id,
-    cursoId: row.cursoId,
-    titulo: row.titulo,
-    descripcion: row.descripcion,
-    fechaEntrega: row.fechaEntrega,
-    prioridad: row.prioridad,
-    estado: row.estado,
-    horasEstimadas: Number(row.horasEstimadas),
-    progreso: row.progreso,
-  };
-}
-
-function mapearExamen(row) {
-  return {
-    id: row.id,
-    cursoId: row.cursoId,
-    titulo: row.titulo,
-    fecha: row.fecha,
-    hora: typeof row.hora === "string" ? row.hora.slice(0, 5) : row.hora,
-    temas: row.temas ?? [],
-    preparacion: row.preparacion,
-  };
-}
-
-function mapearBloque(row) {
-  return {
-    id: row.id,
-    dia: row.dia,
-    horaInicio: Number(row.horaInicio),
-    duracion: Number(row.duracion),
-    titulo: row.titulo,
-    cursoId: row.cursoId ?? undefined,
-    color: row.color,
-    tipo: row.tipo,
-  };
-}
-
-function mapearNotificacion(row) {
-  return {
-    id: row.id,
-    tipo: row.tipo,
-    titulo: row.titulo,
-    mensaje: row.mensaje,
-    creadaEn: row.creadaEn,
-    noLeida: row.noLeida,
-  };
-}
-
-function mapearMensajeChat(row) {
-  return {
-    id: row.id,
-    tipo: row.tipo,
-    mensaje: row.mensaje,
-    hora: row.hora,
-    creadaEn: row.creadaEn,
-  };
 }
 
 function convertirFechaAOrdenable(valor) {

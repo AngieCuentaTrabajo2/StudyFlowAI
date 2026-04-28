@@ -325,7 +325,7 @@ export default function LandingPage() {
               ["Recursos", ["Centro de ayuda", "Guías", "Comunidad"]],
               ["Legal", ["Privacidad", "Términos", "Seguridad"]],
             ].map(([titulo, items]) => (
-              <div key={titulo}>
+              <div key={String(titulo)}>
                 <h3 className="mb-4 font-semibold">{titulo}</h3>
                 <ul className="space-y-2 text-gray-400">
                   {(items as string[]).map((item) => (
