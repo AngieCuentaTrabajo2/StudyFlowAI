@@ -64,6 +64,11 @@ export const router = createBrowserRouter([
     errorElement: <RouteErrorPage />,
   },
   {
+    path: "/verify-email",
+    lazy: () => cargarRutaDiferida(() => import("./pages/VerifyEmailPage")),
+    errorElement: <RouteErrorPage />,
+  },
+  {
     path: "/app",
     lazy: () => cargarRutaDiferida(() => import("./components/DashboardLayout")),
     errorElement: <RouteErrorPage />,

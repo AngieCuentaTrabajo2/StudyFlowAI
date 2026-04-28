@@ -70,6 +70,7 @@ export type UsuarioApi = {
   carrera: string;
   semestre: string;
   plan: "gratis" | "estudiante" | "premium";
+  emailVerificado: boolean;
   horasDisponibles: string | null;
   metodoEstudio: string | null;
   tonoAsistente: "frio" | "amigable" | "responsable" | null;
@@ -195,7 +196,19 @@ export const api = {
     semestre: string;
     plan: "gratis" | "estudiante" | "premium";
   }) {
-    return request<{ usuario: UsuarioApi }>("/api/auth/register", {
+    return request<{ usuario: UsuarioApi; verificacionCorreoEnviada?: boolean }>("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  verificarCorreo(payload: { token: string }) {
+    return request<{ usuario: UsuarioApi }>("/api/auth/verify-email", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  reenviarVerificacionCorreo(payload: { estudianteId: string }) {
+    return request<{ ok: boolean; yaVerificado?: boolean; omitido?: boolean }>("/api/auth/resend-verification", {
       method: "POST",
       body: JSON.stringify(payload),
     });

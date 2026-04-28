@@ -7,11 +7,18 @@ import pkg from "pg";
 import {
   crearHashContrasena,
   crearHashTemporalGoogle,
+  crearHashToken,
+  crearTokenSeguro,
   esHashSeguroContrasena,
   obtenerNombreYApellidosGoogle,
   requiereCompletarPerfilAcademico,
   verificarContrasena,
 } from "./auth-utils.js";
+import {
+  construirCorreoNotificacion,
+  construirCorreoVerificacion,
+  enviarCorreo,
+} from "./email-service.js";
 import {
   mapearBloque,
   mapearCurso,
@@ -42,6 +49,67 @@ const clienteGroq = groqApiKey
     })
   : null;
 const clienteGoogle = googleClientId ? new OAuth2Client(googleClientId) : null;
+
+async function enviarVerificacionCorreo({ estudianteId, nombres, correo }) {
+  if (!pool) return { ok: false, omitido: true };
+
+  const token = crearTokenSeguro();
+  const tokenHash = crearHashToken(token);
+  const expira = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  await pool.query(
+    `
+    update estudiantes
+    set email_verificacion_token = $1,
+        email_verificacion_expira = $2
+    where id = $3
+    `,
+    [tokenHash, expira, estudianteId],
+  );
+
+  const correoVerificacion = construirCorreoVerificacion({ nombres, token });
+  return enviarCorreo({
+    para: correo,
+    asunto: correoVerificacion.asunto,
+    html: correoVerificacion.html,
+    texto: correoVerificacion.texto,
+  });
+}
+
+async function enviarNotificacionCorreoSiCorresponde(estudianteId, notificacion) {
+  if (!pool) return;
+
+  try {
+    const resultado = await pool.query(
+      `
+      select
+        nombres,
+        correo,
+        notif_correo as "notificacionesCorreo",
+        email_verificado as "emailVerificado"
+      from estudiantes
+      where id = $1
+      limit 1
+      `,
+      [estudianteId],
+    );
+
+    const usuario = resultado.rows[0];
+    if (!usuario?.notificacionesCorreo || !usuario?.emailVerificado) {
+      return;
+    }
+
+    const correoNotificacion = construirCorreoNotificacion(notificacion);
+    await enviarCorreo({
+      para: usuario.correo,
+      asunto: correoNotificacion.asunto,
+      html: correoNotificacion.html,
+      texto: correoNotificacion.texto,
+    });
+  } catch (error) {
+    console.warn("[email] No se pudo enviar notificacion por correo:", error.message);
+  }
+}
 
 function responderSinBase(response) {
   response.status(500).json({ mensaje: "DATABASE_URL no configurada." });
@@ -1170,6 +1238,7 @@ async function obtenerContextoEstudiante(estudianteId) {
           notif_ia as "notificacionesIa",
           notif_semanal as "notificacionesSemanal",
           notif_correo as "notificacionesCorreo",
+          email_verificado as "emailVerificado",
           app_modo_oscuro as "aplicacionModoOscuro",
           app_google_calendar as "aplicacionGoogleCalendar",
           app_sugerencias_automaticas as "aplicacionSugerenciasAutomaticas"
@@ -1287,10 +1356,13 @@ async function obtenerContextoEstudiante(estudianteId) {
   };
 }
 
-async function asegurarColumnasGoogleAuth() {
+async function asegurarColumnasCompatibilidad() {
   if (!pool) return;
 
   await pool.query("alter table estudiantes add column if not exists google_sub text");
+  await pool.query("alter table estudiantes add column if not exists email_verificado boolean not null default false");
+  await pool.query("alter table estudiantes add column if not exists email_verificacion_token text");
+  await pool.query("alter table estudiantes add column if not exists email_verificacion_expira timestamptz");
   await pool.query(
     "create unique index if not exists estudiantes_google_sub_unique on estudiantes (google_sub) where google_sub is not null",
   );
@@ -1324,6 +1396,7 @@ app.post("/api/auth/login", async (request, response) => {
         notif_ia as "notificacionesIa",
         notif_semanal as "notificacionesSemanal",
         notif_correo as "notificacionesCorreo",
+        email_verificado as "emailVerificado",
         app_modo_oscuro as "aplicacionModoOscuro",
         app_google_calendar as "aplicacionGoogleCalendar",
         app_sugerencias_automaticas as "aplicacionSugerenciasAutomaticas",
@@ -1421,6 +1494,7 @@ app.post("/api/auth/google", async (request, response) => {
         notif_ia as "notificacionesIa",
         notif_semanal as "notificacionesSemanal",
         notif_correo as "notificacionesCorreo",
+        email_verificado as "emailVerificado",
         app_modo_oscuro as "aplicacionModoOscuro",
         app_google_calendar as "aplicacionGoogleCalendar",
         app_sugerencias_automaticas as "aplicacionSugerenciasAutomaticas",
@@ -1442,9 +1516,13 @@ app.post("/api/auth/google", async (request, response) => {
       }
 
       if (!usuarioExistente.googleSub) {
-        await pool.query("update estudiantes set google_sub = $1 where id = $2", [googleSub, usuarioExistente.id]);
+        await pool.query(
+          "update estudiantes set google_sub = $1, email_verificado = true, email_verificacion_token = null, email_verificacion_expira = null where id = $2",
+          [googleSub, usuarioExistente.id],
+        );
         usuarioExistente.googleSub = googleSub;
       }
+      usuarioExistente.emailVerificado = true;
 
       response.json({
         usuario: mapearUsuario(usuarioExistente),
@@ -1476,11 +1554,12 @@ app.post("/api/auth/google", async (request, response) => {
         notif_ia,
         notif_semanal,
         notif_correo,
+        email_verificado,
         app_modo_oscuro,
         app_google_calendar,
         app_sugerencias_automaticas
       )
-      values ($1, $2, $3, $4, $5, '', '', '', 'gratis', '4-6', 'pomodoro', 'responsable', '', 4, 8, true, true, true, true, false, false, false, true)
+      values ($1, $2, $3, $4, $5, '', '', '', 'gratis', '4-6', 'pomodoro', 'responsable', '', 4, 8, true, true, true, true, false, true, false, false, true)
       returning
         id,
         nombres,
@@ -1501,6 +1580,7 @@ app.post("/api/auth/google", async (request, response) => {
         notif_ia as "notificacionesIa",
         notif_semanal as "notificacionesSemanal",
         notif_correo as "notificacionesCorreo",
+        email_verificado as "emailVerificado",
         app_modo_oscuro as "aplicacionModoOscuro",
         app_google_calendar as "aplicacionGoogleCalendar",
         app_sugerencias_automaticas as "aplicacionSugerenciasAutomaticas"
@@ -1581,6 +1661,7 @@ app.post("/api/auth/register", async (request, response) => {
         notif_ia as "notificacionesIa",
         notif_semanal as "notificacionesSemanal",
         notif_correo as "notificacionesCorreo",
+        email_verificado as "emailVerificado",
         app_modo_oscuro as "aplicacionModoOscuro",
         app_google_calendar as "aplicacionGoogleCalendar",
         app_sugerencias_automaticas as "aplicacionSugerenciasAutomaticas"
@@ -1588,9 +1669,134 @@ app.post("/api/auth/register", async (request, response) => {
       [nombres, apellidos, correo, hashContrasena, universidad, carrera, semestre, plan],
     );
 
-    response.status(201).json({ usuario: mapearUsuario(resultado.rows[0]) });
+    let verificacionCorreoEnviada = false;
+    try {
+      const envio = await enviarVerificacionCorreo({
+        estudianteId: resultado.rows[0].id,
+        nombres,
+        correo,
+      });
+      verificacionCorreoEnviada = Boolean(envio.ok);
+    } catch (error) {
+      console.warn("[email] No se pudo enviar verificacion de correo:", error.message);
+    }
+
+    response.status(201).json({
+      usuario: mapearUsuario(resultado.rows[0]),
+      verificacionCorreoEnviada,
+    });
   } catch (error) {
     response.status(500).json({ mensaje: "No se pudo registrar el usuario.", error: error.message });
+  }
+});
+
+app.post("/api/auth/verify-email", async (request, response) => {
+  if (!pool) return responderSinBase(response);
+
+  const token = String(request.body?.token || "").trim();
+  if (!token) {
+    response.status(400).json({ mensaje: "Token de verificacion requerido." });
+    return;
+  }
+
+  try {
+    const tokenHash = crearHashToken(token);
+    const resultado = await pool.query(
+      `
+      update estudiantes
+      set email_verificado = true,
+          email_verificacion_token = null,
+          email_verificacion_expira = null,
+          notif_correo = true
+      where email_verificacion_token = $1
+        and email_verificacion_expira > now()
+      returning
+        id,
+        nombres,
+        apellidos,
+        correo,
+        universidad,
+        carrera,
+        semestre,
+        plan,
+        horas_disponibles as "horasDisponibles",
+        metodo_estudio as "metodoEstudio",
+        tono_asistente as "tonoAsistente",
+        metas,
+        horas_estudio_diarias as "horasEstudioDiarias",
+        horas_sueno as "horasSueno",
+        notif_tareas as "notificacionesTareas",
+        notif_examenes as "notificacionesExamenes",
+        notif_ia as "notificacionesIa",
+        notif_semanal as "notificacionesSemanal",
+        notif_correo as "notificacionesCorreo",
+        email_verificado as "emailVerificado",
+        app_modo_oscuro as "aplicacionModoOscuro",
+        app_google_calendar as "aplicacionGoogleCalendar",
+        app_sugerencias_automaticas as "aplicacionSugerenciasAutomaticas"
+      `,
+      [tokenHash],
+    );
+
+    if (!resultado.rows[0]) {
+      response.status(400).json({ mensaje: "El enlace de verificacion no es valido o ya expiro." });
+      return;
+    }
+
+    const usuarioActualizado = resultado.rows[0];
+    if (request.body?.notificaciones?.correo === true && !usuarioActualizado.emailVerificado) {
+      try {
+        await enviarVerificacionCorreo({
+          estudianteId: usuarioActualizado.id,
+          nombres: usuarioActualizado.nombres,
+          correo: usuarioActualizado.correo,
+        });
+      } catch (error) {
+        console.warn("[email] No se pudo enviar verificacion al activar correo:", error.message);
+      }
+    }
+
+    response.json({ usuario: mapearUsuario(usuarioActualizado) });
+  } catch (error) {
+    response.status(500).json({ mensaje: "No se pudo verificar el correo.", error: error.message });
+  }
+});
+
+app.post("/api/auth/resend-verification", async (request, response) => {
+  if (!pool) return responderSinBase(response);
+
+  const estudianteId = String(request.body?.estudianteId || "").trim();
+  if (!estudianteId) {
+    response.status(400).json({ mensaje: "estudianteId requerido." });
+    return;
+  }
+
+  try {
+    const resultado = await pool.query(
+      "select id, nombres, correo, email_verificado as \"emailVerificado\" from estudiantes where id = $1 limit 1",
+      [estudianteId],
+    );
+    const usuario = resultado.rows[0];
+
+    if (!usuario) {
+      response.status(404).json({ mensaje: "Usuario no encontrado." });
+      return;
+    }
+
+    if (usuario.emailVerificado) {
+      response.json({ ok: true, yaVerificado: true });
+      return;
+    }
+
+    const envio = await enviarVerificacionCorreo({
+      estudianteId: usuario.id,
+      nombres: usuario.nombres,
+      correo: usuario.correo,
+    });
+
+    response.json({ ok: Boolean(envio.ok), omitido: Boolean(envio.omitido) });
+  } catch (error) {
+    response.status(500).json({ mensaje: "No se pudo reenviar la verificacion.", error: error.message });
   }
 });
 
@@ -1689,6 +1895,7 @@ app.patch("/api/perfil/:estudianteId", async (request, response) => {
         notif_ia as "notificacionesIa",
         notif_semanal as "notificacionesSemanal",
         notif_correo as "notificacionesCorreo",
+        email_verificado as "emailVerificado",
         app_modo_oscuro as "aplicacionModoOscuro",
         app_google_calendar as "aplicacionGoogleCalendar",
         app_sugerencias_automaticas as "aplicacionSugerenciasAutomaticas"
@@ -2147,7 +2354,10 @@ app.post("/api/notificaciones", async (request, response) => {
       [estudianteId, tipo, titulo, mensaje, noLeida],
     );
 
-    response.status(201).json(mapearNotificacion(resultado.rows[0]));
+    const notificacion = mapearNotificacion(resultado.rows[0]);
+    await enviarNotificacionCorreoSiCorresponde(estudianteId, notificacion);
+
+    response.status(201).json(notificacion);
   } catch (error) {
     response.status(500).json({ mensaje: "No se pudo crear la notificacion.", error: error.message });
   }
@@ -2263,9 +2473,9 @@ app.delete("/api/chat/:estudianteId", async (request, response) => {
   }
 });
 
-asegurarColumnasGoogleAuth()
+asegurarColumnasCompatibilidad()
   .catch((error) => {
-    console.error("No se pudo preparar el esquema de Google Auth:", error);
+    console.error("No se pudo preparar el esquema de compatibilidad:", error);
   })
   .finally(() => {
     app.listen(puerto, () => {

@@ -35,12 +35,14 @@ export default function Settings() {
   const {
     usuarioActual,
     actualizarPerfil,
+    reenviarVerificacionCorreo,
     permisoNotificacionesNavegador,
     solicitarPermisoNotificacionesNavegador,
   } = useStudyFlow();
   const [perfil, setPerfil] = useState<PerfilUsuario | null>(usuarioActual);
   const [estadoGuardado, setEstadoGuardado] = useState<"idle" | "saved">("idle");
   const [mensajePermisoNavegador, setMensajePermisoNavegador] = useState("");
+  const [mensajeVerificacionCorreo, setMensajeVerificacionCorreo] = useState("");
 
   useEffect(() => {
     setPerfil(usuarioActual);
@@ -403,6 +405,58 @@ export default function Settings() {
                 setPerfil({ ...perfil, notificaciones: { ...perfil.notificaciones, semanal: value } })
               }
             />
+            <FilaToggle
+              label="Notificaciones por correo"
+              descripcion={
+                perfil.emailVerificado
+                  ? "Envía alertas importantes a tu correo registrado."
+                  : "Primero verifica tu correo para recibir alertas reales."
+              }
+              checked={perfil.notificaciones.correo}
+              onCheckedChange={(value) =>
+                setPerfil({ ...perfil, notificaciones: { ...perfil.notificaciones, correo: value } })
+              }
+            />
+
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-slate-900">Correo electrónico</span>
+                    <Badge
+                      className={
+                        perfil.emailVerificado
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-amber-100 text-amber-700"
+                      }
+                    >
+                      {perfil.emailVerificado ? "Verificado" : "Pendiente"}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-slate-600">
+                    {perfil.emailVerificado
+                      ? "Tu correo ya puede recibir notificaciones de StudyFlow AI."
+                      : "Te enviaremos un enlace para confirmar que este correo te pertenece."}
+                  </p>
+                </div>
+
+                <Button
+                  variant="outline"
+                  className="sm:shrink-0"
+                  disabled={perfil.emailVerificado}
+                  onClick={async () => {
+                    const resultado = await reenviarVerificacionCorreo();
+                    setMensajeVerificacionCorreo(resultado.mensaje);
+                  }}
+                >
+                  {perfil.emailVerificado ? "Ya verificado" : "Reenviar enlace"}
+                </Button>
+              </div>
+
+              {mensajeVerificacionCorreo ? (
+                <p className="mt-3 text-sm text-slate-600">{mensajeVerificacionCorreo}</p>
+              ) : null}
+            </div>
 
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

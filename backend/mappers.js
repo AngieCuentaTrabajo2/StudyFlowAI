@@ -10,6 +10,7 @@ export function mapearUsuario(row) {
     carrera: row.carrera,
     semestre: row.semestre,
     plan: row.plan ?? "gratis",
+    emailVerificado: row.emailVerificado ?? false,
     horasDisponibles: row.horasDisponibles ?? null,
     metodoEstudio: row.metodoEstudio ?? null,
     tonoAsistente: row.tonoAsistente ?? "responsable",

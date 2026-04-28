@@ -33,6 +33,7 @@ export type PerfilUsuario = {
   carrera: string;
   semestre: string;
   plan: "gratis" | "estudiante" | "premium";
+  emailVerificado: boolean;
   horasDisponibles: string;
   metodoEstudio: string;
   tonoAsistente: "frio" | "amigable" | "responsable";

@@ -90,6 +90,8 @@ type ValorContextoStudyFlow = EstadoStudyFlow & {
   iniciarSesion: (correo: string, contrasena: string) => Promise<boolean>;
   iniciarSesionConGoogle: (credential: string) => Promise<ResultadoInicioSesionGoogle>;
   registrarUsuario: (datos: DatosRegistro) => Promise<boolean>;
+  verificarCorreo: (token: string) => Promise<boolean>;
+  reenviarVerificacionCorreo: () => Promise<{ ok: boolean; mensaje: string }>;
   cerrarSesion: () => void;
   actualizarPerfil: (cambios: Partial<PerfilUsuario>) => void;
   completarPerfilAcademico: (datos: {
@@ -1141,6 +1143,7 @@ function crearPerfilBase(): PerfilUsuario {
     carrera: "Ingenieria de Sistemas",
     semestre: "5",
     plan: "premium",
+    emailVerificado: true,
     horasDisponibles: "4-6",
     metodoEstudio: "pomodoro",
     tonoAsistente: "responsable",
@@ -1172,6 +1175,7 @@ function normalizarUsuarioApi(
   return {
     ...base,
     ...usuario,
+    emailVerificado: usuario.emailVerificado ?? base.emailVerificado,
     horasDisponibles: usuario.horasDisponibles ?? base.horasDisponibles,
     metodoEstudio: usuario.metodoEstudio ?? base.metodoEstudio,
     tonoAsistente: usuario.tonoAsistente ?? base.tonoAsistente,
@@ -1204,6 +1208,10 @@ function normalizarUsuarioPersistido(usuario: unknown): PerfilUsuario | null {
       candidato.plan === "gratis" || candidato.plan === "estudiante" || candidato.plan === "premium"
         ? candidato.plan
         : base.plan,
+    emailVerificado:
+      typeof candidato.emailVerificado === "boolean"
+        ? candidato.emailVerificado
+        : base.emailVerificado,
     horasDisponibles:
       typeof candidato.horasDisponibles === "string"
         ? candidato.horasDisponibles
@@ -1562,6 +1570,8 @@ function integrarContexto(estadoActual: EstadoStudyFlow, contexto: ContextoApi):
           carrera: contexto.usuario?.carrera ?? estadoActual.usuarioActual.carrera,
           semestre: contexto.usuario?.semestre ?? estadoActual.usuarioActual.semestre,
           plan: contexto.usuario?.plan ?? estadoActual.usuarioActual.plan,
+          emailVerificado:
+            contexto.usuario?.emailVerificado ?? estadoActual.usuarioActual.emailVerificado,
           horasDisponibles:
             contexto.usuario?.horasDisponibles ?? estadoActual.usuarioActual.horasDisponibles,
           metodoEstudio:
@@ -1837,7 +1847,9 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
             id: crearId("notif"),
             tipo: "success",
             titulo: "Bienvenido a StudyFlow AI",
-            mensaje: "Tu perfil fue creado y tu panel académico está listo para empezar.",
+            mensaje: siguienteUsuario.emailVerificado
+              ? "Tu perfil fue creado y tu panel académico está listo para empezar."
+              : "Tu perfil fue creado. Revisa tu correo para activar las notificaciones por email.",
             creadaEn: new Date().toISOString(),
             noLeida: true,
           };
@@ -1870,6 +1882,7 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
             carrera: datos.career,
             semestre: datos.semester,
             plan: datos.plan,
+            emailVerificado: false,
           };
 
           setEstado((actual) => ({
@@ -1878,6 +1891,59 @@ export function StudyFlowProvider({ children }: { children: ReactNode }) {
           }));
 
           return true;
+        }
+      },
+      verificarCorreo: async (token) => {
+        try {
+          const resultado = await api.verificarCorreo({ token });
+          setEstado((actual) => ({
+            ...actual,
+            usuarioActual: normalizarUsuarioApi(resultado.usuario, {
+              base: actual.usuarioActual,
+            }),
+          }));
+          return true;
+        } catch (_error) {
+          return false;
+        }
+      },
+      reenviarVerificacionCorreo: async () => {
+        const usuario = estado.usuarioActual;
+        if (!usuario) {
+          return { ok: false, mensaje: "Primero inicia sesión para reenviar la verificación." };
+        }
+
+        if (usuario.emailVerificado) {
+          return { ok: true, mensaje: "Tu correo ya está verificado." };
+        }
+
+        try {
+          const resultado = await api.reenviarVerificacionCorreo({ estudianteId: usuario.id });
+          if (resultado.yaVerificado) {
+            setEstado((actual) => ({
+              ...actual,
+              usuarioActual: actual.usuarioActual
+                ? { ...actual.usuarioActual, emailVerificado: true }
+                : actual.usuarioActual,
+            }));
+            return { ok: true, mensaje: "Tu correo ya estaba verificado." };
+          }
+
+          if (resultado.omitido) {
+            return {
+              ok: false,
+              mensaje: "El backend todavía no tiene RESEND_API_KEY configurada para enviar correos.",
+            };
+          }
+
+          return {
+            ok: resultado.ok,
+            mensaje: resultado.ok
+              ? "Te enviamos un nuevo enlace de verificación."
+              : "No se pudo enviar el correo de verificación.",
+          };
+        } catch (_error) {
+          return { ok: false, mensaje: "No se pudo reenviar el correo de verificación." };
         }
       },
       cerrarSesion: () => {

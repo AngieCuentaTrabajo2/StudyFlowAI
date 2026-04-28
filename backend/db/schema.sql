@@ -22,6 +22,9 @@ create table if not exists estudiantes (
   notif_ia boolean not null default true,
   notif_semanal boolean not null default true,
   notif_correo boolean not null default false,
+  email_verificado boolean not null default false,
+  email_verificacion_token text,
+  email_verificacion_expira timestamptz,
   app_modo_oscuro boolean not null default false,
   app_google_calendar boolean not null default false,
   app_sugerencias_automaticas boolean not null default true,
@@ -38,6 +41,9 @@ alter table estudiantes add column if not exists notif_examenes boolean not null
 alter table estudiantes add column if not exists notif_ia boolean not null default true;
 alter table estudiantes add column if not exists notif_semanal boolean not null default true;
 alter table estudiantes add column if not exists notif_correo boolean not null default false;
+alter table estudiantes add column if not exists email_verificado boolean not null default false;
+alter table estudiantes add column if not exists email_verificacion_token text;
+alter table estudiantes add column if not exists email_verificacion_expira timestamptz;
 alter table estudiantes add column if not exists app_modo_oscuro boolean not null default false;
 alter table estudiantes add column if not exists app_google_calendar boolean not null default false;
 alter table estudiantes add column if not exists app_sugerencias_automaticas boolean not null default true;

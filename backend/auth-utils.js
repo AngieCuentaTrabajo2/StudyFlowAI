@@ -1,4 +1,4 @@
-import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 
 export function crearHashContrasena(contrasena) {
   const salt = randomBytes(16).toString("hex");
@@ -47,6 +47,14 @@ export function obtenerNombreYApellidosGoogle(payload) {
 
 export function crearHashTemporalGoogle() {
   return crearHashContrasena(randomBytes(24).toString("hex"));
+}
+
+export function crearTokenSeguro(bytes = 32) {
+  return randomBytes(bytes).toString("hex");
+}
+
+export function crearHashToken(valor) {
+  return createHash("sha256").update(String(valor)).digest("hex");
 }
 
 function tieneTextoPerfilValido(valor) {
