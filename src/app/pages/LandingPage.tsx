@@ -18,7 +18,7 @@ const planes = [
     subtitulo: "Para empezar con orden y sin complicarte",
     precio: "S/ 0",
     caracteristicas: [
-      "Hasta 5 cursos",
+      "Hasta 3 cursos",
       "Tareas y exámenes en un solo lugar",
       "Tokens del agente limitados",
       "Recordatorios esenciales",
